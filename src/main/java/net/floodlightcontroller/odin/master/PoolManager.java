@@ -21,7 +21,7 @@ import net.floodlightcontroller.util.MACAddress;
  * @author Lalith Suresh <suresh.lalith@gmail.com>
  *
  */
-class PoolManager {
+public class PoolManager {
 	
 	static public final String GLOBAL_POOL = "global";
 	private final byte[] oui = {(byte) 0x00, (byte) 0x1b, (byte) 0xb3};

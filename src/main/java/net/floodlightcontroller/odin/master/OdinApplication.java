@@ -14,6 +14,7 @@ import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
 import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
 import net.floodlightcontroller.odin.master.OdinEventFlowDetection;
+import net.floodlightcontroller.storage.IStorageSourceService;
 import net.floodlightcontroller.util.MACAddress;
 
 
@@ -325,6 +326,10 @@ public abstract class OdinApplication implements Runnable {
 	protected final SmartApSelectionParams getSmartApSelectionParams (){
 		return odinApplicationInterfaceToMaster.getSmartApSelectionParams();
 	}
+ 
+ 	protected final IStorageSourceService getStorageService() {
+		return odinApplicationInterfaceToMaster.getStorageService();
+	}	
 	
 	/**
 	 * Get TxPower from and specific agent (AP)
