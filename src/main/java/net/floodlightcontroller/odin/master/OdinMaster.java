@@ -71,9 +71,9 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
     private String flowdetectionList = "";
     private int idleLvapTimeout = 60; // Seconds
 
-    private final ConcurrentMap<Long, SubscriptionCallbackTuple> subscriptions = new ConcurrentHashMap<Long, SubscriptionCallbackTuple>();
+    private final ConcurrentMap<Long, SubscriptionCallbackTuple> subscriptions = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<Long, FlowDetectionCallbackTuple> flowsdetection = new ConcurrentHashMap<Long, FlowDetectionCallbackTuple>();
+    private final ConcurrentMap<Long, FlowDetectionCallbackTuple> flowsdetection = new ConcurrentHashMap<>();
 
     private static String detector_ip_address = "0.0.0.0"; // Detector Ip Address not assigned
 
@@ -223,7 +223,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                 || clientHwAddress == null
                 || clientHwAddress.isBroadcast()
                 || clientHwAddress.isMulticast()
-                || agentManager.isTracked(odinAgentAddr) == false
+                || !agentManager.isTracked(odinAgentAddr)
                 || poolManager.getNumNetworks() == 0) {
             return;
         }
@@ -241,7 +241,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
             MACAddress bssid = poolManager.generateBssidForClient(clientHwAddress);
 
             // FIXME: Sub-optimal. We'll end up generating redundant probe requests
-            Set<String> ssidSet = new TreeSet<String>();
+            Set<String> ssidSet = new TreeSet<>();
             for (String pool : poolManager.getPoolsForAgent(odinAgentAddr)) {
 
                 if (pool.equals(PoolManager.GLOBAL_POOL)) //???????
@@ -269,8 +269,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
 
                 // Hearing from this client for the first time
                 if (oc == null) {
-                    List<String> ssidList = new ArrayList<String>();
-                    ssidList.addAll(poolManager.getSsidListForPool(pool));
+                    List<String> ssidList = new ArrayList<>(poolManager.getSsidListForPool(pool));
 
                     Lvap lvap = new Lvap(poolManager.generateBssidForClient(clientHwAddress),
                             ssidList);
@@ -711,6 +710,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      * @param oes the subscription
      * @param cb the callback
      */
+    @SuppressWarnings("Duplicates")
     @Override
     public synchronized long registerSubscription(String pool, final OdinEventSubscription oes,
             final NotificationCallback cb) {
@@ -724,10 +724,10 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
         subscriptions.put(subscriptionId, tup);
 
         /*
-         * Update the subscription list, and push to all agents
-         * TODO: This is a common subscription string being
-         *  sent to all agents. Replace this with per-agent
-         *  subscriptions.
+          Update the subscription list, and push to all agents
+          TODO: This is a common subscription string being
+           sent to all agents. Replace this with per-agent
+           subscriptions.
          */
         subscriptionList = "";
         int count = 0;
@@ -742,11 +742,9 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                     entry.getValue().oes.getValue() + " ";
         }
 
-        subscriptionList = String.valueOf(count) + " " + subscriptionList;
+        subscriptionList = count + " " + subscriptionList;
 
-        /**
-         * Should probably have threads to do this
-         */
+        /* Should probably have threads to do this */
         for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
             pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
         }
@@ -761,6 +759,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      * @param pool Pool that the invoking application corresponds to
      * @param id subscription id to remove
      */
+    @SuppressWarnings("Duplicates")
     @Override
     public synchronized void unregisterSubscription(String pool, final long id) {
         // FIXME: Need to calculate subscriptions per pool
@@ -779,11 +778,9 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                     entry.getValue().oes.getValue() + " ";
         }
 
-        subscriptionList = String.valueOf(count) + " " + subscriptionList;
+        subscriptionList = count + " " + subscriptionList;
 
-        /**
-         * Should probably have threads to do this
-         */
+        /* Should probably have threads to do this */
         for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
             pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
         }
@@ -800,6 +797,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      * @param oefd the flow detection
      * @param cb the callback
      */
+    @SuppressWarnings("Duplicates")
     @Override
     public synchronized long registerFlowDetection(String pool, final OdinEventFlowDetection oefd,
             final FlowDetectionCallback cb) {
@@ -814,11 +812,11 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
         flowdetectionId++;
         flowsdetection.put(flowdetectionId, tup);
 
-        /**
-         * Update the flowsdetection list, and push to all agents
-         * TODO: This is a common flow2detect string being
-         * sent to all agents. Replace this with per-agent
-         * flow2detect.
+        /*
+          Update the flowsdetection list, and push to all agents
+          TODO: This is a common flow2detect string being
+          sent to all agents. Replace this with per-agent
+          flow2detect.
          */
         flowdetectionList = "";
         int count = 0;
@@ -833,16 +831,16 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                     entry.getValue().oefd.getDstPort() + " ";
         }
 
-        flowdetectionList = String.valueOf(count) + " " + flowdetectionList;
+        flowdetectionList = count + " " + flowdetectionList;
 
-        /**
-         * FIXME:  Only one registered request: detect all flows. And it is not sent to agents
-         *
-         * Only in case of sending to the agents the registered flows to detect
-         * Should probably have threads to do this
-         *
-         *  for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
-         *	    pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
+        /*
+          FIXME:  Only one registered request: detect all flows. And it is not sent to agents
+
+          Only in case of sending to the agents the registered flows to detect
+          Should probably have threads to do this
+
+           for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
+         	    pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
 
          }*/
 
@@ -856,6 +854,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      * @param pool Pool that the invoking application corresponds to
      * @param id flow detection id to remove
      */
+    @SuppressWarnings("Duplicates")
     @Override
     public synchronized void unregisterFlowDetection(String pool, final long id) {
         // FIXME: Need to calculate subscriptions per pool
@@ -874,16 +873,16 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                     entry.getValue().oefd.getDstPort() + " ";
         }
 
-        flowdetectionList = String.valueOf(count) + " " + flowdetectionList;
+        flowdetectionList = count + " " + flowdetectionList;
 
-        /**
-         * FIXME:  Only one registered request: detect all flows. And it is not sent to agents
-         *
-         * Only in case of sending to the agents the registered flows to detect
-         * Should probably have threads to do this
-         *
-         *  for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
-         *	    pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
+        /*
+          FIXME:  Only one registered request: detect all flows. And it is not sent to agents
+
+          Only in case of sending to the agents the registered flows to detect
+          Should probably have threads to do this
+
+           for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
+         	    pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
 
          }*/
 
@@ -981,6 +980,8 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
     }
 
     // TODO: check if error 'private' is a problem (01-06-2019)
+    //  - changed 'private' to 'public' (01-06-2019)
+    //  - uncommented '@Override'
 
     /**
      * Channel Switch Announcement, to the clients of an specific agent (AP) -> Must it be private?
@@ -991,7 +992,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      * @param lvapSsids Network names
      * @param channel Channel number
      */
-    //@Override
+//    @Override
     private void sendChannelSwitchToClient(String pool, InetAddress agentAddr,
             MACAddress clientHwAddr, List<String> lvapSsids, int channel) {
         MACAddress bssid = poolManager.generateBssidForClient(clientHwAddr);
@@ -1176,7 +1177,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
         Collection<Class<? extends IFloodlightService>> l =
-                new ArrayList<Class<? extends IFloodlightService>>();
+                new ArrayList<>();
         l.add(IFloodlightProviderService.class);
         l.add(IRestApiService.class);
         return l;
@@ -1191,8 +1192,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
     public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
         Map<Class<? extends IFloodlightService>,
                 IFloodlightService> m =
-                new HashMap<Class<? extends IFloodlightService>,
-                        IFloodlightService>();
+                new HashMap<>();
         m.put(OdinMaster.class, this);
         return m;
     }
@@ -1225,7 +1225,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
             agentAuthListFile = agentAuthListFileConfig;
         }
 
-        List<OdinApplication> applicationList = new ArrayList<OdinApplication>();
+        List<OdinApplication> applicationList = new ArrayList<>();
         applicationMap = new HashMap<>();
         try {
             BufferedReader br = new BufferedReader(new FileReader(agentAuthListFile));
@@ -1516,11 +1516,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -1543,7 +1539,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                 MACAddress hwAddress = MACAddress.valueOf(fields[0]);
                 InetAddress ipaddr = InetAddress.getByName(fields[1]);
 
-                ArrayList<String> ssidList = new ArrayList<String>();
+                ArrayList<String> ssidList = new ArrayList<>();
                 ssidList.add(fields[3]); // FIXME: assumes a single ssid
                 Lvap lvap = new Lvap(MACAddress.valueOf(fields[2]), ssidList);
 
@@ -1637,7 +1633,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
             return Command.CONTINUE;
         }
         IPacket p3 = p2.getPayload(); // Application
-        if ((p3 != null) && (p3 instanceof DHCP)) {
+        if (p3 instanceof DHCP) {
             DHCP packet = (DHCP) p3;
             try {
 
@@ -1802,7 +1798,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
 
             // Client didn't follow through to connect - no assoc message received in the master
 
-            if (client.getLvap().getAssocState() == false) {
+            if (!client.getLvap().getAssocState()) {
                 IOdinAgent agent = client.getLvap().getAgent();
 
                 if (agent != null) {
@@ -1818,7 +1814,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                 //log.info("Association state of client " + client.getMacAddress() + " is " + client.getLvap().getAssocState());
             }
 
-/* Original code
+            /* Original code
 			// Client didn't follow through to connect
 			try {
 				if (client.getIpAddress().equals(InetAddress.getByName("0.0.0.0"))) {
@@ -1836,7 +1832,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
 			} catch (UnknownHostException e) {
 				// skip
 			}
-*/
+            */
         }
     }
 

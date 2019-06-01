@@ -80,7 +80,7 @@ public abstract class OdinApplication implements Runnable {
      * @param lock the application lock
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    protected void setLock(Object lock) {
+    protected final void setLock(Object lock) {
         this.lock = lock;
     }
 
@@ -312,7 +312,7 @@ public abstract class OdinApplication implements Runnable {
     }
 
 //	/**
-//	 * Channel Switch Announcement, to the clients of an specific agent (AP)
+//	 * Channel Switch Announcement to the clients of a specific agent (AP)
 //	 *
 //	 * @param Agent InetAddress
 //	 * @param Client MAC

@@ -206,16 +206,16 @@ interface IOdinMasterToApplicationInterface {
     int getChannelFromAgent(String pool, InetAddress agentAddr);
 
 
-    /**
-     * Channel Switch Announcement, to the clients of a specific agent (AP)
-     *
-     * @param pool Pool that the invoking application corresponds to
-     * @param agentAddr InetAddress of the agent
-     * @param clientHwAddr MAC address of the client
-     * @author Luis Sequeira <sequeira@unizar.es>
-     */
-    void sendChannelSwitchToClient(String pool, InetAddress agentAddr, MACAddress clientHwAddr,
-            List<String> lvapSsids, int channel);
+//    /**
+//     * Channel Switch Announcement, to the clients of a specific agent (AP)
+//     *
+//     * @param pool Pool that the invoking application corresponds to
+//     * @param agentAddr InetAddress of the agent
+//     * @param clientHwAddr MAC address of the client
+//     * @author Luis Sequeira <sequeira@unizar.es>
+//     */
+//    void sendChannelSwitchToClient(String pool, InetAddress agentAddr, MACAddress clientHwAddr,
+//            List<String> lvapSsids, int channel);
 
 
     /**
