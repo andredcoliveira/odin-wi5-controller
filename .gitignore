@@ -8,5 +8,10 @@
 #target
 thrift
 logback.xml
-target/bin/
+target/
 /bin/
+
+# IntelliJ
+.idea/
+*.iml
+

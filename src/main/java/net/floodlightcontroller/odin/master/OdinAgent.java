@@ -88,6 +88,9 @@ class OdinAgent implements IOdinAgent {
 	private final int MTX_DISTANCE_RX_STAT_NUM_PROPERTIES = 1;
 	private final int ODIN_AGENT_PORT = 6777;
 
+	// The weighted RSSI value for each client MAC address heard by the AP
+	private HashMap<MACAddress, Double> weightedRssi;
+
 
 	/**
 	 * Probably need a better identifier
@@ -800,4 +803,49 @@ class OdinAgent implements IOdinAgent {
 
 		return stats;
 	}
+
+	/**
+	 * Retrieves historical RSSI value for all stations
+	 *
+	 * @return historical RSSI value
+	 */
+	@Override
+	public HashMap<MACAddress, Double> getWeightedRssi() {
+		return weightedRssi;
+	}
+
+	/**
+	 * Sets historical RSSI value for all stations
+	 *
+	 * @param weightedRssi historical RSSI value
+	 */
+	@Override
+	public void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi) {
+		this.weightedRssi = weightedRssi;
+	}
+
+	/**
+	 * Retrieves historical RSSI value for a single station
+	 * based on its MAC address
+	 *
+	 * @param staHwAddr Ethernet address of STA
+	 * @return historical RSSI value
+	 */
+	@Override
+	public Double getClientWeightedRssi(MACAddress staHwAddr) {
+		return weightedRssi.get(staHwAddr);
+	}
+
+	/**
+	 * Sets historical RSSI value for a single station
+	 * based on its MAC address
+	 *
+	 * @param staHwAddr Ethernet address of STA
+	 * @param weightedRssi historical RSSI value
+	 */
+	@Override
+	public void setClientWeightedRssi(MACAddress staHwAddr, Double weightedRssi) {
+		this.weightedRssi.put(staHwAddr, weightedRssi);
+	}
+
 }
