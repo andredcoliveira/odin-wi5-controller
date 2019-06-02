@@ -22,6 +22,7 @@ import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
 import net.floodlightcontroller.storage.IStorageSourceService;
 import net.floodlightcontroller.util.MACAddress;
 
+@SuppressWarnings("Duplicates")
 public class SmartApSelection extends OdinApplication {
 
     // IMPORTANT: this application only works if all the agents in the
@@ -36,7 +37,7 @@ public class SmartApSelection extends OdinApplication {
     private SmartApSelectionParams SMARTAP_PARAMS;
 
     // Scanning agents
-    Map<InetAddress, Integer> scanningAgents = new HashMap<InetAddress, Integer>();
+    Map<InetAddress, Integer> scanningAgents = new HashMap<>();
     int result; // Result for scanning
 
     HashSet<OdinClient> clients;
@@ -65,7 +66,7 @@ public class SmartApSelection extends OdinApplication {
     private final int SrcPort;                        // Handle a SrcPort or all SrcPort ("*")
     private final int DstPort;                        // Handle a DstPort or all DstPort ("*")
 
-    Map<InetAddress, DetectedFlow> flowsReceived = new HashMap<InetAddress, DetectedFlow>();
+    Map<InetAddress, DetectedFlow> flowsReceived = new HashMap<>();
 
     public SmartApSelection() {
         this.IPSrcAddress = "*";
@@ -81,12 +82,7 @@ public class SmartApSelection extends OdinApplication {
     private void initDetection() {
         OdinEventFlowDetection oefd = new OdinEventFlowDetection();
         oefd.setFlowDetection(this.IPSrcAddress, this.IPSrcAddress, this.protocol, this.SrcPort, this.DstPort);
-        FlowDetectionCallback cb = new FlowDetectionCallback() {
-            @Override
-            public void exec(OdinEventFlowDetection oefd, FlowDetectionCallbackContext cntx) {
-                handler(oefd, cntx);
-            }
-        };
+        FlowDetectionCallback cb = this::handler;
         /* Before executing this line, make sure the agents declared in poolfile are started */
         registerFlowDetection(oefd, cb);
     }
@@ -196,10 +192,10 @@ public class SmartApSelection extends OdinApplication {
         ps.flush();
 
         vals_rx = new String[num_channels][num_agents]; // Matrix to store the results from agents
-        Map<MACAddress, Double[]> rssiData = new HashMap<MACAddress, Double[]>(); // Map to store RSSI for each STA in all APs
-        Map<MACAddress, Long> handoffDate = new HashMap<MACAddress, Long>(); // Map to store last handoff for each STA FIXME: Maybe create struct
+        Map<MACAddress, Double[]> rssiData = new HashMap<>(); // Map to store RSSI for each STA in all APs
+        Map<MACAddress, Long> handoffDate = new HashMap<>(); // Map to store last handoff for each STA FIXME: Maybe create struct
 
-        Map<MACAddress, Double[]> ffData = new HashMap<MACAddress, Double[]>(); // Map to store Throughput available for each STA in all APs
+        Map<MACAddress, Double[]> ffData = new HashMap<>(); // Map to store Throughput available for each STA in all APs
 
         char[] progressChar = new char[]{'-', '\\', '|', '/'};
         int progressIndex = 0;
@@ -213,7 +209,7 @@ public class SmartApSelection extends OdinApplication {
             try {
                 Thread.sleep(100);
 
-                clients = new HashSet<OdinClient>(getClients());
+                clients = new HashSet<>(getClients());
 
                 int num_clients = clients.size(); // Number of STAs
 
@@ -227,8 +223,7 @@ public class SmartApSelection extends OdinApplication {
 
                 // Some index
                 int client_index = 0;
-                int client_channel = 0;
-                ind_aux = 0;
+                int client_channel;
 
                 for (OdinClient oc : clients) { // Create array with client channels and their indexes for better data processing
 
@@ -254,7 +249,7 @@ public class SmartApSelection extends OdinApplication {
 
                 //For each channel used in owned APs
 
-                Map<InetAddress, Integer> agentsID = new HashMap<InetAddress, Integer>();
+                Map<InetAddress, Integer> agentsID = new HashMap<>();
 
                 for (int channel = 0; channel < num_channels; ++channel) {
 
@@ -292,7 +287,6 @@ public class SmartApSelection extends OdinApplication {
                 // All the statistics stored, now process
                 time = System.currentTimeMillis();
                 client_index = 0;
-                ind_aux = 0;
 
                 // For each client associated
 
@@ -314,7 +308,7 @@ public class SmartApSelection extends OdinApplication {
 
                         Double rssi = getRssiFromRxStats(eth, arr); // rssi or -99.9
 
-                        Double[] client_average_dBm = new Double[num_agents];
+                        Double[] client_average_dBm;
 
                         client_average_dBm = rssiData.get(eth);
 
@@ -332,8 +326,7 @@ public class SmartApSelection extends OdinApplication {
                                     Double client_signal = Math.pow(10.0, (rssi) / 10.0); // Linear power
                                     Double client_average = Math.pow(10.0, (client_average_dBm[ind_aux]) / 10.0); // Linear power average
                                     client_average = client_average * (1 - SMARTAP_PARAMS.weight) + client_signal * SMARTAP_PARAMS.weight;
-                                    client_average_dBm[ind_aux] = Double.valueOf((double) Math.round(1000 * Math.log10(client_average))
-                                            / 100); //Average power in dBm with 2 decimals
+                                    client_average_dBm[ind_aux] = (double) Math.round(1000 * Math.log10(client_average)) / 100; //Average power in dBm with 2 decimals
 
                                 }
                             } else {
@@ -370,7 +363,7 @@ public class SmartApSelection extends OdinApplication {
 
                     MACAddress eth = oc.getMacAddress(); // client MAC
 
-                    Double[] client_dBm = new Double[num_agents];
+                    Double[] client_dBm;
 
                     InetAddress clientAddr = oc.getIpAddress();
                     InetAddress agentAddr = oc.getLvap().getAgent().getIpAddress();
@@ -426,11 +419,11 @@ public class SmartApSelection extends OdinApplication {
                                     Long handoffTime = handoffDate.get(eth);
 
                                     //If Time threshold is reached, handoff
-                                    if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime.longValue()) / 1000
+                                    if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime) / 1000
                                             > SMARTAP_PARAMS.hysteresis_threshold)) {
 
                                         handoffClientToAp(eth, agentsArray[client_index]);
-                                        handoffDate.put(eth, Long.valueOf(System.currentTimeMillis()));
+                                        handoffDate.put(eth, System.currentTimeMillis());
                                         //System.out.println(" - Handoff >--->--->---> "+agentsArray[client_index]);
                                         ps.println("[Action] Handoff to agent: " + agentsArray[client_index]); // Log in file
 
@@ -471,10 +464,10 @@ public class SmartApSelection extends OdinApplication {
                                         //System.out.println("\033[K\r[SmartAPSelection] avg rate: " + vals_entry_rx.get("avg_rate") + " kbps");
                                         Double clientRate = Double.parseDouble(vals_entry_rx.get("avg_rate"));
                                         // t and T
-                                        double[] tTValues = getTransmissionTime(clientRate.doubleValue());
+                                        double[] tTValues = getTransmissionTime(clientRate);
                                         double p = 0.98 * (tTValues[1] / tTValues[0]);
                                         //System.out.println("\033[K\r[SmartAPSelection] Th_av["+ind_aux+"]: " + String.format("%.2f",clientRate.doubleValue()*p));
-                                        TH_av[ind_aux] = clientRate.doubleValue() * p;
+                                        TH_av[ind_aux] = clientRate * p;
                                     } else {
                                         TH_av[ind_aux] = 0.0;
                                     }
@@ -487,7 +480,7 @@ public class SmartApSelection extends OdinApplication {
                                     double maxRate = getOFDMRates(snr);
                                     double[] tTValues = getTransmissionTime(maxRate);
 
-                                    HashSet<OdinClient> clients_FF = new HashSet<OdinClient>(getClientsFromAgent(agentAddrFF));
+                                    HashSet<OdinClient> clients_FF = new HashSet<>(getClientsFromAgent(agentAddrFF));
                                     double t2Value = calculateT2(clients_FF.size(), tTValues[0]);
                                     double p = 0.98 * (tTValues[1] / t2Value);
                                     TH_av[ind_aux] = maxRate * p;
@@ -558,14 +551,13 @@ public class SmartApSelection extends OdinApplication {
                             Long handoffTime = handoffDate.get(eth);
 
                             //If Time threshold is reached, handoff
-                            if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime.longValue()) / 1000
+                            if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime) / 1000
                                     > SMARTAP_PARAMS.hysteresis_threshold)) {
 
                                 if (!(currentTh_av == 0.0)) {
                                     handoffClientToAp(eth, agentsArray[client_index]);
-                                    handoffDate.put(eth, Long.valueOf(System.currentTimeMillis()));
+                                    handoffDate.put(eth, System.currentTimeMillis());
                                     ps.println("\t\t[Action] Handoff to agent: " + agentsArray[client_index]); // Log in file
-                                } else {
                                 }
                             } else {
                                 ps.println("\t\t[No Action] No Handoff: Hysteresis time not reached"); // Log in file
@@ -578,7 +570,7 @@ public class SmartApSelection extends OdinApplication {
                 }
                 if (SMARTAP_PARAMS.mode.equals("BALANCER")) {
 
-                    Map<MACAddress, InetAddress> assignedClients = new HashMap<MACAddress, InetAddress>(); // Array with the balancer decission
+                    Map<MACAddress, InetAddress> assignedClients; // Array with the balancer decission
 
                     assignedClients = simpleBalancerAlgorithm(rssiData, agentsArray, clients,
                             SMARTAP_PARAMS.signal_threshold); // Very simple balancer algorithm
@@ -588,13 +580,13 @@ public class SmartApSelection extends OdinApplication {
                         Long handoffTime = handoffDate.get(eth);
                         OdinClient clientHandoff = getClientFromHwAddress(eth);
 
-                        if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime.longValue()) / 1000
+                        if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime) / 1000
                                 > SMARTAP_PARAMS.hysteresis_threshold)) {
 
                             InetAddress assignedAgent = assignedClients.get(eth);
                             if (getClientFromHwAddress(eth) != null) {
                                 handoffClientToAp(eth, assignedAgent);
-                                handoffDate.put(eth, Long.valueOf(System.currentTimeMillis()));
+                                handoffDate.put(eth, System.currentTimeMillis());
                                 ps.println("\t\t[Action] Handoff " + clientHandoff.getIpAddress() + " to agent: "
                                         + assignedAgent); // Log in file
                             }
@@ -667,7 +659,7 @@ public class SmartApSelection extends OdinApplication {
 
         for (String elem : arr.split("\n")) {//Split string in STAs
 
-            String row[] = elem.split(" ");//Split string in MAC and rssi
+            String[] row = elem.split(" ");//Split string in MAC and rssi
 
             if (row.length != 2) { // If there is more than 2 items, next one
                 continue;
@@ -679,9 +671,7 @@ public class SmartApSelection extends OdinApplication {
 
                 Double rssi = Double.parseDouble(row[1]);
 
-                if (rssi != null) {
-                    return rssi;
-                }
+                return rssi;
             }
         }
         return -99.9;//Not heard by the AP, return -99.9
@@ -788,7 +778,7 @@ public class SmartApSelection extends OdinApplication {
         int max_index = 0;
         int[] numStasPerAgent = new int[agentsArray.length];
         boolean orderHandoff = false;
-        Map<MACAddress, InetAddress> arrayHandoff = new HashMap<MACAddress, InetAddress>();
+        Map<MACAddress, InetAddress> arrayHandoff = new HashMap<>();
 
         HashSet<OdinClient> clients_Balancer;
 
@@ -799,7 +789,7 @@ public class SmartApSelection extends OdinApplication {
 
         for (InetAddress agentAddrBalancer : agentsArray) { // Create array with number of STAs for each AP, find the one with lower number
 
-            clients_Balancer = new HashSet<OdinClient>(getClientsFromAgent(agentAddrBalancer));
+            clients_Balancer = new HashSet<>(getClientsFromAgent(agentAddrBalancer));
 
             int numberOfStas = clients_Balancer.size();
 
@@ -831,7 +821,7 @@ public class SmartApSelection extends OdinApplication {
         float mean = (float) num_clients / numberOfAgentsAvailable;
         int meanStas = Math.round(mean);
 
-        for (InetAddress agentAddrBalancer : agentsArray) { // Print APs and number of STAs associated at it
+        for (InetAddress ignored : agentsArray) { // Print APs and number of STAs associated at it
 
             if ((ind_aux == agent_index) && (numStasPerAgent[ind_aux] < meanStas) && (maxStas
                     > meanStas)) { // min<mean and max>mean try to handoff a STA
@@ -844,10 +834,10 @@ public class SmartApSelection extends OdinApplication {
         }
         OdinClient clientHandoff = null;
         if (orderHandoff) {
-            clients_Balancer = new HashSet<OdinClient>(getClientsFromAgent(agentsArray[max_index]));
+            clients_Balancer = new HashSet<>(getClientsFromAgent(agentsArray[max_index]));
             double maxRssi = -99.9;
             for (OdinClient oc : clients_Balancer) {
-                Double[] client_dBm = new Double[num_agents];
+                Double[] client_dBm;
                 MACAddress eth = oc.getMacAddress();
                 InetAddress clientAddr = oc.getIpAddress();
                 if (clientAddr.equals(nullAddr))// If client not assigned, next one
@@ -926,7 +916,7 @@ public class SmartApSelection extends OdinApplication {
 
         for (InetAddress agentAddrAP : agentsArray) { // Create array with number of STAs for each AP
 
-            clients_AP = new HashSet<OdinClient>(getClientsFromAgent(agentAddrAP));
+            clients_AP = new HashSet<>(getClientsFromAgent(agentAddrAP));
 
             int numberOfStas = clients_AP.size();
 
