@@ -1,13 +1,8 @@
 package net.floodlightcontroller.odin.applications;
 
 import java.net.InetAddress;
-import java.util.Arrays;
-import java.util.Set;
 import java.util.Scanner;
-import java.io.*;
-
 import net.floodlightcontroller.odin.master.OdinApplication;
-import net.floodlightcontroller.odin.master.OdinClient;
 
 public class ChannelLoop extends OdinApplication {
 

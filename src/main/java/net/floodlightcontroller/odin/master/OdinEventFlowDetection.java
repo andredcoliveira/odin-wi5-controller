@@ -1,12 +1,10 @@
 package net.floodlightcontroller.odin.master;
 
 /**
- * Odin Applications should use instances of this class to express
- * flow detection requests. One instance of this class represents
- * a single flow detection request.
+ * Odin Applications should use instances of this class to express flow detection requests. One
+ * instance of this class represents a single flow detection request.
  * <p>
- * FIXME: The application should ensure it doesn't install the same
- * flow detection twice.
+ * FIXME: The application should ensure it doesn't install the same flow detection twice.
  */
 public class OdinEventFlowDetection {
 
@@ -57,7 +55,8 @@ public class OdinEventFlowDetection {
     /**
      * Sets a FlowDetection for an event
      */
-    public void setFlowDetection(String IPSrcAddress, String IPDstAddress, int protocol, int SrcPort, int DstPort) {
+    public void setFlowDetection(String IPSrcAddress, String IPDstAddress, int protocol,
+            int SrcPort, int DstPort) {
 
         this.IPSrcAddress = IPSrcAddress;
         this.IPDstAddress = IPDstAddress;

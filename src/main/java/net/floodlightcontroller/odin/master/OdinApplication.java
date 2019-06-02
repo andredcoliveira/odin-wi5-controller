@@ -1,15 +1,14 @@
 package net.floodlightcontroller.odin.master;
 
+import java.net.InetAddress;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.odin.master.OdinMaster.MobilityParams;
 import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
 import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
 import net.floodlightcontroller.util.MACAddress;
-
-import java.net.InetAddress;
-import java.util.Map;
-import java.util.Set;
-
 
 /**
  * Base class for all Odin applications. They are expected to run as a thread provided by the
@@ -22,9 +21,17 @@ public abstract class OdinApplication implements Runnable {
     private IOdinMasterToApplicationInterface odinApplicationInterfaceToMaster;
     private String pool;
 
-    private State state;
+    private AtomicReference<State> state;
     private Object lock;
 
+    /**
+     * Constructor.
+     *
+     * <p>By default, applications are expected to be RUNNING.
+     */
+    public OdinApplication() {
+        setState(State.RUNNING);
+    }
 
     /**
      * Set the OdinMaster to use
@@ -33,7 +40,6 @@ public abstract class OdinApplication implements Runnable {
         odinApplicationInterfaceToMaster = om;
     }
 
-
     /**
      * Sets the pool to use for the application
      */
@@ -41,56 +47,89 @@ public abstract class OdinApplication implements Runnable {
         this.pool = pool;
     }
 
-
     /**
-     * Gets the application state (RUNNING, HALTING, HALTED)
+     * Gets the application's state (RUNNING, HALTING, HALTED)
      *
-     * @return the application state
+     * @return the application's state
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected State getState() {
-        return state;
+        return state.get();
     }
 
-
     /**
-     * Sets the application state (RUNNING, HALTING, HALTED)
+     * Sets the application's state (RUNNING, HALTING, HALTED)
      *
+     * @param s the application's new state
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    protected void setState(State state) {
-        this.state = state;
+    protected void setState(State s) {
+        if (state == null) {
+            state = new AtomicReference<>(s);
+        } else {
+            state.set(s);
+        }
     }
 
-
     /**
-     * Gets the application lock (for synchronization purposes)
+     * Gets the application's lock (for synchronization purposes)
      *
-     * @return the application lock
+     * @return the application's lock
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected Object getLock() {
         return lock;
     }
 
-
     /**
-     * Sets the application lock (for synchronization purposes)
+     * Sets the application's lock (for synchronization purposes)
      *
-     * @param lock the application lock
+     * @param lock the application's lock
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected final void setLock(Object lock) {
         this.lock = lock;
     }
 
+    /**
+     * Changes the application's state from RUNNING to HALTING, meaning that it should/will begin
+     * its halting process if/when possible. It is up to the application to safely switch from
+     * HALTING to HALTED.
+     *
+     * @return true if the application's previous state was RUNNING, false otherwise
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected final boolean tryHalt() {
+        return state.compareAndSet(State.RUNNING, State.HALTING);
+    }
+
+    /**
+     * Changes the application's state from HALTING to HALTED, meaning that it has found a safe
+     * point to pause its execution
+     *
+     * @return true if the application's previous state was HALTING, false otherwise
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected final boolean halt() {
+        return state.compareAndSet(State.HALTING, State.HALTED);
+    }
+
+    /**
+     * Changes the application's state from HALTED to RUNNING, meaning that it is safe to continue
+     * its procedures.
+     *
+     * @return true if the application's previous state was HALTED, false otherwise
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected final boolean resume() {
+        return state.compareAndSet(State.HALTED, State.RUNNING);
+    }
 
     /**
      * Needed to wrap OdinApplications into a thread, and is implemented by the specific
      * application
      */
     public abstract void run();
-
 
     /**
      * VAP-Handoff a client to a new AP. This operation is idempotent.
@@ -102,7 +141,6 @@ public abstract class OdinApplication implements Runnable {
         odinApplicationInterfaceToMaster.handoffClientToAp(pool, staHwAddr, newApIpAddr);
     }
 
-
     /**
      * Get the list of clients currently registered with Odin
      *
@@ -111,7 +149,6 @@ public abstract class OdinApplication implements Runnable {
     protected final Set<OdinClient> getClients() {
         return odinApplicationInterfaceToMaster.getClients(pool);
     }
-
 
     /**
      * Get the OdinClient type from the client's MACAddress
@@ -154,7 +191,6 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.getRxStatsFromAgent(pool, agentAddr);
     }
 
-
     /**
      * Request scanned stations statistics from the agent
      *
@@ -163,12 +199,11 @@ public abstract class OdinApplication implements Runnable {
      * @param ssid to scan (always is *)
      * @return If request is accepted return 1, otherwise, return 0
      */
-    protected final int requestScannedStationsStatsFromAgent(InetAddress agentAddr, int channel,
-            String ssid) {
-        return odinApplicationInterfaceToMaster
-                .requestScannedStationsStatsFromAgent(pool, agentAddr, channel, ssid);
+    protected final int requestScannedStationsStatsFromAgent(
+            InetAddress agentAddr, int channel, String ssid) {
+        return odinApplicationInterfaceToMaster.requestScannedStationsStatsFromAgent(
+                pool, agentAddr, channel, ssid);
     }
-
 
     /**
      * Retreive scanned stations statistics from the agent
@@ -182,7 +217,6 @@ public abstract class OdinApplication implements Runnable {
                 .getScannedStationsStatsFromAgent(pool, agentAddr, ssid);
     }
 
-
     /**
      * Request scanned stations statistics from the agent
      *
@@ -191,12 +225,11 @@ public abstract class OdinApplication implements Runnable {
      * @param ssid to scan (e.g odin_init)
      * @return If request is accepted return 1, otherwise, return 0
      */
-    protected final int requestSendMesurementBeaconFromAgent(InetAddress agentAddr, int channel,
-            String ssid) {
-        return odinApplicationInterfaceToMaster
-                .requestSendMesurementBeaconFromAgent(pool, agentAddr, channel, ssid);
+    protected final int requestSendMesurementBeaconFromAgent(
+            InetAddress agentAddr, int channel, String ssid) {
+        return odinApplicationInterfaceToMaster.requestSendMesurementBeaconFromAgent(
+                pool, agentAddr, channel, ssid);
     }
-
 
     /**
      * Stop sending mesurement beacon from the agent
@@ -208,7 +241,6 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.stopSendMesurementBeaconFromAgent(pool, agentAddr);
     }
 
-
     /**
      * Get a list of Odin agents from the agent tracker
      *
@@ -217,7 +249,6 @@ public abstract class OdinApplication implements Runnable {
     protected final Set<InetAddress> getAgents() {
         return odinApplicationInterfaceToMaster.getAgentAddrs(pool);
     }
-
 
     /**
      * Add a subscription for a particular event defined by oes. cb is defines the application
@@ -232,7 +263,6 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.registerSubscription(pool, oes, cb);
     }
 
-
     /**
      * Remove a subscription from the list
      *
@@ -241,7 +271,6 @@ public abstract class OdinApplication implements Runnable {
     protected final void unregisterSubscription(long id) {
         odinApplicationInterfaceToMaster.unregisterSubscription(pool, id);
     }
-
 
     /**
      * Add a flow detection for a particular event defined by oefd. cb is defines the application
@@ -252,11 +281,10 @@ public abstract class OdinApplication implements Runnable {
      * @param oefd the flow detection
      * @param cb the callback
      */
-    protected final long registerFlowDetection(OdinEventFlowDetection oefd,
-            FlowDetectionCallback cb) {
+    protected final long registerFlowDetection(
+            OdinEventFlowDetection oefd, FlowDetectionCallback cb) {
         return odinApplicationInterfaceToMaster.registerFlowDetection(pool, oefd, cb);
     }
-
 
     /**
      * Remove a flow detection from the list
@@ -266,7 +294,6 @@ public abstract class OdinApplication implements Runnable {
     protected final void unregisterFlowDetectionn(long id) {
         odinApplicationInterfaceToMaster.unregisterFlowDetection(pool, id);
     }
-
 
     /**
      * Add an SSID to the Odin network.
@@ -278,7 +305,6 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.addNetwork(pool, ssid);
     }
 
-
     /**
      * Remove an SSID from the Odin network.
      *
@@ -288,7 +314,6 @@ public abstract class OdinApplication implements Runnable {
     protected final boolean removeNetwork(String ssid) {
         return odinApplicationInterfaceToMaster.removeNetwork(pool, ssid);
     }
-
 
     /**
      * Change the Wi-Fi channel of an specific agent (AP)
@@ -300,7 +325,6 @@ public abstract class OdinApplication implements Runnable {
         odinApplicationInterfaceToMaster.setChannelToAgent(pool, agentAddr, channel);
     }
 
-
     /**
      * Get channel from a specific agent (AP)
      *
@@ -311,18 +335,19 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.getChannelFromAgent(pool, agentAddr);
     }
 
-//	/**
-//	 * Channel Switch Announcement to the clients of a specific agent (AP)
-//	 *
-//	 * @param Agent InetAddress
-//	 * @param Client MAC
-//	 * @param SSID
-//	 * @param Channel
-//	 */
-//	protected final void sendChannelSwitchToClient (InetAddress agentAddr, MACAddress clientHwAddr, String ssid, int channel){
-//		odinApplicationInterfaceToMaster.sendChannelSwitchToClient(pool, agentAddr, clientHwAddr, ssid, channel);
-//	}
-
+    //	/**
+    //	 * Channel Switch Announcement to the clients of a specific agent (AP)
+    //	 *
+    //	 * @param Agent InetAddress
+    //	 * @param Client MAC
+    //	 * @param SSID
+    //	 * @param Channel
+    //	 */
+    //	protected final void sendChannelSwitchToClient (InetAddress agentAddr, MACAddress clientHwAddr,
+    // String ssid, int channel){
+    //		odinApplicationInterfaceToMaster.sendChannelSwitchToClient(pool, agentAddr, clientHwAddr,
+    // ssid, channel);
+    //	}
 
     /**
      * Scanning for a client in a specific agent (AP)
@@ -332,32 +357,27 @@ public abstract class OdinApplication implements Runnable {
      * @param time scanning time
      * @return Signal power
      */
-    protected final int scanClientFromAgent(InetAddress agentAddr, MACAddress clientHwAddr,
-            int channel, int time) {
-        return odinApplicationInterfaceToMaster
-                .scanClientFromAgent(pool, agentAddr, clientHwAddr, channel, time);
+    protected final int scanClientFromAgent(
+            InetAddress agentAddr, MACAddress clientHwAddr, int channel, int time) {
+        return odinApplicationInterfaceToMaster.scanClientFromAgent(
+                pool, agentAddr, clientHwAddr, channel, time);
     }
-
 
     protected final MobilityParams getMobilityParams() {
         return odinApplicationInterfaceToMaster.getMobilityParams();
     }
 
-
     protected final ScannParams getMatrixParams() {
         return odinApplicationInterfaceToMaster.getMatrixParams();
     }
-
 
     protected final ScannParams getInterferenceParams() {
         return odinApplicationInterfaceToMaster.getInterferenceParams();
     }
 
-
     protected final ChannelAssignmentParams getChannelAssignmentParams() {
         return odinApplicationInterfaceToMaster.getChannelAssignmentParams();
     }
-
 
     protected final SmartApSelectionParams getSmartApSelectionParams() {
         return odinApplicationInterfaceToMaster.getSmartApSelectionParams();
@@ -373,7 +393,6 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.getTxPowerFromAgent(pool, agentAddr);
     }
 
-
     /**
      * Retrieve scanned wi5 stations rssi from the agent
      *
@@ -383,7 +402,6 @@ public abstract class OdinApplication implements Runnable {
     protected final String getScannedStaRssiFromAgent(InetAddress agentAddr) {
         return odinApplicationInterfaceToMaster.getScannedStaRssiFromAgent(pool, agentAddr);
     }
-
 
     /**
      * Retrieve associated wi5 stations in the agent
@@ -395,7 +413,6 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.getClientsFromAgent(pool, agentAddr);
     }
 
-
     /**
      * Return Vip AP IP address
      *
@@ -404,7 +421,6 @@ public abstract class OdinApplication implements Runnable {
     protected final String getVipAPIpAddress() {
         return odinApplicationInterfaceToMaster.getVipAPIpAddress();
     }
-
 
     /**
      * Retrieve the historical RSSI value stored at the agent, for a certain station
@@ -419,31 +435,70 @@ public abstract class OdinApplication implements Runnable {
         return odinApplicationInterfaceToMaster.getStaWeightedRssiFromAgent(staHwAddr, agentAddr);
     }
 
-
     /**
      * Gets the target application's state (RUNNING, HALTING, HALTED)
      *
      * @param applicationName Name of the target application
-     * @return the application state
+     * @return the application's state
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected State getApplicationState(String applicationName) {
         return odinApplicationInterfaceToMaster.getApplicationState(applicationName);
     }
 
-
     /**
-     * Sets a target application's state (RUNNING, HALTING, HALTED)
+     * Changes a target application's state from RUNNING to HALTING, meaning that it should begin
+     * its halting process if/when possible. It is up to the application to safely switch from
+     * HALTING to HALTED.
      *
      * @param applicationName Name of the target application
-     * @param state State to set the application to (RUNNING, HALTING, HALTED)
-     * @return true if application exists, false otherwise
+     * @return true if the application exists and its previous state was RUNNING, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    protected final boolean setApplicationState(String applicationName, State state) {
-        return odinApplicationInterfaceToMaster.setApplicationState(applicationName, state);
+    protected final boolean tryHaltApplication(String applicationName) {
+        return odinApplicationInterfaceToMaster.tryHaltApplication(applicationName);
     }
 
+    /**
+     * Changes a target application's state from HALTED to RUNNING, meaning that it is safe to
+     * continue its procedures.
+     *
+     * @param applicationName Name of the target application
+     * @return true if the application exists and its previous state was HALTED, false otherwise
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected final boolean resumeApplication(String applicationName) {
+        return odinApplicationInterfaceToMaster.resumeApplication(applicationName);
+    }
+
+    /**
+     * Checks if another application requested an interruption. If so, it waits until it is safe to
+     * return.
+     *
+     * @return true if interrupted, false otherwise
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected boolean checkpoint() {
+        boolean interrupted = false;
+
+        synchronized (getLock()) {
+            while (!getState().equals(State.RUNNING)) {
+                if (halt()) {
+                    getLock().notifyAll();
+                }
+                try {
+                    getLock().wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                interrupted = true;
+            }
+
+            getLock().notifyAll();
+        }
+
+        return interrupted;
+    }
 
     /**
      * Describes the state of an application as RUNNING, HALTING or HALTED
@@ -451,6 +506,8 @@ public abstract class OdinApplication implements Runnable {
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected enum State {
-        RUNNING, HALTING, HALTED
+        RUNNING,
+        HALTING,
+        HALTED
     }
 }

@@ -1,14 +1,5 @@
 package net.floodlightcontroller.odin.applications;
 
-import java.util.concurrent.atomic.AtomicReference;
-import net.floodlightcontroller.odin.master.OdinApplication;
-import net.floodlightcontroller.odin.master.OdinClient;
-import net.floodlightcontroller.util.MACAddress;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,6 +8,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +16,14 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import net.floodlightcontroller.odin.master.OdinApplication;
+import net.floodlightcontroller.odin.master.OdinClient;
+import net.floodlightcontroller.util.MACAddress;
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 
 /**
  * Application that handles predictive mobility management in flying networks
@@ -49,49 +49,52 @@ public class FlyingNetworkManager extends OdinApplication {
             e.printStackTrace();
         }
 
-        long receiveTime;
-
         // infinite loop if server socket is valid (i.e., listening on port 6666)
         while (serverSocket != null) {
-            String message = null;
+            String message;
             try {
-                clientSocket = serverSocket.accept();  // blocks until someone connects
+                clientSocket = serverSocket.accept(); // blocks until someone connects
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 message = in.readLine();
             } catch (IOException e) {
                 e.printStackTrace();
+                continue;
             }
-            receiveTime = System.nanoTime();
+            out.println(Instant.now().toString());
+            long receiveTime = System.nanoTime();
 
-            if (isPossiblyJson(message)) {
-                setApplicationState("SmartApSelection", State.HALTING);
-                synchronized (getLock()) {
-                    while (!getApplicationState("SmartApSelection").equals(State.HALTING)) {
-                        try {
-                            getLock().wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+            if (!possibleJson(message)) {
+                continue;
+            }
+
+            // Wait until it's safe
+            tryHaltApplication("SmartApSelection");
+            synchronized (getLock()) {
+                while (!getApplicationState("SmartApSelection").equals(State.HALTED)) {
+                    try {
+                        getLock().wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    long operationTime = handleHandoffs(message, receiveTime);
-
-                    ScheduledExecutorService scheduler = Executors
-                            .newSingleThreadScheduledExecutor();
-
-                    // Resume SmartApSelection() after the APs are done moving around
-                    scheduler.schedule(
-                            () -> {
-                                setApplicationState("SmartApSelection", State.RUNNING);
-                                getLock().notifyAll();
-                            },
-                            Math.round(operationTime * 1000)
-                                    - (System.nanoTime() - receiveTime) / 1000000,
-                            TimeUnit.MILLISECONDS
-                    );
-                    scheduler.shutdown();
                 }
+
+                // Handle handoffs
+                long resumeDelay = handleHandoffs(message, receiveTime);
+
+                ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+                // Resume SmartApSelection() after the UAVs/APs are done moving around
+                scheduler.schedule(
+                        new RunResumeApplication("SmartApSelection", getLock()),
+                        resumeDelay - (System.nanoTime() - receiveTime),
+                        TimeUnit.NANOSECONDS);
+                scheduler.shutdown();
+
+                getLock().notifyAll();
             }
+
+            out.println("DONE");
         }
 
         try {
@@ -104,18 +107,34 @@ public class FlyingNetworkManager extends OdinApplication {
         }
     }
 
-    private boolean isPossiblyJson(String message) {
-        return message != null && !message.trim().isEmpty() && (
-                (message.startsWith("[") && message.endsWith("]")) || (message.startsWith("{")
-                        && message.endsWith("}")));
+    /**
+     * Checks very basic JSON rules. Eliminates easy targets.
+     *
+     * @param message the JSON string
+     * @return true if string might be a JSON object, false otherwise
+     */
+    private boolean possibleJson(String message) {
+        return message != null
+                && !message.trim().isEmpty()
+                && ((message.startsWith("[") && message.endsWith("]"))
+                || (message.startsWith("{") && message.endsWith("}")));
     }
 
+    /**
+     * Handles a set of handoffs given a JSON string with IPv4 Addresses keying ApRelocation
+     * objects. It requires: Origin coordinates (GPS), Destination coordinates (GPS), Reference
+     * coordinates (GPS) and Velocity (NED), for every UAV acting as a possible AP.
+     *
+     * @param message JSON string with information regarding UAV relocations
+     * @param receiveTime time [ns] used as reference to begin operations
+     * @return the duration [ns] of the longest UAV flight (operation time)
+     */
     private long handleHandoffs(String message, long receiveTime) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, ApRelocation> apRelocations;
         try {
-            apRelocations = objectMapper
-                    .readValue(message, new TypeReference<Map<String, ApRelocation>>() {
+            apRelocations =
+                    objectMapper.readValue(message, new TypeReference<Map<String, ApRelocation>>() {
                     });
         } catch (IOException e) {
             apRelocations = Collections.emptyMap();
@@ -133,47 +152,54 @@ public class FlyingNetworkManager extends OdinApplication {
 
         AtomicReference<Double> longestFlight = new AtomicReference<>();
 
-        apRelocations.forEach((agent, apRelocation) -> {
-            InetAddress agentAddress = null;
-            try {
-                agentAddress = InetAddress.getByName(agent);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
+        apRelocations.forEach(
+                (agent, apRelocation) -> {
+                    InetAddress agentAddress = null;
+                    try {
+                        agentAddress = InetAddress.getByName(agent);
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    }
 
-            if (agentAddress != null) {
-                Cartesian originNed = apRelocation.origin.toEcef().toNed(
-                        apRelocation.reference.lat,
-                        apRelocation.reference.lon,
-                        apRelocation.reference.alt
-                );
-                agentCoordinatesNedOrigin.put(agentAddress, originNed);
+                    if (agentAddress != null) {
+                        Cartesian originNed =
+                                apRelocation
+                                        .origin
+                                        .toEcef()
+                                        .toNed(
+                                                apRelocation.reference.lat,
+                                                apRelocation.reference.lon,
+                                                apRelocation.reference.alt);
+                        agentCoordinatesNedOrigin.put(agentAddress, originNed);
 
-                Cartesian destinationNed = apRelocation.destination.toEcef().toNed(
-                        apRelocation.reference.lat,
-                        apRelocation.reference.lon,
-                        apRelocation.reference.alt
-                );
-                agentCoordinatesNedDestination.put(agentAddress, destinationNed);
+                        Cartesian destinationNed =
+                                apRelocation
+                                        .destination
+                                        .toEcef()
+                                        .toNed(
+                                                apRelocation.reference.lat,
+                                                apRelocation.reference.lon,
+                                                apRelocation.reference.alt);
+                        agentCoordinatesNedDestination.put(agentAddress, destinationNed);
 
-                double flightX = (destinationNed.x - originNed.x) / apRelocation.velocity.x;
-                double flightY = (destinationNed.y - originNed.y) / apRelocation.velocity.y;
-                double flightZ = (destinationNed.z - originNed.z) / apRelocation.velocity.z;
-                double flightTime;
+                        double flightX = (destinationNed.x - originNed.x) / apRelocation.velocity.x;
+                        double flightY = (destinationNed.y - originNed.y) / apRelocation.velocity.y;
+                        double flightZ = (destinationNed.z - originNed.z) / apRelocation.velocity.z;
+                        double flightTime;
 
-                if (flightX >= flightY && flightX >= flightZ) {
-                    flightTime = flightX;
-                } else if (flightY >= flightX && flightY >= flightZ) {
-                    flightTime = flightY;
-                } else {
-                    flightTime = flightZ;
-                }
+                        if (flightX >= flightY && flightX >= flightZ) {
+                            flightTime = flightX;
+                        } else if (flightY >= flightX && flightY >= flightZ) {
+                            flightTime = flightY;
+                        } else {
+                            flightTime = flightZ;
+                        }
 
-                if (flightTime > longestFlight.get()) {
-                    longestFlight.set(flightTime);
-                }
-            }
-        });
+                        if (flightTime > longestFlight.get()) {
+                            longestFlight.set(flightTime);
+                        }
+                    }
+                });
 
         // For each client: (NED, wRSSI)_uavs -> NED
         Map<MACAddress, Cartesian> clientCoordinatesNed = new HashMap<>();
@@ -209,10 +235,10 @@ public class FlyingNetworkManager extends OdinApplication {
             double min = Double.MAX_VALUE; // meters
 
             for (InetAddress agent : agents) {
-                Double distanceSqr = distanceSquared(
-                        clientCoordinatesNed.get(client.getMacAddress()),
-                        agentCoordinatesNedDestination.get(agent)
-                );
+                Double distanceSqr =
+                        distanceSquared(
+                                clientCoordinatesNed.get(client.getMacAddress()),
+                                agentCoordinatesNedDestination.get(agent));
 
                 if (distanceSqr < min) {
                     min = distanceSqr;
@@ -232,44 +258,84 @@ public class FlyingNetworkManager extends OdinApplication {
             Cartesian p2 = agentCoordinatesNedOrigin.get(futureAgent);
             Cartesian p = clientCoordinatesNed.get(client.getMacAddress());
 
-            Double delay = lowestPositiveQuadraticSolution(
-                    v1.x * v1.x + v1.y * v1.y + v1.z * v1.z
-                            - v2.x * v2.x - v2.y * v2.y - v2.z * v2.z,
-                    2 * (v1.x * (p1.x - p.x)
-                            + v1.y * (p1.y - p.y)
-                            + v1.z * (p1.z - p.z)
-                            - v2.x * (p2.x - p.x)
-                            - v2.y * (p2.y - p.y)
-                            - v2.z * (p2.z - p.z)),
-                    p1.x * p1.x + p1.y * p1.y + p1.z * p1.z
-                            - p2.x * p2.x - p2.y * p2.y - p2.z * p2.z
-                            - 2 * (p.x * (p1.x - p2.x)
-                            + p.y * (p1.y - p2.y)
-                            + p.z * (p1.z - p2.z))
-            ); // seconds
+            Double delay =
+                    lowestPositiveQuadraticSolution(
+                            v1.x * v1.x + v1.y * v1.y + v1.z * v1.z - v2.x * v2.x - v2.y * v2.y
+                                    - v2.z * v2.z,
+                            2
+                                    * (v1.x * (p1.x - p.x)
+                                    + v1.y * (p1.y - p.y)
+                                    + v1.z * (p1.z - p.z)
+                                    - v2.x * (p2.x - p.x)
+                                    - v2.y * (p2.y - p.y)
+                                    - v2.z * (p2.z - p.z)),
+                            p1.x * p1.x
+                                    + p1.y * p1.y
+                                    + p1.z * p1.z
+                                    - p2.x * p2.x
+                                    - p2.y * p2.y
+                                    - p2.z * p2.z
+                                    - 2
+                                    * (p.x * (p1.x - p2.x)
+                                    + p.y * (p1.y - p2.y)
+                                    + p.z * (p1.z - p2.z))); // seconds
 
             if (delay != null) {
                 // Schedule handoff
                 scheduler.schedule(
-                        new HandoffRunnable(client.getMacAddress(), futureAgent),
+                        new RunHandoffClientToAp(client.getMacAddress(), futureAgent),
                         Math.round(delay * 1000) - (System.nanoTime() - receiveTime) / 1000000,
-                        TimeUnit.MILLISECONDS
-                );
+                        TimeUnit.MILLISECONDS);
             }
         }
 
-        // Gracefully shutdown the scheduler: no new tasks will be accepted
+        // Gracefully shutdown the scheduler (i.e., still finishes old tasks)
         scheduler.shutdown();
 
-        return Math.round(longestFlight.get() * 1000) - (System.nanoTime() - receiveTime) / 1000000;
+        return (long) (longestFlight.get().doubleValue());
     }
 
-    public class HandoffRunnable implements Runnable {
+    public double distanceSquared(Cartesian p1, Cartesian p2) {
+        return ((p1.x - p2.x) * (p1.x - p2.x)
+                + (p1.y - p2.y) * (p1.y - p2.y)
+                + (p1.z - p2.z) * (p1.z - p2.z));
+    }
+
+    public double distance(Cartesian p1, Cartesian p2) {
+        return Math.sqrt(distanceSquared(p1, p2));
+    }
+
+    private static Double lowestPositiveQuadraticSolution(double a, double b, double c) {
+
+        double discriminant = b * b - 4 * a * c;
+
+        // no real solution
+        // avoids complex solutions
+        if (discriminant < 0) {
+            return null;
+        }
+
+        double answerPlus = (-b + Math.sqrt(discriminant)) / (2 * a);
+        double answerMinus = (-b - Math.sqrt(discriminant)) / (2 * a);
+
+        // discard negative numbers
+        if ((answerPlus < 0 && answerMinus < 0)
+                || (Double.isNaN(answerPlus) && Double.isNaN(answerMinus))) {
+            return null;
+        } else if (answerPlus > 0 && answerMinus > 0) {
+            return Math.min(answerPlus, answerMinus);
+        }
+
+        // return that which is > 0
+        return (answerPlus > answerMinus) ? answerPlus : answerMinus;
+    }
+
+    public class RunHandoffClientToAp implements Runnable {
 
         private final MACAddress staHwAddr;
         private final InetAddress futureAgent;
 
-        public HandoffRunnable(MACAddress staHwAddr, InetAddress futureAgent) {
+        public RunHandoffClientToAp(MACAddress staHwAddr, InetAddress futureAgent) {
             this.staHwAddr = staHwAddr;
             this.futureAgent = futureAgent;
         }
@@ -277,6 +343,26 @@ public class FlyingNetworkManager extends OdinApplication {
         @Override
         public void run() {
             handoffClientToAp(staHwAddr, futureAgent);
+        }
+    }
+
+    protected class RunResumeApplication implements Runnable {
+
+        final String appName;
+        final Object lock;
+
+        protected RunResumeApplication(String appName, Object lock) {
+            this.appName = appName;
+            this.lock = lock;
+        }
+
+        @Override
+        public void run() {
+            synchronized (lock) {
+                if (resumeApplication(appName)) {
+                    lock.notifyAll();
+                }
+            }
         }
     }
 
@@ -292,8 +378,7 @@ public class FlyingNetworkManager extends OdinApplication {
                 @JsonProperty("origin") GpsCoordinates origin,
                 @JsonProperty("destination") GpsCoordinates destination,
                 @JsonProperty("reference") GpsCoordinates reference,
-                @JsonProperty("velocity") Cartesian velocity
-        ) {
+                @JsonProperty("velocity") Cartesian velocity) {
             this.origin = origin;
             this.destination = destination;
             this.reference = reference;
@@ -302,42 +387,45 @@ public class FlyingNetworkManager extends OdinApplication {
 
         @Override
         public String toString() {
-            return "{\n" +
-                    "\n  origin=" + origin +
-                    "\n  destination=" + destination +
-                    "\n  reference=" + reference +
-                    "\n  velocity=" + velocity +
-                    "\n}";
+            return "{\n"
+                    + "\n  origin="
+                    + origin
+                    + "\n  destination="
+                    + destination
+                    + "\n  reference="
+                    + reference
+                    + "\n  velocity="
+                    + velocity
+                    + "\n}";
         }
     }
 
     @SuppressWarnings("Duplicates")
     public static class GpsCoordinates {
 
-        double lat;  // degrees
-        double lon;  // degrees
+        double lat; // degrees
+        double lon; // degrees
         double alt;
 
         @JsonCreator
         public GpsCoordinates(
                 @JsonProperty("lat") double lat,
                 @JsonProperty("lon") double lon,
-                @JsonProperty("alt") double alt
-        ) {
+                @JsonProperty("alt") double alt) {
             this.lat = lat;
             this.lon = lon;
             this.alt = alt;
         }
 
         public Cartesian toEcef() {
-            //TODO: test
+            // TODO: test
 
             // WGS-84 geodetic constants
-            final double a = 6378137.0;         // WGS-84 Earth semimajor axis (m)
-            final double b = 6356752.314245;    // Derived Earth semiminor axis (m)
-            final double f = (a - b) / a;       // Ellipsoid Flatness
+            final double a = 6378137.0; // WGS-84 Earth semimajor axis (m)
+            final double b = 6356752.314245; // Derived Earth semiminor axis (m)
+            final double f = (a - b) / a; // Ellipsoid Flatness
 
-            double e_sq = f * (2 - f);           // Square of Eccentricity
+            double e_sq = f * (2 - f); // Square of Eccentricity
 
             double lambda = Math.toRadians(lat);
             double phi = Math.toRadians(lon);
@@ -352,8 +440,7 @@ public class FlyingNetworkManager extends OdinApplication {
             return new Cartesian(
                     (alt + N) * cos_lambda * cos_phi,
                     (alt + N) * cos_lambda * sin_phi,
-                    (alt + (1 - e_sq) * N) * sin_lambda
-            );
+                    (alt + (1 - e_sq) * N) * sin_lambda);
         }
 
         @Override
@@ -371,24 +458,22 @@ public class FlyingNetworkManager extends OdinApplication {
 
         @JsonCreator
         public Cartesian(
-                @JsonProperty("x") double x,
-                @JsonProperty("y") double y,
-                @JsonProperty("z") double z
-        ) {
+                @JsonProperty("x") double x, @JsonProperty("y") double y,
+                @JsonProperty("z") double z) {
             this.x = x;
             this.y = y;
             this.z = z;
         }
 
         public Cartesian toNed(double lat0, double lon0, double alt0) {
-            //TODO: test
+            // TODO: test
 
             // WGS-84 geodetic constants
-            final double a = 6378137.0;         // WGS-84 Earth semimajor axis (m)
-            final double b = 6356752.314245;    // Derived Earth semiminor axis (m)
-            final double f = (a - b) / a;       // Ellipsoid Flatness
+            final double a = 6378137.0; // WGS-84 Earth semimajor axis (m)
+            final double b = 6356752.314245; // Derived Earth semiminor axis (m)
+            final double f = (a - b) / a; // Ellipsoid Flatness
 
-            double e_sq = f * (2 - f);          // Square of Eccentricity
+            double e_sq = f * (2 - f); // Square of Eccentricity
 
             double lambda = Math.toRadians(lat0);
             double phi = Math.toRadians(lon0);
@@ -410,9 +495,9 @@ public class FlyingNetworkManager extends OdinApplication {
             zd = z - z0;
 
             // This is the matrix multiplication
-            x = -cos_phi * sin_lambda * xd - sin_lambda * sin_phi * yd + cos_lambda * zd;  // xNorth
-            y = -sin_phi * xd + cos_phi * yd;  // yEast
-            z = -cos_lambda * cos_phi * xd + cos_lambda * sin_phi * yd + sin_lambda * zd;  // zDown
+            x = -cos_phi * sin_lambda * xd - sin_lambda * sin_phi * yd + cos_lambda * zd; // xNorth
+            y = -sin_phi * xd + cos_phi * yd; // yEast
+            z = -cos_lambda * cos_phi * xd + cos_lambda * sin_phi * yd + sin_lambda * zd; // zDown
 
             return this;
         }
@@ -423,45 +508,14 @@ public class FlyingNetworkManager extends OdinApplication {
         }
     }
 
-    public double distanceSquared(Cartesian p1, Cartesian p2) {
-        return ((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y) + (p1.z - p2.z) * (
-                p1.z
-                        - p2.z));
-    }
-
-    public double distance(Cartesian p1, Cartesian p2) {
-        return Math.sqrt(distanceSquared(p1, p2));
-    }
-
-    private static Double lowestPositiveQuadraticSolution(double a, double b, double c) {
-
-        double discriminant = b * b - 4 * a * c;
-
-        // no real solution
-        // avoids complex solutions
-        if (discriminant < 0) {
-            return null;
-        }
-
-        double answerPlus = (-b + Math.sqrt(discriminant)) / (2 * a);
-        double answerMinus = (-b - Math.sqrt(discriminant)) / (2 * a);
-
-        // discard negative numbers
-        if ((answerPlus < 0 && answerMinus < 0) || (Double.isNaN(answerPlus) && Double
-                .isNaN(answerMinus))) {
-            return null;
-        } else if (answerPlus > 0 && answerMinus > 0) {
-            return Math.min(answerPlus, answerMinus);
-        }
-
-        // return that which is > 0
-        return (answerPlus > answerMinus) ? answerPlus : answerMinus;
-    }
-
+    /**
+     * DEBUG *
+     */
     private String dummyJson(int num) {
         StringBuilder payload = new StringBuilder();
 
-        String dummyObject = "{\"origin\": {\"lat\": \"34.00000048\", \"lon\": \"-117.3335693\", \"alt\": \"251.702\"}, \"destination\": {\"lat\": \"34.00000048\", \"lon\": \"-117.3335693\", \"alt\": \"251.702\"}, \"reference\": {\"lat\": \"34.00000048\", \"lon\": \"-117.3335693\", \"alt\": \"251.702\"}, \"velocity\": {\"x\": \"1.5\", \"y\": \"1.5\", \"z\": \"0.5\"}}";
+        String dummyObject =
+                "{\"origin\": {\"lat\": \"34.00000048\", \"lon\": \"-117.3335693\", \"alt\": \"251.702\"}, \"destination\": {\"lat\": \"34.00000048\", \"lon\": \"-117.3335693\", \"alt\": \"251.702\"}, \"reference\": {\"lat\": \"34.00000048\", \"lon\": \"-117.3335693\", \"alt\": \"251.702\"}, \"velocity\": {\"x\": \"1.5\", \"y\": \"1.5\", \"z\": \"0.5\"}}";
 
         for (int i = 1; i <= num; i++) {
             payload.append("{\"192.168.1.").append(i).append("\": ").append(dummyObject)

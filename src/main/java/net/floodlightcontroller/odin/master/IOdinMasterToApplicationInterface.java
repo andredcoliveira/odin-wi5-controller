@@ -1,15 +1,12 @@
 package net.floodlightcontroller.odin.master;
 
 import java.net.InetAddress;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import net.floodlightcontroller.odin.master.OdinApplication.State;
-import net.floodlightcontroller.odin.master.OdinClient;
+import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.odin.master.OdinMaster.MobilityParams;
 import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
-import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
 import net.floodlightcontroller.util.MACAddress;
 
@@ -205,7 +202,6 @@ interface IOdinMasterToApplicationInterface {
      */
     int getChannelFromAgent(String pool, InetAddress agentAddr);
 
-
 //    /**
 //     * Channel Switch Announcement, to the clients of a specific agent (AP)
 //     *
@@ -315,7 +311,6 @@ interface IOdinMasterToApplicationInterface {
      * @param staHwAddr Ethernet address of the client (Sta)
      * @param agentAddr InetAddress of the agent
      * @return historical RSSI value
-     *
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     Double getStaWeightedRssiFromAgent(MACAddress staHwAddr, InetAddress agentAddr);
@@ -325,21 +320,31 @@ interface IOdinMasterToApplicationInterface {
      * Gets the target application's state (RUNNING, HALTING, HALTED)
      *
      * @param applicationName Name of the target application
-     * @return the application state
-     *
+     * @return the application's state
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     State getApplicationState(String applicationName);
 
 
     /**
-     * Sets a target application's state (RUNNING, HALTING, HALTED).
-     * It assumes a lock has been set.
+     * Changes a target application's state from RUNNING to HALTING, meaning that it should begin
+     * its halting process if/when possible. It is up to the application to safely switch from
+     * HALTING to HALTED.
      *
      * @param applicationName Name of the target application
-     * @param state State to set the application to (RUNNING, HALTING, HALTED)
-     * @return true if application exists, false otherwise
+     * @return true if the application exists and its previous state was RUNNING, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    boolean setApplicationState(String applicationName, State state);
+    boolean tryHaltApplication(String applicationName);
+
+
+    /**
+     * Changes a target application's state from HALTED to RUNNING, meaning that it is safe to
+     * continue its procedures.
+     *
+     * @param applicationName Name of the target application
+     * @return true if the application exists and its previous state was HALTED, false otherwise
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    boolean resumeApplication(String applicationName);
 }
