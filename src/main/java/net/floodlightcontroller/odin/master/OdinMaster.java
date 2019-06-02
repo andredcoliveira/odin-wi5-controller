@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.MidiDevice.Info;
 
+import net.floodlightcontroller.odin.master.OdinApplication.State;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFType;
 import org.slf4j.Logger;
@@ -90,6 +92,8 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 	private static ChannelAssignmentParams channel_params; // ChannelAssignment parameters
 	
 	private static SmartApSelectionParams smartap_params; // SmartApSelection parameters
+
+	private Map<String, OdinApplication> applicationInstances;
 	
 	// some defaults
 	static private final String DEFAULT_POOL_FILE = "poolfile";
@@ -1061,6 +1065,73 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 		return agentManager.getAgent(agentAddr).getLvapsLocal();
 	}
 
+	/**
+	 * Retrieve historical RSSI value stored at the agent, for a certain station
+	 *
+	 * @param staHwAddr Ethernet address of the client (Sta)
+	 * @param agentAddr InetAddress of the agent
+	 * @return historical RSSI value
+	 * @author André Oliveira <andreduartecoliveira@gmail.com>
+	 */
+	@Override
+	public Double getStaWeightedRssiFromAgent(MACAddress staHwAddr, InetAddress agentAddr) {
+		return agentManager.getAgent(agentAddr).getClientWeightedRssi(staHwAddr);
+	}
+
+	/**
+	 * Gets the target application's state (RUNNING, HALTING, HALTED)
+	 *
+	 * @param applicationName Name of the target application
+	 * @return the application's state
+	 * @author André Oliveira <andreduartecoliveira@gmail.com>
+	 */
+	@Override
+	public State getApplicationState(String applicationName) {
+		OdinApplication application = applicationInstances.get(applicationName);
+		if (application == null) {
+			return null;
+		}
+
+		return application.getState();
+	}
+
+	/**
+	 * Changes a target application's state from RUNNING to HALTING, meaning that it should begin
+	 * its halting process if/when possible. It is up to the application to safely switch from
+	 * HALTING to HALTED.
+	 *
+	 * @param applicationName Name of the target application
+	 * @return true if the application exists and its previous state was RUNNING, false otherwise
+	 * @author André Oliveira <andreduartecoliveira@gmail.com>
+	 */
+	@Override
+	public boolean tryHaltApplication(String applicationName) {
+		OdinApplication application = applicationInstances.get(applicationName);
+		if (application == null) {
+			return false;
+		}
+
+		return application.tryHalt();
+	}
+
+	/**
+	 * Changes a target application's state from HALTED to RUNNING, meaning that it is safe to
+	 * continue its procedures.
+	 *
+	 * @param applicationName Name of the target application
+	 * @return true if the application exists and its previous state was HALTED, false otherwise
+	 * @author André Oliveira <andreduartecoliveira@gmail.com>
+	 */
+	@Override
+	public boolean resumeApplication(String applicationName) {
+		OdinApplication application = applicationInstances.get(applicationName);
+		if (application == null) {
+			return false;
+		}
+
+		return application.resume();
+	}
+
 	//********* from IFloodlightModule **********//
 
 	@Override
@@ -1118,6 +1189,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
         }
         
         this.applicationList = new ArrayList<OdinApplication>();
+		applicationInstances = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
        	try {
 			BufferedReader br = new BufferedReader (new FileReader(agentAuthListFile));
 
@@ -1214,6 +1286,12 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener, IOdinMa
 						appInstance.setOdinInterface(this);
 						appInstance.setPool(poolName);
 						applicationList.add(appInstance);
+
+						applicationInstances.put(
+								fields[1].substring(fields[1].lastIndexOf(".") + 1),
+								appInstance
+						);
+
 						br.mark(1000);
 						continue;
 					}

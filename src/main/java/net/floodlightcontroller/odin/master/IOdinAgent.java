@@ -2,6 +2,7 @@ package net.floodlightcontroller.odin.master;
 
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -263,6 +264,36 @@ public interface IOdinAgent {
 	 * @param agentAddr InetAddress of the agent
 	 * @return Key-Value entries of each recorded rssi for each wi5 station 
 	 */
-	public String getScannedStaRssi ();	
+	public String getScannedStaRssi ();
+
+	/**
+	 * Retrieves historical RSSI value for all stations
+	 *
+	 * @return historical RSSI value
+	 */
+	HashMap<MACAddress, Double> getWeightedRssi();
+
+	/**
+	 * Sets historical RSSI value for all stations
+	 *
+	 * @param weightedRssi historical RSSI value
+	 */
+	void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi);
+
+	/**
+	 * Retrieves historical RSSI value for a single station based on its MAC address
+	 *
+	 * @param staHwAddr Ethernet address of STA
+	 * @return historical RSSI value
+	 */
+	Double getClientWeightedRssi(MACAddress staHwAddr);
+
+	/**
+	 * Sets historical RSSI value for a single station based on its MAC address
+	 *
+	 * @param staHwAddr Ethernet address of STA
+	 * @param weightedRssi historical RSSI value
+	 */
+	void setClientWeightedRssi(MACAddress staHwAddr, Double weightedRssi);
 		
 }

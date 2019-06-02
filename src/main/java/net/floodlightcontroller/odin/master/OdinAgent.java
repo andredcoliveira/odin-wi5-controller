@@ -53,6 +53,9 @@ class OdinAgent implements IOdinAgent {
 	private int lastScan;
 	private int txpower;
 
+	// The weighted RSSI value for each client MAC address heard by the AP
+	private HashMap<MACAddress, Double> weightedRssi;
+
 	private ConcurrentSkipListSet<OdinClient> clientList = new ConcurrentSkipListSet<OdinClient>();
 
 	// OdinAgent Handler strings. Wi5: We introduce handlers to manage APs channels
@@ -799,5 +802,47 @@ class OdinAgent implements IOdinAgent {
 		String stats = invokeReadHandler(READ_HANDLER_STA_RSSI);
 
 		return stats;
+	}
+
+	/**
+	 * Retrieves historical RSSI value for all stations
+	 *
+	 * @return historical RSSI value
+	 */
+	@Override
+	public HashMap<MACAddress, Double> getWeightedRssi() {
+		return weightedRssi;
+	}
+
+	/**
+	 * Sets historical RSSI value for all stations
+	 *
+	 * @param weightedRssi historical RSSI value
+	 */
+	@Override
+	public void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi) {
+		this.weightedRssi = weightedRssi;
+	}
+
+	/**
+	 * Retrieves historical RSSI value for a single station based on its MAC address
+	 *
+	 * @param staHwAddr Ethernet address of STA
+	 * @return historical RSSI value
+	 */
+	@Override
+	public Double getClientWeightedRssi(MACAddress staHwAddr) {
+		return weightedRssi.get(staHwAddr);
+	}
+
+	/**
+	 * Sets historical RSSI value for a single station based on its MAC address
+	 *
+	 * @param staHwAddr Ethernet address of STA
+	 * @param weightedRssi historical RSSI value
+	 */
+	@Override
+	public void setClientWeightedRssi(MACAddress staHwAddr, Double weightedRssi) {
+		this.weightedRssi.put(staHwAddr, weightedRssi);
 	}
 }

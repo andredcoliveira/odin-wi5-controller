@@ -8,6 +8,10 @@
 #target
 thrift
 logback.xml
-target/bin/
+target/
 /bin/
 src/main/java/net/floodlightcontroller/odin/master/OdinEventFlowDetection.java
+
+# IntelliJ
+.idea/
+*.iml
