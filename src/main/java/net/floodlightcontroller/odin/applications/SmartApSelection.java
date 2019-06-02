@@ -295,7 +295,6 @@ public class SmartApSelection extends OdinApplication {
                 for (OdinClient oc : clients) {
 
                     clientStorage = new OdinClientStorage(oc.getMacAddress().toString(), oc.getIpAddress(), oc.getLvap());
-
                     clientStorage.setAgentsHeardClient(agentsID);
 
                     MACAddress eth = oc.getMacAddress(); // client MAC
@@ -320,7 +319,7 @@ public class SmartApSelection extends OdinApplication {
 
                         } else {
 
-                            if ((client_average_dBm[ind_aux] != -99.9) && (client_average_dBm[ind_aux] != null)) {
+                            if ((client_average_dBm[ind_aux] != null) && (client_average_dBm[ind_aux] != -99.9)) {
                                 if (rssi != -99.9) {
 
                                     Double client_signal = Math.pow(10.0, (rssi) / 10.0); // Linear power
@@ -409,8 +408,7 @@ public class SmartApSelection extends OdinApplication {
                             }
                         }
 
-                        if (!SMARTAP_PARAMS.mode
-                                .equals("FF")) { // In BALANCER mode, it will assign STAs to APs always with higher RSSI than threshold, so there is not ping pong effect
+                        if (!SMARTAP_PARAMS.mode.equals("FF")) { // In BALANCER mode, it will assign STAs to APs always with higher RSSI than threshold, so there is not ping pong effect
                             if (!agentsArray[client_index].equals(agentAddr)) { // Change to the best RSSI
 
                                 //If Rssi threshold is reached, handoff
@@ -570,18 +568,16 @@ public class SmartApSelection extends OdinApplication {
                 }
                 if (SMARTAP_PARAMS.mode.equals("BALANCER")) {
 
-                    Map<MACAddress, InetAddress> assignedClients; // Array with the balancer decission
+                    Map<MACAddress, InetAddress> assignedClients; // Array with the balancer decision
 
-                    assignedClients = simpleBalancerAlgorithm(rssiData, agentsArray, clients,
-                            SMARTAP_PARAMS.signal_threshold); // Very simple balancer algorithm
+                    assignedClients = simpleBalancerAlgorithm(rssiData, agentsArray, clients, SMARTAP_PARAMS.signal_threshold); // Very simple balancer algorithm
 
                     for (MACAddress eth : assignedClients.keySet()) {
 
                         Long handoffTime = handoffDate.get(eth);
                         OdinClient clientHandoff = getClientFromHwAddress(eth);
 
-                        if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime) / 1000
-                                > SMARTAP_PARAMS.hysteresis_threshold)) {
+                        if ((handoffTime == null) || ((System.currentTimeMillis() - handoffTime) / 1000 > SMARTAP_PARAMS.hysteresis_threshold)) {
 
                             InetAddress assignedAgent = assignedClients.get(eth);
                             if (getClientFromHwAddress(eth) != null) {

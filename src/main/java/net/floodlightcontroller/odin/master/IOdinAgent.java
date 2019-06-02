@@ -271,14 +271,14 @@ public interface IOdinAgent {
 	 *
 	 * @return historical RSSI value
 	 */
-	HashMap<MACAddress, Double> getWeightedRssi();
+	Map<MACAddress, Double> getWeightedRssi();
 
 	/**
 	 * Sets historical RSSI value for all stations
 	 *
 	 * @param weightedRssi historical RSSI value
 	 */
-	void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi);
+	void setWeightedRssi(Map<MACAddress, Double> weightedRssi);
 
 	/**
 	 * Retrieves historical RSSI value for a single station based on its MAC address
