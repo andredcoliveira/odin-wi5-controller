@@ -1,6 +1,10 @@
 package net.floodlightcontroller.odin.master;
 
+import java.io.File;
+import java.io.PrintStream;
 import java.net.InetAddress;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -529,5 +533,45 @@ public abstract class OdinApplication implements Runnable {
         RUNNING,
         HALTING,
         HALTED
+    }
+
+    /**
+     * TEST
+     */
+    protected static String getTimestamp() {
+        return String.format("%1$TF_%1$TT", Timestamp.from(Instant.now()));
+    }
+
+    /**
+     * TEST
+     */
+    protected PrintStream getPrintStream(String directoryName, String fileName) {
+        PrintStream ps = null;
+        File directory = new File(directoryName);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        File file = new File(directoryName + "/" + fileName);
+        try {
+            ps = new PrintStream(file);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ps;
+    }
+
+    /**
+     * TEST
+     */
+    public void TEE(String message, PrintStream ps) {
+        String callerApp = Thread.currentThread().getStackTrace()[2].getClassName();
+        callerApp = callerApp.substring(callerApp.lastIndexOf('.') + 1);
+        message = String.format("[%s] %25s:  %s", getTimestamp(), callerApp, message);
+        System.out.println(message);
+        if(ps != null) {
+            ps.println(message);
+            System.out.println(message);
+        }
     }
 }

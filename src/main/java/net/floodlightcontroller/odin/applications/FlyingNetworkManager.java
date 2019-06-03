@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -34,11 +35,20 @@ import net.floodlightcontroller.util.MACAddress;
  */
 public class FlyingNetworkManager extends OdinApplication {
 
-    // TODO: Implementar versão de teste (JSON com data exata + tempo para handoff)
-    String VERSION = "TEST"; // "TEST" || "PRODUCTION"
+    private String VERSION = "TEST"; // "TEST" || "PRODUCTION"
+    private PrintStream ps = null;
 
     @Override
     public void run() {
+
+        // Integration of write on file functionality
+        if (VERSION.equals("TEST")) { // check that the parameter exists
+            String PATH = System.getProperty("user.dir");
+            String directoryName = PATH.concat("/" + FlyingNetworkManager.class.getSimpleName() + "/log");
+            String fileName = FlyingNetworkManager.class.getSimpleName() + "_" + getTimestamp() + ".txt";
+
+            ps = getPrintStream(directoryName, fileName);
+        }
 
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
@@ -53,6 +63,7 @@ public class FlyingNetworkManager extends OdinApplication {
 
         // infinite loop if server socket is valid (i.e., listening on port 6666)
         while (serverSocket != null) {
+            TEE("Listening...", ps);
             String message;
             try {
                 clientSocket = serverSocket.accept(); // blocks until someone connects
@@ -63,12 +74,13 @@ public class FlyingNetworkManager extends OdinApplication {
                 e.printStackTrace();
                 continue;
             }
-            out.println(Instant.now().toString());
             long receiveTime = System.nanoTime();
 
             if (!possibleJson(message)) {
                 continue;
             }
+            TEE("Topology is moving:\n\t" + message, ps);
+            out.println("ACK_" + getTimestamp());
 
             // Wait until it's safe
             tryHaltApplication("SmartApSelection");
@@ -81,6 +93,7 @@ public class FlyingNetworkManager extends OdinApplication {
                     }
                 }
 
+                TEE("Handling handoffs", ps);
                 // Handle handoffs
                 long resumeDelay = 0L;
                 if (VERSION.equals("PRODUCTION")) {
@@ -101,7 +114,7 @@ public class FlyingNetworkManager extends OdinApplication {
                 getLock().notifyAll();
             }
 
-            out.println("DONE");
+            TEE("Done", ps);
         }
 
         try {
@@ -128,9 +141,8 @@ public class FlyingNetworkManager extends OdinApplication {
     }
 
     /**
-     * Handles a set of handoffs given a JSON string with IPv4 Addresses keying ApRelocation
-     * objects. It requires: Origin coordinates (GPS), Destination coordinates (GPS), Reference
-     * coordinates (GPS) and Velocity (NED), for every UAV acting as a possible AP.
+     * Handles a set of handoffs given a JSON string with IPv4 Addresses keying ApRelocation objects. It requires: Origin coordinates (GPS),
+     * Destination coordinates (GPS), Reference coordinates (GPS) and Velocity (NED), for every UAV acting as a possible AP.
      *
      * @param message JSON string with information regarding UAV relocations
      * @param receiveTime time [ns] used as reference to begin operations
@@ -140,7 +152,8 @@ public class FlyingNetworkManager extends OdinApplication {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, ApRelocation> apRelocations;
         try {
-            apRelocations = objectMapper.readValue(message, new TypeReference<Map<String, ApRelocation>>() {});
+            apRelocations = objectMapper.readValue(message, new TypeReference<Map<String, ApRelocation>>() {
+            });
         } catch (IOException e) {
             apRelocations = Collections.emptyMap();
             e.printStackTrace();
@@ -363,6 +376,7 @@ public class FlyingNetworkManager extends OdinApplication {
             synchronized (lock) {
                 if (resumeApplication(appName)) {
                     lock.notifyAll();
+                    TEE("Resume " + appName, ps);
                 }
             }
         }
@@ -531,7 +545,6 @@ public class FlyingNetworkManager extends OdinApplication {
         return payload.toString();
     }
 
-
     /**
      * TEST
      */
@@ -539,7 +552,8 @@ public class FlyingNetworkManager extends OdinApplication {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, ApRelocationTest> oldApRelocations;
         try {
-            oldApRelocations = objectMapper.readValue(message, new TypeReference<Map<String, ApRelocationTest>>() {});
+            oldApRelocations = objectMapper.readValue(message, new TypeReference<Map<String, ApRelocationTest>>() {
+            });
         } catch (IOException e) {
             oldApRelocations = Collections.emptyMap();
             e.printStackTrace();
@@ -607,7 +621,6 @@ public class FlyingNetworkManager extends OdinApplication {
         // Gracefully shutdown the scheduler (i.e., still finishes old tasks)
         scheduler.shutdown();
 
-
         return longestFlight;
     }
 
@@ -635,6 +648,7 @@ public class FlyingNetworkManager extends OdinApplication {
      * TEST
      */
     public static class ApRelocationTest {
+
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS", timezone = "Portugal")
         private Timestamp startTime;
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS", timezone = "Portugal")
@@ -658,5 +672,12 @@ public class FlyingNetworkManager extends OdinApplication {
                     + handoffTime
                     + "\n}";
         }
+    }
+
+    /**
+     * TEST
+     */
+    public static String getTimestamp() {
+        return String.format("%1$TF_%1$TT", Timestamp.from(Instant.now()));
     }
 }
