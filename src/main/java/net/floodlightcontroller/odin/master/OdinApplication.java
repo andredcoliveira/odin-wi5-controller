@@ -430,9 +430,29 @@ public abstract class OdinApplication implements Runnable {
      * @return historical RSSI value
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    protected final Double getStaWeightedRssiFromAgent(MACAddress staHwAddr,
-            InetAddress agentAddr) {
+    protected final Double getStaWeightedRssiFromAgent(MACAddress staHwAddr, InetAddress agentAddr) {
         return odinApplicationInterfaceToMaster.getStaWeightedRssiFromAgent(staHwAddr, agentAddr);
+    }
+
+    /**
+     * Store the historical RSSI value in the agent, for a certain station
+     *
+     * @param staHwAddr Ethernet address of the client (Sta)
+     * @param agentAddr InetAddress of the agent
+     * @param weightedRssi historical RSSI value
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected final void setStaWeightedRssiForAgent(MACAddress staHwAddr, InetAddress agentAddr, double weightedRssi) {
+        odinApplicationInterfaceToMaster.setStaWeightedRssiForAgent(staHwAddr, agentAddr, weightedRssi);
+    }
+
+    /**
+     * Clear the historical RSSI values the agents have stored
+     *
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    protected final void clearAgentsWeightedRssis() {
+        odinApplicationInterfaceToMaster.clearWeightedRssis(pool);
     }
 
     /**

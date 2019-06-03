@@ -1166,6 +1166,32 @@ public class OdinMaster
     }
 
     /**
+     * Store the historical RSSI value in the agent, for a certain station
+     *
+     * @param staHwAddr Ethernet address of the client (Sta)
+     * @param agentAddr InetAddress of the agent
+     * @param weightedRssi historical RSSI value
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    @Override
+    public void setStaWeightedRssiForAgent(MACAddress staHwAddr, InetAddress agentAddr, double weightedRssi) {
+        agentManager.getAgent(agentAddr).setClientWeightedRssi(staHwAddr, weightedRssi);
+    }
+
+    /**
+     * Clear the historical RSSI values the agents have stored
+     *
+     * @param pool Pool that the invoking application corresponds to
+     * @author André Oliveira <andreduartecoliveira@gmail.com>
+     */
+    @Override
+    public void clearWeightedRssis(String pool) {
+        for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
+            agentManager.getAgent(agentAddr).getWeightedRssi().clear();
+        }
+    }
+
+    /**
      * Gets the target application's state (RUNNING, HALTING, HALTED)
      *
      * @param applicationName Name of the target application

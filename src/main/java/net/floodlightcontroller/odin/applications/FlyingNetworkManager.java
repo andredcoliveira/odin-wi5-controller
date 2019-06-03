@@ -1,5 +1,10 @@
 package net.floodlightcontroller.odin.applications;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,6 +13,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,10 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.floodlightcontroller.odin.master.OdinApplication;
 import net.floodlightcontroller.odin.master.OdinClient;
 import net.floodlightcontroller.util.MACAddress;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 /**
  * Application that handles predictive mobility management in flying networks
@@ -33,7 +35,7 @@ import org.codehaus.jackson.type.TypeReference;
 public class FlyingNetworkManager extends OdinApplication {
 
     // TODO: Implementar versão de teste (JSON com data exata + tempo para handoff)
-    String VERSION = "TEST"; // "TEST" or "PRODUCTION"
+    String VERSION = "TEST"; // "TEST" || "PRODUCTION"
 
     @Override
     public void run() {
@@ -80,7 +82,12 @@ public class FlyingNetworkManager extends OdinApplication {
                 }
 
                 // Handle handoffs
-                long resumeDelay = handleHandoffs(message, receiveTime);
+                long resumeDelay = 0L;
+                if (VERSION.equals("PRODUCTION")) {
+                    resumeDelay = handleHandoffs(message, receiveTime);
+                } else if (VERSION.equals("TEST")) {
+                    resumeDelay = handleHandoffsTest(message, receiveTime);
+                }
 
                 ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -133,9 +140,7 @@ public class FlyingNetworkManager extends OdinApplication {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, ApRelocation> apRelocations;
         try {
-            apRelocations =
-                    objectMapper.readValue(message, new TypeReference<Map<String, ApRelocation>>() {
-                    });
+            apRelocations = objectMapper.readValue(message, new TypeReference<Map<String, ApRelocation>>() {});
         } catch (IOException e) {
             apRelocations = Collections.emptyMap();
             e.printStackTrace();
@@ -150,7 +155,7 @@ public class FlyingNetworkManager extends OdinApplication {
         Map<InetAddress, Cartesian> agentCoordinatesNedOrigin = new HashMap<>();
         Map<InetAddress, Cartesian> agentCoordinatesNedDestination = new HashMap<>();
 
-        AtomicReference<Double> longestFlight = new AtomicReference<>();
+        AtomicReference<Double> longestFlight = new AtomicReference<>(0.0);
 
         apRelocations.forEach(
                 (agent, apRelocation) -> {
@@ -246,7 +251,7 @@ public class FlyingNetworkManager extends OdinApplication {
                 }
             }
 
-            // consider client handled
+            // Check if client needs a handoff
             if (futureAgent == null || futureAgent.equals(currentAgent)) {
                 continue;
             }
@@ -258,27 +263,24 @@ public class FlyingNetworkManager extends OdinApplication {
             Cartesian p2 = agentCoordinatesNedOrigin.get(futureAgent);
             Cartesian p = clientCoordinatesNed.get(client.getMacAddress());
 
-            Double delay =
-                    lowestPositiveQuadraticSolution(
-                            v1.x * v1.x + v1.y * v1.y + v1.z * v1.z - v2.x * v2.x - v2.y * v2.y
-                                    - v2.z * v2.z,
-                            2
-                                    * (v1.x * (p1.x - p.x)
-                                    + v1.y * (p1.y - p.y)
-                                    + v1.z * (p1.z - p.z)
-                                    - v2.x * (p2.x - p.x)
-                                    - v2.y * (p2.y - p.y)
-                                    - v2.z * (p2.z - p.z)),
-                            p1.x * p1.x
-                                    + p1.y * p1.y
-                                    + p1.z * p1.z
-                                    - p2.x * p2.x
-                                    - p2.y * p2.y
-                                    - p2.z * p2.z
-                                    - 2
-                                    * (p.x * (p1.x - p2.x)
-                                    + p.y * (p1.y - p2.y)
-                                    + p.z * (p1.z - p2.z))); // seconds
+            Double delay = lowestPositiveQuadraticSolution(
+                    v1.x * v1.x + v1.y * v1.y + v1.z * v1.z - v2.x * v2.x - v2.y * v2.y
+                            - v2.z * v2.z,
+                    2 * (v1.x * (p1.x - p.x)
+                            + v1.y * (p1.y - p.y)
+                            + v1.z * (p1.z - p.z)
+                            - v2.x * (p2.x - p.x)
+                            - v2.y * (p2.y - p.y)
+                            - v2.z * (p2.z - p.z)),
+                    p1.x * p1.x
+                            + p1.y * p1.y
+                            + p1.z * p1.z
+                            - p2.x * p2.x
+                            - p2.y * p2.y
+                            - p2.z * p2.z
+                            - 2 * (p.x * (p1.x - p2.x)
+                            + p.y * (p1.y - p2.y)
+                            + p.z * (p1.z - p2.z))); // seconds
 
             if (delay != null) {
                 // Schedule handoff
@@ -509,7 +511,7 @@ public class FlyingNetworkManager extends OdinApplication {
     }
 
     /**
-     * DEBUG *
+     * DEBUG
      */
     private String dummyJson(int num) {
         StringBuilder payload = new StringBuilder();
@@ -527,5 +529,134 @@ public class FlyingNetworkManager extends OdinApplication {
         }
 
         return payload.toString();
+    }
+
+
+    /**
+     * TEST
+     */
+    private long handleHandoffsTest(String message, long receiveTime) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, ApRelocationTest> oldApRelocations;
+        try {
+            oldApRelocations = objectMapper.readValue(message, new TypeReference<Map<String, ApRelocationTest>>() {});
+        } catch (IOException e) {
+            oldApRelocations = Collections.emptyMap();
+            e.printStackTrace();
+        }
+
+        HashSet<InetAddress> agents = new HashSet<>(getAgents());
+        HashSet<OdinClient> clients = new HashSet<>(getClients());
+
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(clients.size());
+
+        // Convert Strings to InetAddresses and get the longest flight time
+        Map<InetAddress, ApRelocationTest> apRelocations = new HashMap<>();
+        long longestFlight = 0L;
+
+        for (Map.Entry<String, ApRelocationTest> entry : oldApRelocations.entrySet()) {
+            String agent = entry.getKey();
+            ApRelocationTest apRelocation = entry.getValue();
+
+            InetAddress agentAddress = null;
+            try {
+                agentAddress = InetAddress.getByName(agent);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+
+            if (agentAddress != null) {
+                apRelocations.put(agentAddress, apRelocation);
+
+                long delayMillis = 2 * (apRelocation.handoffTime.getTime() - apRelocation.startTime.getTime());
+                if (delayMillis > longestFlight) {
+                    longestFlight = delayMillis;
+                }
+            }
+        }
+
+        // Foreach client in client_set
+        for (OdinClient client : clients) {
+            // Set future agent as the first AP without association to this client (2 agents only)
+            InetAddress currentAgent = client.getLvap().getAgent().getIpAddress();
+            InetAddress futureAgent = null;
+
+            for (InetAddress agent : agents) {
+                if (agent != currentAgent) {
+                    futureAgent = agent;
+                    break;
+                }
+            }
+
+            // Check if client needs a handoff
+            if (futureAgent == null || futureAgent.equals(currentAgent)) {
+                continue;
+            }
+
+            long delay = apRelocations.get(futureAgent).handoffTime.getTime() - apRelocations.get(futureAgent).startTime.getTime();
+
+            if (delay > 0) {
+                // Schedule handoff
+                scheduler.schedule(
+                        new RunHandoffClientToAp(client.getMacAddress(), futureAgent),
+                        delay - (System.nanoTime() - receiveTime) / 1000000,
+                        TimeUnit.MILLISECONDS);
+            }
+        }
+
+        // Gracefully shutdown the scheduler (i.e., still finishes old tasks)
+        scheduler.shutdown();
+
+
+        return longestFlight;
+    }
+
+    /**
+     * TEST
+     */
+    public static String dummyJsonTest(int num) {
+        StringBuilder payload = new StringBuilder();
+
+        String dummyObject = "{\"startTime\": \"2019-06-03 02:03:25.940\", \"handoffTime\": \"2019-06-03 02:03:35.321\"}";
+
+        for (int i = 1; i <= num; i++) {
+            payload.append("{\"192.168.1.").append(i).append("\": ").append(dummyObject)
+                    .append("}");
+
+            if (i < num) {
+                payload.append(",");
+            }
+        }
+
+        return payload.toString();
+    }
+
+    /**
+     * TEST
+     */
+    public static class ApRelocationTest {
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS", timezone = "Portugal")
+        private Timestamp startTime;
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS", timezone = "Portugal")
+        private Timestamp handoffTime;
+
+        @JsonCreator
+        public ApRelocationTest(
+                @JsonProperty("startTime") Timestamp startTime,
+                @JsonProperty("handoffTime") Timestamp handoffTime
+        ) {
+            this.startTime = startTime;
+            this.handoffTime = handoffTime;
+        }
+
+        @Override
+        public String toString() {
+            return "{"
+                    + "\n  startTime = "
+                    + startTime + ","
+                    + "\n  stopTime = "
+                    + handoffTime
+                    + "\n}";
+        }
     }
 }

@@ -38,6 +38,7 @@ public interface IOdinAgent {
      */
     public Set<OdinClient> getLvapsLocal();
 
+
     /**
      * Retrieve Tx-stats from the OdinAgent.
      *
@@ -233,6 +234,7 @@ public interface IOdinAgent {
      */
     public int stopSendMesurementBeacon();
 
+
     /**
      * Get TxPower
      *
@@ -240,12 +242,14 @@ public interface IOdinAgent {
      */
     public int getTxPower();
 
+
     /**
      * Returns the Detector IP address added in poolfile
      *
      * @return Detector InetAddress
      */
     public String setDetectorIpAddress();
+
 
     /**
      * Retreive scanned wi5 stations rssi from the agent
@@ -261,7 +265,8 @@ public interface IOdinAgent {
      *
      * @return historical RSSI value
      */
-    HashMap<MACAddress, Double> getWeightedRssi();
+    Map<MACAddress, Double> getWeightedRssi();
+
 
     /**
      * Sets historical RSSI value for all stations
@@ -270,6 +275,7 @@ public interface IOdinAgent {
      */
     void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi);
 
+
     /**
      * Retrieves historical RSSI value for a single station based on its MAC address
      *
@@ -277,6 +283,7 @@ public interface IOdinAgent {
      * @return historical RSSI value
      */
     Double getClientWeightedRssi(MACAddress staHwAddr);
+
 
     /**
      * Sets historical RSSI value for a single station based on its MAC address

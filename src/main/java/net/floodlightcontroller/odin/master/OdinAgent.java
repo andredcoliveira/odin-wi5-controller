@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.util.MACAddress;
@@ -48,7 +49,10 @@ class OdinAgent implements IOdinAgent {
     private int lastScan;
     private int txpower;
 
-    private ConcurrentSkipListSet<OdinClient> clientList = new ConcurrentSkipListSet<OdinClient>();
+    // The weighted RSSI value for each client MAC address heard by the AP
+    private ConcurrentHashMap<MACAddress, Double> weightedRssi = new ConcurrentHashMap<>();
+
+    private ConcurrentSkipListSet<OdinClient> clientList = new ConcurrentSkipListSet<>();
 
     // OdinAgent Handler strings. Wi5: We introduce handlers to manage APs channels
     private static final String READ_HANDLER_TABLE = "table";
@@ -82,9 +86,6 @@ class OdinAgent implements IOdinAgent {
     private final int RX_STAT_NUM_PROPERTIES = 8;
     private final int MTX_DISTANCE_RX_STAT_NUM_PROPERTIES = 1;
     private final int ODIN_AGENT_PORT = 6777;
-
-    // The weighted RSSI value for each client MAC address heard by the AP
-    private HashMap<MACAddress, Double> weightedRssi;
 
 
     /**
@@ -816,7 +817,7 @@ class OdinAgent implements IOdinAgent {
      * @return historical RSSI value
      */
     @Override
-    public HashMap<MACAddress, Double> getWeightedRssi() {
+    public Map<MACAddress, Double> getWeightedRssi() {
         return weightedRssi;
     }
 
@@ -827,7 +828,7 @@ class OdinAgent implements IOdinAgent {
      */
     @Override
     public void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi) {
-        this.weightedRssi = weightedRssi;
+        this.weightedRssi = new ConcurrentHashMap<>(weightedRssi);
     }
 
     /**

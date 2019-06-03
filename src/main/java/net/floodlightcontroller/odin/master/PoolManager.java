@@ -207,8 +207,7 @@ class PoolManager {
         return clientToPoolMap.get(client);
     }
 
-    Set<InetAddress> getAgentAddrsForPool(String pool) {
-        Set<InetAddress> ret = poolToAgentSetMap.get(pool);
+    Set<InetAddress> getAgentAddrsForPool(String pool) {Set<InetAddress> ret = poolToAgentSetMap.get(pool);
 
         return (ret == null) ? Collections.<InetAddress>emptySet() : ret;
     }
