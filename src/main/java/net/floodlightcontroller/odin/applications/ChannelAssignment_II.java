@@ -19,6 +19,7 @@ import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.util.MACAddress;
 import org.apache.commons.io.output.TeeOutputStream;
 
+@SuppressWarnings("Duplicates")
 public class ChannelAssignment_II extends OdinApplication {
 
     // IMPORTANT: this application only works if all the agents in the

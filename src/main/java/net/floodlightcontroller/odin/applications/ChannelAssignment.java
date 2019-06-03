@@ -19,6 +19,7 @@ import net.floodlightcontroller.util.MACAddress;
 import org.apache.commons.io.output.TeeOutputStream;
 import wi5.Wi5;
 
+@SuppressWarnings("Duplicates")
 public class ChannelAssignment extends OdinApplication {
 
     // IMPORTANT: this application only works if all the agents in the

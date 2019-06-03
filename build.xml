@@ -44,15 +44,18 @@
     <property name="thrift.dir" value="${basedir}/src/main/thrift"/>
     <property name="thrift.out.dir" value="lib/gen-java"/>
     <property name="thrift.package" value="net/floodlightcontroller/packetstreamer/thrift"/>
-    <property name="ant.build.javac.source" value="1.6"/>
-    <property name="ant.build.javac.target" value="1.6"/>
+    <property name="ant.build.javac.source" value="1.8"/>
+    <property name="ant.build.javac.target" value="1.8"/>
     <property name="lib" location="lib"/>
 
     <patternset id="lib">
         <include name="logback-classic-1.0.0.jar"/>
         <include name="logback-core-1.0.0.jar"/>
         <include name="jackson-core-asl-1.8.6.jar"/>
-        <include name="jackson-mapper-asl-1.8.6.jar"/>
+	<include name="jackson-mapper-asl-1.8.6.jar"/>
+	<include name="jackson-core-2.9.9.jar" />
+	<include name="jackson-annotations-2.9.9.jar" />
+	<include name="jackson-databind-2.9.9.jar" />
         <include name="slf4j-api-1.6.4.jar"/>
         <include name="org.restlet-2.1-RC1.jar"/>
         <include name="org.restlet.ext.jackson-2.1-RC1.jar"/>
