@@ -1,14 +1,15 @@
 package net.floodlightcontroller.odin.applications;
 
+import net.floodlightcontroller.odin.master.OdinApplication;
+import net.floodlightcontroller.odin.master.OdinClient;
+import net.floodlightcontroller.util.MACAddress;
+
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import net.floodlightcontroller.odin.master.OdinApplication;
-import net.floodlightcontroller.odin.master.OdinClient;
-import net.floodlightcontroller.util.MACAddress;
 
 public class SimpleLoadBalancer extends OdinApplication {
 
@@ -30,8 +31,7 @@ public class SimpleLoadBalancer extends OdinApplication {
      * 00:00:00:00:00:01		192.168.0.2
      * 00:00:00:00:00:02		192.168.0.1
      * 00:00:00:00:00:03		192.168.0.3
-     */
-    Map<MACAddress, Set<InetAddress>> hearingMap = new HashMap<MACAddress, Set<InetAddress>>();
+     */ Map<MACAddress, Set<InetAddress>> hearingMap = new HashMap<MACAddress, Set<InetAddress>>();
 
     /* This table will be used for storing the status of the new balance
      * as you fill the table, you distribute and balance the clients between agents
@@ -41,12 +41,9 @@ public class SimpleLoadBalancer extends OdinApplication {
      * 192.168.0.1		3
      * 192.168.0.2		1
      * 192.168.0.3		2
-     */
-    Map<InetAddress, Integer> newMapping = new HashMap<InetAddress, Integer>();
+     */ Map<InetAddress, Integer> newMapping = new HashMap<InetAddress, Integer>();
 
-
-    @Override
-    public void run() {
+    @Override public void run() {
 
         while (true) {
             try {
@@ -72,10 +69,12 @@ public class SimpleLoadBalancer extends OdinApplication {
                 for (InetAddress agentAddr : getAgents()) {
                     /* FIXME: if the next line is run before the APs are activated,
                      *the program blocks here */
-                    Map<MACAddress, Map<String, String>> vals = getRxStatsFromAgent(agentAddr);
+                    Map<MACAddress, Map<String, String>> vals = getRxStatsFromAgent(
+                            agentAddr);
 
                     /* for each STA which has contacted that agent (AP) (not necessarily associated) */
-                    for (Entry<MACAddress, Map<String, String>> vals_entry : vals.entrySet()) {
+                    for (Entry<MACAddress, Map<String, String>> vals_entry : vals
+                            .entrySet()) {
 
                         MACAddress staHwAddr = vals_entry.getKey();
 
@@ -89,17 +88,19 @@ public class SimpleLoadBalancer extends OdinApplication {
                              * - the received signal must be over the threshold
                              */
                             if (oc.getMacAddress().equals(staHwAddr)
-                                    && oc.getIpAddress() != null
-                                    && !oc.getIpAddress().getHostAddress().equals("0.0.0.0")
-                                    && Integer.parseInt(vals_entry.getValue().get("signal"))
-                                    >= SIGNAL_THRESHOLD) {
+                                && oc.getIpAddress() != null && !oc
+                                    .getIpAddress().getHostAddress()
+                                    .equals("0.0.0.0") && Integer.parseInt(
+                                    vals_entry.getValue().get("signal"))
+                                                          >= SIGNAL_THRESHOLD) {
 
                                 /* if the client is in not in the hearing map, I add
                                  * the MAC address of the STA to the hearing map table
                                  * and I initialize the table of agents who have heared it
                                  */
                                 if (!hearingMap.containsKey(staHwAddr)) {
-                                    hearingMap.put(staHwAddr, new HashSet<InetAddress>());
+                                    hearingMap.put(staHwAddr,
+                                                   new HashSet<InetAddress>());
                                 }
 
                                 /* for that MAC address, add the agent (AP)
@@ -138,19 +139,22 @@ public class SimpleLoadBalancer extends OdinApplication {
             int minVal = 0;
 
             /* if the client does not have an IP address, do nothing */
-            if (client.getIpAddress() == null
-                    || client.getIpAddress().getHostAddress().equals("0.0.0.0")) {
+            if (client.getIpAddress() == null || client.getIpAddress()
+                                                       .getHostAddress()
+                                                       .equals("0.0.0.0")) {
                 continue;
             }
 
             /* if the MAC of the client is not in the (just built) hearing map, do nothing */
             if (hearingMap.get(client.getMacAddress()) == null) {
-                System.err.println("Skipping for client: " + client.getMacAddress());
+                System.err.println(
+                        "Skipping for client: " + client.getMacAddress());
                 continue;
             }
 
             /* for each agent (AP) in the hearing table who has heared that client */
-            for (InetAddress agentAddr : hearingMap.get(client.getMacAddress())) {
+            for (InetAddress agentAddr : hearingMap
+                    .get(client.getMacAddress())) {
 
                 /* if the IP of the agent is not in the table, add it */
                 if (!newMapping.containsKey(agentAddr)) {

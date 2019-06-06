@@ -1,16 +1,13 @@
 package net.floodlightcontroller.odin.applications;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
 import net.floodlightcontroller.odin.master.OdinApplication;
 import net.floodlightcontroller.odin.master.OdinClient;
 import net.floodlightcontroller.util.MACAddress;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class DemoStatistics extends OdinApplication {
 
@@ -43,8 +40,7 @@ public class DemoStatistics extends OdinApplication {
     InetAddress nullAddr = null;
     InetAddress vipAPAddr = null;
 
-    @Override
-    public void run() {
+    @Override public void run() {
         try {
             Thread.sleep(INITIAL_INTERVAL);
         } catch (InterruptedException e) {
@@ -67,22 +63,27 @@ public class DemoStatistics extends OdinApplication {
 
                 // for each Agent
                 for (InetAddress agentAddr : agents) {
-                    System.out.println("[DemoStatistics] Agent: " + agentAddr);
-                    clients = new HashSet<OdinClient>(getClientsFromAgent(agentAddr));
+                    System.out
+                            .println("[DemoStatistics] Agent: " + agentAddr);
+                    clients = new HashSet<OdinClient>(
+                            getClientsFromAgent(agentAddr));
                     if (clients.size() != 0) {
                         System.out.println("[DemoStatistics] \tClients:");
                         for (OdinClient oc : clients) {
-                            System.out.println(
-                                    "[DemoStatistics] \t\t" + oc.getIpAddress().getHostAddress());
+                            System.out.println("[DemoStatistics] \t\t" + oc
+                                    .getIpAddress().getHostAddress());
                         }
                     } else {
-                        System.out.println("[DemoStatistics] \tNo clients associated");
+                        System.out.println(
+                                "[DemoStatistics] \tNo clients associated");
                     }
                 }
                 System.out.println(
                         "[DemoStatistics] =============================================================");
-                System.out.println("[DemoStatistics] 1) Internal statistics");
-                System.out.println("[DemoStatistics] 2) External statistics");
+                System.out
+                        .println("[DemoStatistics] 1) Internal statistics");
+                System.out
+                        .println("[DemoStatistics] 2) External statistics");
                 System.out.println(
                         "[DemoStatistics] 3) Active scanning (Matrix of \"distance in dBs\")");
                 System.out.println(
@@ -94,31 +95,39 @@ public class DemoStatistics extends OdinApplication {
                 int agent_index = 0;
                 switch (option) {
                     case 1:
-                        System.out.println("[DemoStatistics] =======Internal statistics=======");
+                        System.out.println(
+                                "[DemoStatistics] =======Internal statistics=======");
                         // for each Agent
                         agent_index = 0;
                         for (InetAddress agentAddr : agents) {
 
                             System.out.println(
-                                    "[DemoStatistics] Agent [" + agent_index + "]: " + agentAddr);
-                            System.out.println(
-                                    "[DemoStatistics] \tTxpower: " + getTxPowerFromAgent(agentAddr)
-                                            + " dBm");
-                            System.out.println("[DemoStatistics] \tChannel: " + getChannelFromAgent(
+                                    "[DemoStatistics] Agent [" + agent_index
+                                    + "]: " + agentAddr);
+                            System.out.println("[DemoStatistics] \tTxpower: "
+                                               + getTxPowerFromAgent(
+                                    agentAddr) + " dBm");
+                            System.out.println("[DemoStatistics] \tChannel: "
+                                               + getChannelFromAgent(
                                     agentAddr));
                             System.out.println(
-                                    "[DemoStatistics] \tLast heard: " + (System.currentTimeMillis()
-                                            - getLastHeardFromAgent(agentAddr)) + " ms ago");
+                                    "[DemoStatistics] \tLast heard: " + (
+                                            System.currentTimeMillis()
+                                            - getLastHeardFromAgent(
+                                                    agentAddr)) + " ms ago");
                             System.out.println("[DemoStatistics]");
                             agent_index++;
 
                         }
-                        System.out.print("\tSelect agent [0-" + (agent_index - 1)
-                                + "]: ");// FIXME: Assuming no mistake, key in range
+                        System.out.print("\tSelect agent [0-" + (agent_index
+                                                                 - 1)
+                                         + "]: ");// FIXME: Assuming no mistake, key in range
                         agent_index = promptKey();
-                        clients = new HashSet<OdinClient>(getClientsFromAgent(agents[agent_index]));
+                        clients = new HashSet<OdinClient>(
+                                getClientsFromAgent(agents[agent_index]));
                         if (clients.size() == 0) {
-                            System.out.println("[DemoStatistics] No clients associated");
+                            System.out.println(
+                                    "[DemoStatistics] No clients associated");
                             break;
                         }
                         vals_tx = getTxStatsFromAgent(agents[agent_index]);
@@ -127,63 +136,109 @@ public class DemoStatistics extends OdinApplication {
                                 "[DemoStatistics] =============================================================");
                         for (OdinClient oc : clients) {  // all the clients currently associated
                             // for each STA associated to the Agent
-                            System.out
-                                    .println("[DemoStatistics] <<<<<<<<< Rx statistics >>>>>>>>>");
+                            System.out.println(
+                                    "[DemoStatistics] <<<<<<<<< Rx statistics >>>>>>>>>");
                             for (Entry<MACAddress, Map<String, String>> vals_entry_rx : vals_rx
                                     .entrySet()) {
 
-                                MACAddress staHwAddr = vals_entry_rx.getKey();
+                                MACAddress staHwAddr = vals_entry_rx
+                                        .getKey();
                                 if (oc.getMacAddress().equals(staHwAddr)
-                                        && oc.getIpAddress() != null && !oc.getIpAddress()
-                                        .getHostAddress().equals("0.0.0.0")) {
+                                    && oc.getIpAddress() != null && !oc
+                                        .getIpAddress().getHostAddress()
+                                        .equals("0.0.0.0")) {
                                     System.out.println(
-                                            "\tUplink station MAC: " + staHwAddr + " IP: " + oc
-                                                    .getIpAddress().getHostAddress());
+                                            "\tUplink station MAC: "
+                                            + staHwAddr + " IP: " + oc
+                                                    .getIpAddress()
+                                                    .getHostAddress());
+                                    System.out.println("\t\tnum packets: "
+                                                       + vals_entry_rx
+                                                               .getValue()
+                                                               .get("packets"));
                                     System.out.println(
-                                            "\t\tnum packets: " + vals_entry_rx.getValue()
-                                                    .get("packets"));
-                                    System.out.println("\t\tavg rate: " + vals_entry_rx.getValue()
-                                            .get("avg_rate") + " kbps");
-                                    System.out.println("\t\tavg signal: " + vals_entry_rx.getValue()
-                                            .get("avg_signal") + " dBm");
-                                    System.out.println("\t\tavg length: " + vals_entry_rx.getValue()
-                                            .get("avg_len_pkt") + " bytes");
-                                    System.out.println("\t\tair time: " + vals_entry_rx.getValue()
-                                            .get("air_time") + " ms");
-                                    System.out.println("\t\tinit time: " + vals_entry_rx.getValue()
-                                            .get("first_received") + " sec");
-                                    System.out.println("\t\tend time: " + vals_entry_rx.getValue()
-                                            .get("last_received") + " sec");
+                                            "\t\tavg rate: " + vals_entry_rx
+                                                    .getValue()
+                                                    .get("avg_rate")
+                                            + " kbps");
+                                    System.out.println("\t\tavg signal: "
+                                                       + vals_entry_rx
+                                                               .getValue()
+                                                               .get("avg_signal")
+                                                       + " dBm");
+                                    System.out.println("\t\tavg length: "
+                                                       + vals_entry_rx
+                                                               .getValue()
+                                                               .get("avg_len_pkt")
+                                                       + " bytes");
+                                    System.out.println(
+                                            "\t\tair time: " + vals_entry_rx
+                                                    .getValue()
+                                                    .get("air_time")
+                                            + " ms");
+                                    System.out.println(
+                                            "\t\tinit time: " + vals_entry_rx
+                                                    .getValue()
+                                                    .get("first_received")
+                                            + " sec");
+                                    System.out.println(
+                                            "\t\tend time: " + vals_entry_rx
+                                                    .getValue()
+                                                    .get("last_received")
+                                            + " sec");
                                     System.out.println("");
                                 }
                             }
-                            System.out
-                                    .println("[DemoStatistics] <<<<<<<<< Tx statistics >>>>>>>>>");
+                            System.out.println(
+                                    "[DemoStatistics] <<<<<<<<< Tx statistics >>>>>>>>>");
                             // for each STA associated to the Agent
                             for (Entry<MACAddress, Map<String, String>> vals_entry_tx : vals_tx
                                     .entrySet()) {
-                                MACAddress staHwAddr = vals_entry_tx.getKey();
+                                MACAddress staHwAddr = vals_entry_tx
+                                        .getKey();
                                 if (oc.getMacAddress().equals(staHwAddr)
-                                        && oc.getIpAddress() != null && !oc.getIpAddress()
-                                        .getHostAddress().equals("0.0.0.0")) {
+                                    && oc.getIpAddress() != null && !oc
+                                        .getIpAddress().getHostAddress()
+                                        .equals("0.0.0.0")) {
                                     System.out.println(
-                                            "\tDownlink station MAC: " + staHwAddr + " IP: " + oc
-                                                    .getIpAddress().getHostAddress());
+                                            "\tDownlink station MAC: "
+                                            + staHwAddr + " IP: " + oc
+                                                    .getIpAddress()
+                                                    .getHostAddress());
+                                    System.out.println("\t\tnum packets: "
+                                                       + vals_entry_tx
+                                                               .getValue()
+                                                               .get("packets"));
                                     System.out.println(
-                                            "\t\tnum packets: " + vals_entry_tx.getValue()
-                                                    .get("packets"));
-                                    System.out.println("\t\tavg rate: " + vals_entry_tx.getValue()
-                                            .get("avg_rate") + " kbps");
-                                    System.out.println("\t\tavg signal: " + vals_entry_tx.getValue()
-                                            .get("avg_signal") + " dBm");
-                                    System.out.println("\t\tavg length: " + vals_entry_tx.getValue()
-                                            .get("avg_len_pkt") + " bytes");
-                                    System.out.println("\t\tair time: " + vals_entry_tx.getValue()
-                                            .get("air_time") + " ms");
-                                    System.out.println("\t\tinit time: " + vals_entry_tx.getValue()
-                                            .get("first_received") + " sec");
-                                    System.out.println("\t\tend time: " + vals_entry_tx.getValue()
-                                            .get("last_received") + " sec");
+                                            "\t\tavg rate: " + vals_entry_tx
+                                                    .getValue()
+                                                    .get("avg_rate")
+                                            + " kbps");
+                                    System.out.println("\t\tavg signal: "
+                                                       + vals_entry_tx
+                                                               .getValue()
+                                                               .get("avg_signal")
+                                                       + " dBm");
+                                    System.out.println("\t\tavg length: "
+                                                       + vals_entry_tx
+                                                               .getValue()
+                                                               .get("avg_len_pkt")
+                                                       + " bytes");
+                                    System.out.println(
+                                            "\t\tair time: " + vals_entry_tx
+                                                    .getValue()
+                                                    .get("air_time")
+                                            + " ms");
+                                    System.out.println(
+                                            "\t\tinit time: " + vals_entry_tx
+                                                    .getValue()
+                                                    .get("first_received")
+                                            + " sec");
+                                    System.out.println(
+                                            "\t\tend time: " + vals_entry_tx
+                                                    .getValue()
+                                                    .get("last_received")
+                                            + " sec");
                                     System.out.println("");
                                 }
                             }
@@ -201,13 +256,15 @@ public class DemoStatistics extends OdinApplication {
                         for (InetAddress agentAddr : agents) {
 
                             System.out.println(
-                                    "[DemoStatistics] Agent [" + agent_index + "]: " + agentAddr);
+                                    "[DemoStatistics] Agent [" + agent_index
+                                    + "]: " + agentAddr);
                             System.out.println("[DemoStatistics]");
                             agent_index++;
 
                         }
-                        System.out.print("\tSelect agent [0-" + (agent_index - 1)
-                                + "]: ");// FIXME: Assuming no mistake, key in range
+                        System.out.print("\tSelect agent [0-" + (agent_index
+                                                                 - 1)
+                                         + "]: ");// FIXME: Assuming no mistake, key in range
                         agent_index = promptKey();
                         System.out
                                 .print("\tSelect channel to scan [1-11]: ");// FIXME: Assuming no mistake, channel in range
@@ -215,10 +272,11 @@ public class DemoStatistics extends OdinApplication {
                         System.out
                                 .print("\tSelect time to scan (msec): ");// FIXME: Assuming no mistake
                         scanning_interval = promptKey();
-                        result = requestScannedStationsStatsFromAgent(agents[agent_index], channel,
-                                "*");
-                        System.out.println("[DemoStatistics] <<<<< Scanning in channel " + channel
-                                + " >>>>>>");
+                        result = requestScannedStationsStatsFromAgent(
+                                agents[agent_index], channel, "*");
+                        System.out.println(
+                                "[DemoStatistics] <<<<< Scanning in channel "
+                                + channel + " >>>>>>");
                         try {
                             Thread.sleep(scanning_interval);
                         } catch (InterruptedException e) {
@@ -229,7 +287,8 @@ public class DemoStatistics extends OdinApplication {
                                     "[DemoStatistics] Agent BUSY during scanning operation");
                             break;
                         }
-                        clients = new HashSet<OdinClient>(getClientsFromAgent(agents[agent_index]));
+                        clients = new HashSet<OdinClient>(
+                                getClientsFromAgent(agents[agent_index]));
 					 
 					 /*if(clients.size()==0){
                        System.out.println("[DemoStatistics] No clients associated");
@@ -245,46 +304,63 @@ public class DemoStatistics extends OdinApplication {
                             MACAddress staHwAddr = vals_entry_rx.getKey();
                             boolean isWi5Sta = false;
                             boolean isWi5Lvap = false;
-                            System.out.println("\tStation MAC: " + staHwAddr);
+                            System.out
+                                    .println("\tStation MAC: " + staHwAddr);
                             System.out.println(
-                                    "\t\tnum packets: " + vals_entry_rx.getValue().get("packets"));
+                                    "\t\tnum packets: " + vals_entry_rx
+                                            .getValue().get("packets"));
                             System.out.println(
-                                    "\t\tavg rate: " + vals_entry_rx.getValue().get("avg_rate")
-                                            + " kbps");
+                                    "\t\tavg rate: " + vals_entry_rx
+                                            .getValue().get("avg_rate")
+                                    + " kbps");
                             System.out.println(
-                                    "\t\tavg signal: " + vals_entry_rx.getValue().get("avg_signal")
-                                            + " dBm");
+                                    "\t\tavg signal: " + vals_entry_rx
+                                            .getValue().get("avg_signal")
+                                    + " dBm");
                             System.out.println(
-                                    "\t\tavg length: " + vals_entry_rx.getValue().get("avg_len_pkt")
-                                            + " bytes");
+                                    "\t\tavg length: " + vals_entry_rx
+                                            .getValue().get("avg_len_pkt")
+                                    + " bytes");
                             System.out.println(
-                                    "\t\tair time: " + vals_entry_rx.getValue().get("air_time")
-                                            + " ms");
-                            System.out.println("\t\tinit time: " + vals_entry_rx.getValue()
-                                    .get("first_received") + " sec");
+                                    "\t\tair time: " + vals_entry_rx
+                                            .getValue().get("air_time")
+                                    + " ms");
                             System.out.println(
-                                    "\t\tend time: " + vals_entry_rx.getValue().get("last_received")
-                                            + " sec");
+                                    "\t\tinit time: " + vals_entry_rx
+                                            .getValue().get("first_received")
+                                    + " sec");
+                            System.out.println(
+                                    "\t\tend time: " + vals_entry_rx
+                                            .getValue().get("last_received")
+                                    + " sec");
 
                             for (OdinClient oc : clients) {  // all the clients currently associated
                                 if (oc.getMacAddress().equals(staHwAddr)) {
                                     System.out.println(
-                                            "\t\tAP of client: " + oc.getLvap().getAgent()
+                                            "\t\tAP of client: " + oc
+                                                    .getLvap().getAgent()
                                                     .getIpAddress());
-                                    System.out.println("\t\tChannel of AP: " + getChannelFromAgent(
-                                            oc.getLvap().getAgent().getIpAddress()));
+                                    System.out.println("\t\tChannel of AP: "
+                                                       + getChannelFromAgent(
+                                            oc.getLvap().getAgent()
+                                              .getIpAddress()));
                                     System.out.println("\t\tCode: Wi-5 STA");
                                     System.out.println("");
                                     isWi5Sta = true;
                                     break;
                                 }
-                                if (oc.getLvap().getBssid().equals(staHwAddr)) {
+                                if (oc.getLvap().getBssid()
+                                      .equals(staHwAddr)) {
                                     System.out.println(
-                                            "\t\tAP of client: " + oc.getLvap().getAgent()
+                                            "\t\tAP of client: " + oc
+                                                    .getLvap().getAgent()
                                                     .getIpAddress());
-                                    System.out.println("\t\tChannel of AP: " + getChannelFromAgent(
-                                            oc.getLvap().getAgent().getIpAddress()));
-                                    System.out.println("\t\tCode: Wi-5 LVAP");
+                                    System.out.println("\t\tChannel of AP: "
+                                                       + getChannelFromAgent(
+                                            oc.getLvap().getAgent()
+                                              .getIpAddress()));
+                                    System.out
+                                            .println("\t\tCode: Wi-5 LVAP");
                                     System.out.println("");
                                     isWi5Lvap = true;
                                     break;
@@ -298,7 +374,8 @@ public class DemoStatistics extends OdinApplication {
                             }
                             System.out.println("\t\tAP of client: unknown");
                             System.out.println("\t\tChannel of AP: unknown");
-                            if (vals_entry_rx.getValue().get("equipment").equals("AP")) {
+                            if (vals_entry_rx.getValue().get("equipment")
+                                             .equals("AP")) {
                                 System.out.println("\t\tCode: non-Wi-5 AP");
                             } else {
                                 System.out.println("\t\tCode: non-Wi-5 STA");
@@ -320,22 +397,23 @@ public class DemoStatistics extends OdinApplication {
 
                         for (InetAddress beaconAgentAddr : getAgents()) {
                             scanningAgents.clear();
-                            System.out.println("[DemoStatistics] Agent to send measurement beacon: "
+                            System.out.println(
+                                    "[DemoStatistics] Agent to send measurement beacon: "
                                     + beaconAgentAddr);
 
                             // For each Agent
                             for (InetAddress agentAddr : getAgents()) {
                                 if (agentAddr != beaconAgentAddr) {
                                     // Request distances
-                                    result = requestScannedStationsStatsFromAgent(agentAddr, 6,
-                                            SCANNED_SSID);
+                                    result = requestScannedStationsStatsFromAgent(
+                                            agentAddr, 6, SCANNED_SSID);
                                     scanningAgents.put(agentAddr, result);
                                 }
                             }
 
                             // Request to send measurement beacon
-                            if (requestSendMesurementBeaconFromAgent(beaconAgentAddr, 6,
-                                    SCANNED_SSID) == 0) {
+                            if (requestSendMesurementBeaconFromAgent(
+                                    beaconAgentAddr, 6, SCANNED_SSID) == 0) {
                                 System.out.println(
                                         "[DemoStatistics] Agent BUSY during measurement beacon operation");
                                 continue;
@@ -348,9 +426,11 @@ public class DemoStatistics extends OdinApplication {
                             }
 
                             // Stop sending meesurement beacon
-                            stopSendMesurementBeaconFromAgent(beaconAgentAddr);
+                            stopSendMesurementBeaconFromAgent(
+                                    beaconAgentAddr);
 
-                            matrix = matrix + beaconAgentAddr.toString().substring(1);
+                            matrix = matrix + beaconAgentAddr.toString()
+                                                             .substring(1);
 
                             for (InetAddress agentAddr : getAgents()) {
                                 if (agentAddr != beaconAgentAddr) {
@@ -361,22 +441,29 @@ public class DemoStatistics extends OdinApplication {
                                                 "[DemoStatistics] Agent BUSY during scanning operation");
                                         continue;
                                     }
-                                    vals_rx = getScannedStationsStatsFromAgent(agentAddr,
-                                            SCANNED_SSID);
+                                    vals_rx = getScannedStationsStatsFromAgent(
+                                            agentAddr, SCANNED_SSID);
 
                                     // for each STA scanned by the Agent
                                     for (Entry<MACAddress, Map<String, String>> vals_entry_rx : vals_rx
                                             .entrySet()) {
                                         // NOTE: the clients currently scanned MAY NOT be the same as the clients who have been associated
-                                        MACAddress APHwAddr = vals_entry_rx.getKey();
-                                        avg_dB = vals_entry_rx.getValue().get("avg_signal");
-                                        System.out.println("\tAP MAC: " + APHwAddr);
-                                        System.out.println("\tavg signal: " + avg_dB + " dBm");
+                                        MACAddress APHwAddr = vals_entry_rx
+                                                .getKey();
+                                        avg_dB = vals_entry_rx.getValue()
+                                                              .get("avg_signal");
+                                        System.out.println(
+                                                "\tAP MAC: " + APHwAddr);
+                                        System.out.println(
+                                                "\tavg signal: " + avg_dB
+                                                + " dBm");
                                         if (avg_dB.length() > 6) {
-                                            matrix =
-                                                    matrix + "\t" + avg_dB.substring(0, 6) + " dBm";
+                                            matrix = matrix + "\t" + avg_dB
+                                                    .substring(0, 6)
+                                                     + " dBm";
                                         } else {
-                                            matrix = matrix + "\t" + avg_dB + " dBm   ";
+                                            matrix = matrix + "\t" + avg_dB
+                                                     + " dBm   ";
                                         }
                                     }
 
@@ -413,19 +500,24 @@ public class DemoStatistics extends OdinApplication {
 
                             String hostIP = agentAddr
                                     .getHostAddress(); // Build line for user interface
-                            showAPsLine = showAPsLine + "\033[0;1m[ AP" + hostIP
-                                    .substring(hostIP.lastIndexOf('.') + 1, hostIP.length()) + " ]";
+                            showAPsLine =
+                                    showAPsLine + "\033[0;1m[ AP" + hostIP
+                                            .substring(
+                                                    hostIP.lastIndexOf('.')
+                                                    + 1, hostIP.length())
+                                    + " ]";
 
                             int chann = getChannelFromAgent(agentAddr);
                             Arrays.sort(channelsAux);
 
                             if (Arrays.binarySearch(channelsAux, chann)
-                                    < 0) {// if already in array, not necessary to add it
+                                < 0) {// if already in array, not necessary to add it
                                 channelsAux[num_channels] = chann;
                                 channels[num_channels] = chann;
                             }
                             System.out.println(
-                                    "[DemoStatistics] AP " + agentAddr + " in channel: " + chann);
+                                    "[DemoStatistics] AP " + agentAddr
+                                    + " in channel: " + chann);
                             num_channels++;
                             ind_aux++;
 
@@ -440,7 +532,8 @@ public class DemoStatistics extends OdinApplication {
                         int num_clients = clients.size(); // Number of STAs
 
                         if (num_clients == 0) {
-                            System.out.println("[DemoStatistics] No clients associated");
+                            System.out.println(
+                                    "[DemoStatistics] No clients associated");
                             break;
                         }
                         int[] clientsChannels = new int[num_clients];
@@ -467,7 +560,8 @@ public class DemoStatistics extends OdinApplication {
                                 ind_aux++;
                             }
                         }
-                        for (channel = 0; channel < num_channels; ++channel) {
+                        for (channel = 0;
+                             channel < num_channels; ++channel) {
 
                             if (channels[channel] == 0) {
                                 continue;
@@ -478,8 +572,9 @@ public class DemoStatistics extends OdinApplication {
                             for (InetAddress agentAddr : agents) {
 
                                 // Request statistics
-                                result = requestScannedStationsStatsFromAgent(agentAddr,
-                                        channels[channel], SCANNED_SSID);
+                                result = requestScannedStationsStatsFromAgent(
+                                        agentAddr, channels[channel],
+                                        SCANNED_SSID);
                                 scanningAgents.put(agentAddr, result);
                             }
 
@@ -508,21 +603,25 @@ public class DemoStatistics extends OdinApplication {
 
                         for (OdinClient oc : clients) {
 
-                            MACAddress eth = oc.getMacAddress(); // client MAC
+                            MACAddress eth = oc
+                                    .getMacAddress(); // client MAC
 
                             client_channel = clientsChannels[client_index]; // row in the matrix
 
-                            for (ind_aux = 0; ind_aux < num_agents; ind_aux++) {// For
+                            for (ind_aux = 0;
+                                 ind_aux < num_agents; ind_aux++) {// For
 
                                 String arr = vals_rx_value[client_channel][ind_aux]; // String with "MAC rssi\nMAC rssi\n..."
 
-                                Double rssi = getRssiFromRxStats(eth, arr); // rssi or -99.9
+                                Double rssi = getRssiFromRxStats(eth,
+                                                                 arr); // rssi or -99.9
 
                                 Double[] client_average_dBm = new Double[num_agents];
 
                                 client_average_dBm = rssiData.get(eth);
 
-                                if (client_average_dBm == null) {// First time STA is associated
+                                if (client_average_dBm
+                                    == null) {// First time STA is associated
 
                                     client_average_dBm = new Double[num_agents];
                                     Arrays.fill(client_average_dBm, -99.9);
@@ -530,21 +629,28 @@ public class DemoStatistics extends OdinApplication {
 
                                 } else {
 
-                                    if ((client_average_dBm[ind_aux] != -99.9) && (
-                                            client_average_dBm[ind_aux] != null)) {
+                                    if ((client_average_dBm[ind_aux]
+                                         != -99.9) && (
+                                                client_average_dBm[ind_aux]
+                                                != null)) {
                                         if (rssi != -99.9) {
 
                                             Double client_signal = Math
-                                                    .pow(10.0, (rssi) / 10.0); // Linear power
-                                            Double client_average = Math.pow(10.0,
-                                                    (client_average_dBm[ind_aux])
-                                                            / 10.0); // Linear power average
+                                                    .pow(10.0, (rssi)
+                                                               / 10.0); // Linear power
+                                            Double client_average = Math
+                                                    .pow(10.0,
+                                                         (client_average_dBm[ind_aux])
+                                                         / 10.0); // Linear power average
                                             client_average =
-                                                    client_average * 0.2 + client_signal * 0.8;
-                                            client_average_dBm[ind_aux] = Double.valueOf(
-                                                    (double) Math.round(1000 * Math
-                                                            .log10(client_average))
-                                                            / 100); //Average power in dBm with 2 decimals
+                                                    client_average * 0.2
+                                                    + client_signal * 0.8;
+                                            client_average_dBm[ind_aux] = Double
+                                                    .valueOf((double) Math
+                                                            .round(1000
+                                                                   * Math.log10(
+                                                                    client_average))
+                                                             / 100); //Average power in dBm with 2 decimals
 
                                         }
                                     } else {
@@ -557,26 +663,30 @@ public class DemoStatistics extends OdinApplication {
                         }
                         System.out.println(
                                 "[DemoStatistics] =============================================================");
-                        System.out.println(showAPsLine + " - RSSI [dBm]\033[00m");
+                        System.out.println(
+                                showAPsLine + " - RSSI [dBm]\033[00m");
                         for (OdinClient oc : clients) {
 
                             client_index = 0;
 
-                            MACAddress eth = oc.getMacAddress(); // client MAC
+                            MACAddress eth = oc
+                                    .getMacAddress(); // client MAC
 
                             Double[] client_dBm = new Double[num_agents];
 
                             InetAddress clientAddr = oc.getIpAddress();
-                            InetAddress agentAddr = oc.getLvap().getAgent().getIpAddress();
+                            InetAddress agentAddr = oc.getLvap().getAgent()
+                                                      .getIpAddress();
 
-                            if (clientAddr.equals(nullAddr))// If client not assigned, next one
+                            if (clientAddr
+                                    .equals(nullAddr))// If client not assigned, next one
                             {
                                 continue;
                             }
 
                             System.out.println(
-                                    "[DemoStatistics] \t\t\t\tClient " + clientAddr + " in agent "
-                                            + agentAddr);
+                                    "[DemoStatistics] \t\t\t\tClient "
+                                    + clientAddr + " in agent " + agentAddr);
 
                             client_dBm = rssiData.get(eth);
 
@@ -586,8 +696,8 @@ public class DemoStatistics extends OdinApplication {
 
                                 Double currentRssi = null;
 
-                                for (ind_aux = 1; ind_aux < client_dBm.length;
-                                        ind_aux++) {//Get max position, VIP AP not considered
+                                for (ind_aux = 1; ind_aux
+                                                  < client_dBm.length; ind_aux++) {//Get max position, VIP AP not considered
 
                                     if (client_dBm[ind_aux] > maxRssi) {
                                         maxRssi = client_dBm[ind_aux];
@@ -598,34 +708,42 @@ public class DemoStatistics extends OdinApplication {
                                 // Printf with colours
                                 System.out.print("[DemoStatistics] ");
 
-                                for (ind_aux = 0; ind_aux < client_dBm.length; ind_aux++) {
+                                for (ind_aux = 0; ind_aux
+                                                  < client_dBm.length; ind_aux++) {
 
-                                    if (agents[ind_aux].equals(agentAddr)) { // Current AP
+                                    if (agents[ind_aux]
+                                            .equals(agentAddr)) { // Current AP
 
                                         currentRssi = client_dBm[ind_aux];
 
-                                        System.out.print("[\033[48;5;29;1m" + String
-                                                .format("%.2f", client_dBm[ind_aux])
-                                                + "\033[00m]"); // Dark Green
+                                        System.out.print("[\033[48;5;29;1m"
+                                                         + String.format(
+                                                "%.2f", client_dBm[ind_aux])
+                                                         + "\033[00m]"); // Dark Green
 
                                     } else {
                                         if (ind_aux == client_index) {
 
-                                            System.out.print("[\033[48;5;88m" + String
-                                                    .format("%.2f", client_dBm[ind_aux])
-                                                    + "\033[00m]"); // Dark red
+                                            System.out.print("[\033[48;5;88m"
+                                                             + String.format(
+                                                    "%.2f",
+                                                    client_dBm[ind_aux])
+                                                             + "\033[00m]"); // Dark red
 
                                         } else {
 
                                             System.out.print("[" + String
-                                                    .format("%.2f", client_dBm[ind_aux]) + "]"); //
+                                                    .format("%.2f",
+                                                            client_dBm[ind_aux])
+                                                             + "]"); //
                                         }
                                     }
                                 }
                                 System.out.println("");
                                 // End prinft with colours
                             } else {
-                                System.out.println("[DemoStatistics] No data received");
+                                System.out.println(
+                                        "[DemoStatistics] No data received");
                             }
                         }
                         rssiData.clear();
@@ -633,11 +751,13 @@ public class DemoStatistics extends OdinApplication {
                                 "[DemoStatistics] =============================================================");
                         break;
                     default:
-                        System.out.println("[DemoStatistics] Invalid option");
+                        System.out
+                                .println("[DemoStatistics] Invalid option");
                         break;
                 }
                 promptEnterKey();
-                System.out.print("\033[2J"); // Clear screen and cursor to 0,0
+                System.out
+                        .print("\033[2J"); // Clear screen and cursor to 0,0
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -659,7 +779,7 @@ public class DemoStatistics extends OdinApplication {
     }
 
     private Double getRssiFromRxStats(MACAddress clientMAC,
-            String arr) { // Process the string with all the data, it saves 2 ms if done inside the app vs. in agent
+                                      String arr) { // Process the string with all the data, it saves 2 ms if done inside the app vs. in agent
 
         for (String elem : arr.split("\n")) {//Split string in STAs
 
@@ -671,7 +791,8 @@ public class DemoStatistics extends OdinApplication {
 
             MACAddress eth = MACAddress.valueOf(row[0].toLowerCase());
 
-            if (clientMAC.equals(eth)) {//If it belongs to the client, return rssi
+            if (clientMAC
+                    .equals(eth)) {//If it belongs to the client, return rssi
 
                 Double rssi = Double.parseDouble(row[1]);
 

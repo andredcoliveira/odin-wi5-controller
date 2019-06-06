@@ -1,5 +1,11 @@
 package net.floodlightcontroller.odin.master;
 
+import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
+import net.floodlightcontroller.odin.master.OdinMaster.MobilityParams;
+import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
+import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
+import net.floodlightcontroller.util.MACAddress;
+
 import java.io.File;
 import java.io.PrintStream;
 import java.net.InetAddress;
@@ -8,11 +14,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
-import net.floodlightcontroller.odin.master.OdinMaster.MobilityParams;
-import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
-import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
-import net.floodlightcontroller.util.MACAddress;
 
 /**
  * Base class for all Odin applications. They are expected to run as a thread provided by the
@@ -30,7 +31,6 @@ public abstract class OdinApplication implements Runnable {
 
     /**
      * Constructor.
-     *
      * <p>By default, applications are expected to be RUNNING.
      */
     public OdinApplication() {
@@ -138,11 +138,13 @@ public abstract class OdinApplication implements Runnable {
     /**
      * VAP-Handoff a client to a new AP. This operation is idempotent.
      *
-     * @param staHwAddr Ethernet address of STA to be handed off
+     * @param staHwAddr   Ethernet address of STA to be handed off
      * @param newApIpAddr IPv4 address of new access point
      */
-    protected final void handoffClientToAp(MACAddress staHwAddr, InetAddress newApIpAddr) {
-        odinApplicationInterfaceToMaster.handoffClientToAp(pool, staHwAddr, newApIpAddr);
+    protected final void handoffClientToAp(MACAddress staHwAddr,
+                                           InetAddress newApIpAddr) {
+        odinApplicationInterfaceToMaster
+                .handoffClientToAp(pool, staHwAddr, newApIpAddr);
     }
 
     /**
@@ -159,8 +161,10 @@ public abstract class OdinApplication implements Runnable {
      *
      * @return a OdinClient instance corresponding to clientHwAddress
      */
-    protected final OdinClient getClientFromHwAddress(MACAddress clientHwAddress) {
-        return odinApplicationInterfaceToMaster.getClientFromHwAddress(pool, clientHwAddress);
+    protected final OdinClient getClientFromHwAddress(
+            MACAddress clientHwAddress) {
+        return odinApplicationInterfaceToMaster
+                .getClientFromHwAddress(pool, clientHwAddress);
     }
 
     /**
@@ -170,7 +174,8 @@ public abstract class OdinApplication implements Runnable {
      * @return timestamp of the last ping heard from the agent
      */
     protected final long getLastHeardFromAgent(InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getLastHeardFromAgent(pool, agentAddr);
+        return odinApplicationInterfaceToMaster
+                .getLastHeardFromAgent(pool, agentAddr);
     }
 
     /**
@@ -181,7 +186,8 @@ public abstract class OdinApplication implements Runnable {
      */
     protected final Map<MACAddress, Map<String, String>> getTxStatsFromAgent(
             InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getTxStatsFromAgent(pool, agentAddr);
+        return odinApplicationInterfaceToMaster
+                .getTxStatsFromAgent(pool, agentAddr);
     }
 
     /**
@@ -192,21 +198,23 @@ public abstract class OdinApplication implements Runnable {
      */
     protected final Map<MACAddress, Map<String, String>> getRxStatsFromAgent(
             InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getRxStatsFromAgent(pool, agentAddr);
+        return odinApplicationInterfaceToMaster
+                .getRxStatsFromAgent(pool, agentAddr);
     }
 
     /**
      * Request scanned stations statistics from the agent
      *
      * @param agentAddr InetAddress of the agent
-     * @param channel to scan
-     * @param ssid to scan (always is *)
+     * @param channel   to scan
+     * @param ssid      to scan (always is *)
      * @return If request is accepted return 1, otherwise, return 0
      */
     protected final int requestScannedStationsStatsFromAgent(
             InetAddress agentAddr, int channel, String ssid) {
-        return odinApplicationInterfaceToMaster.requestScannedStationsStatsFromAgent(
-                pool, agentAddr, channel, ssid);
+        return odinApplicationInterfaceToMaster
+                .requestScannedStationsStatsFromAgent(pool, agentAddr,
+                                                      channel, ssid);
     }
 
     /**
@@ -225,14 +233,15 @@ public abstract class OdinApplication implements Runnable {
      * Request scanned stations statistics from the agent
      *
      * @param agentAddr InetAddress of the agent
-     * @param channel to send mesurement beacon
-     * @param ssid to scan (e.g odin_init)
+     * @param channel   to send mesurement beacon
+     * @param ssid      to scan (e.g odin_init)
      * @return If request is accepted return 1, otherwise, return 0
      */
     protected final int requestSendMesurementBeaconFromAgent(
             InetAddress agentAddr, int channel, String ssid) {
-        return odinApplicationInterfaceToMaster.requestSendMesurementBeaconFromAgent(
-                pool, agentAddr, channel, ssid);
+        return odinApplicationInterfaceToMaster
+                .requestSendMesurementBeaconFromAgent(pool, agentAddr,
+                                                      channel, ssid);
     }
 
     /**
@@ -241,8 +250,10 @@ public abstract class OdinApplication implements Runnable {
      * @param agentAddr InetAddress of the agent
      * @return if the method reaches the end, returns 1
      */
-    protected final int stopSendMesurementBeaconFromAgent(InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.stopSendMesurementBeaconFromAgent(pool, agentAddr);
+    protected final int stopSendMesurementBeaconFromAgent(
+            InetAddress agentAddr) {
+        return odinApplicationInterfaceToMaster
+                .stopSendMesurementBeaconFromAgent(pool, agentAddr);
     }
 
     /**
@@ -261,10 +272,12 @@ public abstract class OdinApplication implements Runnable {
      * later.
      *
      * @param oes the susbcription
-     * @param cb the callback
+     * @param cb  the callback
      */
-    protected final long registerSubscription(OdinEventSubscription oes, NotificationCallback cb) {
-        return odinApplicationInterfaceToMaster.registerSubscription(pool, oes, cb);
+    protected final long registerSubscription(OdinEventSubscription oes,
+                                              NotificationCallback cb) {
+        return odinApplicationInterfaceToMaster
+                .registerSubscription(pool, oes, cb);
     }
 
     /**
@@ -283,11 +296,12 @@ public abstract class OdinApplication implements Runnable {
      * removal later.
      *
      * @param oefd the flow detection
-     * @param cb the callback
+     * @param cb   the callback
      */
-    protected final long registerFlowDetection(
-            OdinEventFlowDetection oefd, FlowDetectionCallback cb) {
-        return odinApplicationInterfaceToMaster.registerFlowDetection(pool, oefd, cb);
+    protected final long registerFlowDetection(OdinEventFlowDetection oefd,
+                                               FlowDetectionCallback cb) {
+        return odinApplicationInterfaceToMaster
+                .registerFlowDetection(pool, oefd, cb);
     }
 
     /**
@@ -323,10 +337,12 @@ public abstract class OdinApplication implements Runnable {
      * Change the Wi-Fi channel of an specific agent (AP)
      *
      * @param agentAddr InetAddress of the agent
-     * @param channel Channel to set
+     * @param channel   Channel to set
      */
-    protected final void setChannelToAgent(InetAddress agentAddr, int channel) {
-        odinApplicationInterfaceToMaster.setChannelToAgent(pool, agentAddr, channel);
+    protected final void setChannelToAgent(InetAddress agentAddr,
+                                           int channel) {
+        odinApplicationInterfaceToMaster
+                .setChannelToAgent(pool, agentAddr, channel);
     }
 
     /**
@@ -336,7 +352,8 @@ public abstract class OdinApplication implements Runnable {
      * @return Channel number
      */
     protected final int getChannelFromAgent(InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getChannelFromAgent(pool, agentAddr);
+        return odinApplicationInterfaceToMaster
+                .getChannelFromAgent(pool, agentAddr);
     }
 
     //	/**
@@ -356,15 +373,17 @@ public abstract class OdinApplication implements Runnable {
     /**
      * Scanning for a client in a specific agent (AP)
      *
-     * @param agentAddr InetAddress of the agent
+     * @param agentAddr    InetAddress of the agent
      * @param clientHwAddr MACAddress of the client (Sta)
-     * @param time scanning time
+     * @param time         scanning time
      * @return Signal power
      */
-    protected final int scanClientFromAgent(
-            InetAddress agentAddr, MACAddress clientHwAddr, int channel, int time) {
-        return odinApplicationInterfaceToMaster.scanClientFromAgent(
-                pool, agentAddr, clientHwAddr, channel, time);
+    protected final int scanClientFromAgent(InetAddress agentAddr,
+                                            MACAddress clientHwAddr,
+                                            int channel, int time) {
+        return odinApplicationInterfaceToMaster
+                .scanClientFromAgent(pool, agentAddr, clientHwAddr, channel,
+                                     time);
     }
 
     protected final MobilityParams getMobilityParams() {
@@ -394,7 +413,8 @@ public abstract class OdinApplication implements Runnable {
      * @return TxPower in dBm
      */
     protected final int getTxPowerFromAgent(InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getTxPowerFromAgent(pool, agentAddr);
+        return odinApplicationInterfaceToMaster
+                .getTxPowerFromAgent(pool, agentAddr);
     }
 
     /**
@@ -403,8 +423,10 @@ public abstract class OdinApplication implements Runnable {
      * @param agentAddr InetAddress of the agent
      * @return Key-Value entries of each recorded RSSI for each wi5 station
      */
-    protected final String getScannedStaRssiFromAgent(InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getScannedStaRssiFromAgent(pool, agentAddr);
+    protected final String getScannedStaRssiFromAgent(
+            InetAddress agentAddr) {
+        return odinApplicationInterfaceToMaster
+                .getScannedStaRssiFromAgent(pool, agentAddr);
     }
 
     /**
@@ -413,8 +435,10 @@ public abstract class OdinApplication implements Runnable {
      * @param agentAddr InetAddress of the agent
      * @return Set of OdinClient associated in the agent
      */
-    protected final Set<OdinClient> getClientsFromAgent(InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getClientsFromAgent(pool, agentAddr);
+    protected final Set<OdinClient> getClientsFromAgent(
+            InetAddress agentAddr) {
+        return odinApplicationInterfaceToMaster
+                .getClientsFromAgent(pool, agentAddr);
     }
 
     /**
@@ -434,20 +458,26 @@ public abstract class OdinApplication implements Runnable {
      * @return historical RSSI value
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    protected final Double getStaWeightedRssiFromAgent(MACAddress staHwAddr, InetAddress agentAddr) {
-        return odinApplicationInterfaceToMaster.getStaWeightedRssiFromAgent(staHwAddr, agentAddr);
+    protected final Double getStaWeightedRssiFromAgent(MACAddress staHwAddr,
+                                                       InetAddress agentAddr) {
+        return odinApplicationInterfaceToMaster
+                .getStaWeightedRssiFromAgent(staHwAddr, agentAddr);
     }
 
     /**
      * Store the historical RSSI value in the agent, for a certain station
      *
-     * @param staHwAddr Ethernet address of the client (Sta)
-     * @param agentAddr InetAddress of the agent
+     * @param staHwAddr    Ethernet address of the client (Sta)
+     * @param agentAddr    InetAddress of the agent
      * @param weightedRssi historical RSSI value
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    protected final void setStaWeightedRssiForAgent(MACAddress staHwAddr, InetAddress agentAddr, double weightedRssi) {
-        odinApplicationInterfaceToMaster.setStaWeightedRssiForAgent(staHwAddr, agentAddr, weightedRssi);
+    protected final void setStaWeightedRssiForAgent(MACAddress staHwAddr,
+                                                    InetAddress agentAddr,
+                                                    double weightedRssi) {
+        odinApplicationInterfaceToMaster
+                .setStaWeightedRssiForAgent(staHwAddr, agentAddr,
+                                            weightedRssi);
     }
 
     /**
@@ -467,37 +497,42 @@ public abstract class OdinApplication implements Runnable {
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected State getApplicationState(String applicationName) {
-        return odinApplicationInterfaceToMaster.getApplicationState(applicationName);
+        return odinApplicationInterfaceToMaster
+                .getApplicationState(applicationName);
     }
 
     /**
-     * Changes a target application's state from RUNNING to HALTING, meaning that it should begin
-     * its halting process if/when possible. It is up to the application to safely switch from
-     * HALTING to HALTED.
+     * Changes a target application's state from RUNNING to HALTING, meaning
+     * that it should begin its halting process if/when possible. It is up
+     * to the application to safely switch from HALTING to HALTED.
      *
      * @param applicationName Name of the target application
-     * @return true if the application exists and its previous state was RUNNING, false otherwise
+     * @return true if the application exists and its previous state was
+     * RUNNING, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected final boolean tryHaltApplication(String applicationName) {
-        return odinApplicationInterfaceToMaster.tryHaltApplication(applicationName);
+        return odinApplicationInterfaceToMaster
+                .tryHaltApplication(applicationName);
     }
 
     /**
-     * Changes a target application's state from HALTED to RUNNING, meaning that it is safe to
-     * continue its procedures.
+     * Changes a target application's state from HALTED to RUNNING, meaning
+     * that it is safe to continue its procedures.
      *
      * @param applicationName Name of the target application
-     * @return true if the application exists and its previous state was HALTED, false otherwise
+     * @return true if the application exists and its previous state
+     * was HALTED, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected final boolean resumeApplication(String applicationName) {
-        return odinApplicationInterfaceToMaster.resumeApplication(applicationName);
+        return odinApplicationInterfaceToMaster
+                .resumeApplication(applicationName);
     }
 
     /**
-     * Checks if another application requested an interruption. If so, it waits until it is safe to
-     * return.
+     * Checks if another application requested an interruption. If so, it
+     * waits until it is safe to return.
      *
      * @return true if interrupted, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
@@ -530,9 +565,7 @@ public abstract class OdinApplication implements Runnable {
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
     protected enum State {
-        RUNNING,
-        HALTING,
-        HALTED
+        RUNNING, HALTING, HALTED
     }
 
     /**
@@ -545,7 +578,8 @@ public abstract class OdinApplication implements Runnable {
     /**
      * TEST
      */
-    protected PrintStream getPrintStream(String directoryName, String fileName) {
+    protected PrintStream getPrintStream(String directoryName,
+                                         String fileName) {
         PrintStream ps = null;
         File directory = new File(directoryName);
         if (!directory.exists()) {
@@ -565,11 +599,13 @@ public abstract class OdinApplication implements Runnable {
      * TEST
      */
     public void TEE(String message, PrintStream ps) {
-        String callerApp = Thread.currentThread().getStackTrace()[2].getClassName();
+        String callerApp = Thread.currentThread().getStackTrace()[2]
+                .getClassName();
         callerApp = callerApp.substring(callerApp.lastIndexOf('.') + 1);
-        message = String.format("[%s] %25s:  %s", getTimestamp(), callerApp, message);
+        message = String.format("[%s] %25s:  %s", getTimestamp(), callerApp,
+                                message);
         System.out.println(message);
-        if(ps != null) {
+        if (ps != null) {
             ps.println(message);
             System.out.println(message);
         }

@@ -1,5 +1,11 @@
 package net.floodlightcontroller.odin.applications;
 
+import net.floodlightcontroller.odin.master.OdinApplication;
+import net.floodlightcontroller.odin.master.OdinClient;
+import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
+import net.floodlightcontroller.util.MACAddress;
+import org.apache.commons.io.output.TeeOutputStream;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -9,18 +15,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
-import net.floodlightcontroller.odin.master.OdinApplication;
-import net.floodlightcontroller.odin.master.OdinClient;
-import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
-import net.floodlightcontroller.util.MACAddress;
-import org.apache.commons.io.output.TeeOutputStream;
 
 public class ShowScannedStationsStatistics extends OdinApplication {
 
-// IMPORTANT: this application only works if all the agents in the
-//poolfile are activated before the end of the INITIAL_INTERVAL.
-// Otherwise, the application looks for an object that does not exist
-//and gets stopped
+    // IMPORTANT: this application only works if all the agents in the
+    //poolfile are activated before the end of the INITIAL_INTERVAL.
+    // Otherwise, the application looks for an object that does not exist
+    //and gets stopped
 
     // SSID to scan
     private final String SCANNED_SSID = "*";
@@ -34,8 +35,7 @@ public class ShowScannedStationsStatistics extends OdinApplication {
 
     HashSet<OdinClient> clients;
 
-    @Override
-    public void run() {
+    @Override public void run() {
 
         this.SCANN_PARAMS = getInterferenceParams();
         try {
@@ -56,21 +56,26 @@ public class ShowScannedStationsStatistics extends OdinApplication {
                 PrintStream ps = null;
 
                 if (SCANN_PARAMS.filename.length() > 0) {
-                    File f = new File(SCANN_PARAMS.filename); // FIXME: Add parameter to poolfile
+                    File f = new File(
+                            SCANN_PARAMS.filename); // FIXME: Add parameter to poolfile
 
                     try {
                         fos = new FileOutputStream(f);
                         //we will want to print in standard "System.out" and in "file"
-                        TeeOutputStream myOut = new TeeOutputStream(System.out, fos);
-                        ps = new PrintStream(myOut, true); //true - auto-flush after println
+                        TeeOutputStream myOut = new TeeOutputStream(
+                                System.out, fos);
+                        ps = new PrintStream(myOut,
+                                             true); //true - auto-flush after println
                         System.setOut(ps); // Both outputs enabled
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
 
-                System.out.println("[ShowScannedStationsStatistics] External Monitoring Table");
-                System.out.println("[ShowScannedStationsStatistics] ================");
+                System.out.println(
+                        "[ShowScannedStationsStatistics] External Monitoring Table");
+                System.out.println(
+                        "[ShowScannedStationsStatistics] ================");
                 System.out.println("[ShowScannedStationsStatistics]");
 
                 //For each channel
@@ -78,28 +83,32 @@ public class ShowScannedStationsStatistics extends OdinApplication {
 
                     scanningAgents.clear();
                     System.out.println(
-                            "[ShowScannedStationsStatistics] Scanning channel " + num_channel);
+                            "[ShowScannedStationsStatistics] Scanning channel "
+                            + num_channel);
 
                     // For each Agent
                     System.out.println(
                             "[ShowScannedStationsStatistics] Request for scanning during the interval of  "
-                                    + SCANN_PARAMS.scanning_interval + " ms in SSID "
-                                    + SCANNED_SSID);
+                            + SCANN_PARAMS.scanning_interval + " ms in SSID "
+                            + SCANNED_SSID);
                     for (InetAddress agentAddr : getAgents()) {
 
-                        System.out.println("[ShowScannedStationsStatistics] Agent: " + agentAddr);
+                        System.out.println(
+                                "[ShowScannedStationsStatistics] Agent: "
+                                + agentAddr);
                         if (SCANN_PARAMS.filename.length() > 0) {
                             System.setOut(stdout); // Return to only console
                         }
 
                         // Request statistics
-                        result = requestScannedStationsStatsFromAgent(agentAddr, num_channel,
-                                SCANNED_SSID);
+                        result = requestScannedStationsStatsFromAgent(
+                                agentAddr, num_channel, SCANNED_SSID);
                         scanningAgents.put(agentAddr, result);
                     }
 
                     try {
-                        Thread.sleep(SCANN_PARAMS.scanning_interval + SCANN_PARAMS.added_time);
+                        Thread.sleep(SCANN_PARAMS.scanning_interval
+                                     + SCANN_PARAMS.added_time);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -109,9 +118,11 @@ public class ShowScannedStationsStatistics extends OdinApplication {
                         if (SCANN_PARAMS.filename.length() > 0) {
                             System.setOut(ps); // Both outputs enabled
                         }
-                        System.out.println("[ShowScannedStationsStatistics]");
-                        System.out.println("[ShowScannedStationsStatistics] Agent: " + agentAddr
-                                + " in channel " + num_channel);
+                        System.out
+                                .println("[ShowScannedStationsStatistics]");
+                        System.out.println(
+                                "[ShowScannedStationsStatistics] Agent: "
+                                + agentAddr + " in channel " + num_channel);
 
                         // Reception statistics
                         if (scanningAgents.get(agentAddr) == 0) {
@@ -129,46 +140,63 @@ public class ShowScannedStationsStatistics extends OdinApplication {
                             MACAddress staHwAddr = vals_entry_rx.getKey();
                             boolean isWi5Sta = false;
                             boolean isWi5Lvap = false;
-                            System.out.println("\tStation MAC: " + staHwAddr);
+                            System.out
+                                    .println("\tStation MAC: " + staHwAddr);
                             System.out.println(
-                                    "\t\tnum packets: " + vals_entry_rx.getValue().get("packets"));
+                                    "\t\tnum packets: " + vals_entry_rx
+                                            .getValue().get("packets"));
                             System.out.println(
-                                    "\t\tavg rate: " + vals_entry_rx.getValue().get("avg_rate")
-                                            + " kbps");
+                                    "\t\tavg rate: " + vals_entry_rx
+                                            .getValue().get("avg_rate")
+                                    + " kbps");
                             System.out.println(
-                                    "\t\tavg signal: " + vals_entry_rx.getValue().get("avg_signal")
-                                            + " dBm");
+                                    "\t\tavg signal: " + vals_entry_rx
+                                            .getValue().get("avg_signal")
+                                    + " dBm");
                             System.out.println(
-                                    "\t\tavg length: " + vals_entry_rx.getValue().get("avg_len_pkt")
-                                            + " bytes");
+                                    "\t\tavg length: " + vals_entry_rx
+                                            .getValue().get("avg_len_pkt")
+                                    + " bytes");
                             System.out.println(
-                                    "\t\tair time: " + vals_entry_rx.getValue().get("air_time")
-                                            + " ms");
-                            System.out.println("\t\tinit time: " + vals_entry_rx.getValue()
-                                    .get("first_received") + " sec");
+                                    "\t\tair time: " + vals_entry_rx
+                                            .getValue().get("air_time")
+                                    + " ms");
                             System.out.println(
-                                    "\t\tend time: " + vals_entry_rx.getValue().get("last_received")
-                                            + " sec");
+                                    "\t\tinit time: " + vals_entry_rx
+                                            .getValue().get("first_received")
+                                    + " sec");
+                            System.out.println(
+                                    "\t\tend time: " + vals_entry_rx
+                                            .getValue().get("last_received")
+                                    + " sec");
 
                             for (OdinClient oc : clients) {  // all the clients currently associated
                                 if (oc.getMacAddress().equals(staHwAddr)) {
                                     System.out.println(
-                                            "\t\tAP of client: " + oc.getLvap().getAgent()
+                                            "\t\tAP of client: " + oc
+                                                    .getLvap().getAgent()
                                                     .getIpAddress());
-                                    System.out.println("\t\tChannel of AP: " + getChannelFromAgent(
-                                            oc.getLvap().getAgent().getIpAddress()));
+                                    System.out.println("\t\tChannel of AP: "
+                                                       + getChannelFromAgent(
+                                            oc.getLvap().getAgent()
+                                              .getIpAddress()));
                                     System.out.println("\t\tCode: Wi-5 STA");
                                     System.out.println("");
                                     isWi5Sta = true;
                                     break;
                                 }
-                                if (oc.getLvap().getBssid().equals(staHwAddr)) {
+                                if (oc.getLvap().getBssid()
+                                      .equals(staHwAddr)) {
                                     System.out.println(
-                                            "\t\tAP of client: " + oc.getLvap().getAgent()
+                                            "\t\tAP of client: " + oc
+                                                    .getLvap().getAgent()
                                                     .getIpAddress());
-                                    System.out.println("\t\tChannel of AP: " + getChannelFromAgent(
-                                            oc.getLvap().getAgent().getIpAddress()));
-                                    System.out.println("\t\tCode: Wi-5 LVAP");
+                                    System.out.println("\t\tChannel of AP: "
+                                                       + getChannelFromAgent(
+                                            oc.getLvap().getAgent()
+                                              .getIpAddress()));
+                                    System.out
+                                            .println("\t\tCode: Wi-5 LVAP");
                                     System.out.println("");
                                     isWi5Lvap = true;
                                     break;
@@ -182,7 +210,8 @@ public class ShowScannedStationsStatistics extends OdinApplication {
                             }
                             System.out.println("\t\tAP of client: unknown");
                             System.out.println("\t\tChannel of AP: unknown");
-                            if (vals_entry_rx.getValue().get("equipment").equals("AP")) {
+                            if (vals_entry_rx.getValue().get("equipment")
+                                             .equals("AP")) {
                                 System.out.println("\t\tCode: non-Wi-5 AP");
                             } else {
                                 System.out.println("\t\tCode: non-Wi-5 STA");

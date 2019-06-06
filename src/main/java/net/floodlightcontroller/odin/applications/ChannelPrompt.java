@@ -1,8 +1,9 @@
 package net.floodlightcontroller.odin.applications;
 
+import net.floodlightcontroller.odin.master.OdinApplication;
+
 import java.net.InetAddress;
 import java.util.Scanner;
-import net.floodlightcontroller.odin.master.OdinApplication;
 
 public class ChannelPrompt extends OdinApplication {
 
@@ -16,8 +17,7 @@ public class ChannelPrompt extends OdinApplication {
 
     private Scanner in = new Scanner(System.in);
 
-    @Override
-    public void run() {
+    @Override public void run() {
 
         try {
             Thread.sleep(15000); // Wait 15 seconds to start
@@ -29,8 +29,11 @@ public class ChannelPrompt extends OdinApplication {
             for (InetAddress agentAddr : getAgents()) {
                 apAddr = agentAddr;
                 channel = getChannelFromAgent(apAddr);
-                System.out.println("[ChannelAssignment] AP " + apAddr + " in channel: " + channel);
-                System.out.print("[ChannelAssignment] Select channel for AP " + apAddr + ":");
+                System.out.println(
+                        "[ChannelAssignment] AP " + apAddr + " in channel: "
+                        + channel);
+                System.out.print("[ChannelAssignment] Select channel for AP "
+                                 + apAddr + ":");
                 channel = in.nextInt();
                 setChannelToAgent(apAddr, channel);
             }

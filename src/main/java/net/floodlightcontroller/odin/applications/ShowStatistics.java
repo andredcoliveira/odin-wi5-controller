@@ -1,19 +1,20 @@
 package net.floodlightcontroller.odin.applications;
 
-import java.net.InetAddress;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
 import net.floodlightcontroller.odin.master.OdinApplication;
 import net.floodlightcontroller.odin.master.OdinClient;
 import net.floodlightcontroller.util.MACAddress;
 
+import java.net.InetAddress;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+
 public class ShowStatistics extends OdinApplication {
 
-// IMPORTANT: this application only works if all the agents in the
-//poolfile are activated before the end of the INITIAL_INTERVAL.
-// Otherwise, the application looks for an object that does not exist
-//and gets stopped
+    // IMPORTANT: this application only works if all the agents in the
+    //poolfile are activated before the end of the INITIAL_INTERVAL.
+    // Otherwise, the application looks for an object that does not exist
+    //and gets stopped
 
     // this interval is for allowing the agents to connect to the controller
     private final int INITIAL_INTERVAL = 30000; // in ms
@@ -23,8 +24,7 @@ public class ShowStatistics extends OdinApplication {
 
     HashSet<OdinClient> clients;
 
-    @Override
-    public void run() {
+    @Override public void run() {
         try {
             Thread.sleep(INITIAL_INTERVAL);
         } catch (InterruptedException e) {
@@ -41,23 +41,27 @@ public class ShowStatistics extends OdinApplication {
                  * because it has been handed off from one agent to another
                  */
 
-                System.out.println("[ShowStatistics] List of Agents:"); //JOSE
+                System.out
+                        .println("[ShowStatistics] List of Agents:"); //JOSE
 
                 // for each Agent
                 for (InetAddress agentAddr : getAgents()) {
 
-                    System.out.println("[ShowStatistics] Agent: " + agentAddr);
+                    System.out
+                            .println("[ShowStatistics] Agent: " + agentAddr);
 
                     // Transmission statistics
                     System.out.println(
-                            "[ShowStatistics] Last ping heard from agent " + agentAddr + " "
-                                    + getLastHeardFromAgent(agentAddr));
+                            "[ShowStatistics] Last ping heard from agent "
+                            + agentAddr + " " + getLastHeardFromAgent(
+                                    agentAddr));
 
                     Map<MACAddress, Map<String, String>> vals_tx = getTxStatsFromAgent(
                             agentAddr);  // all the clients who have statistics
 
                     // Reception statistics
-                    Map<MACAddress, Map<String, String>> vals_rx = getRxStatsFromAgent(agentAddr);
+                    Map<MACAddress, Map<String, String>> vals_rx = getRxStatsFromAgent(
+                            agentAddr);
 
                     for (OdinClient oc : clients) {  // all the clients currently associated
                         // NOTE: the clients currently associated MAY NOT be the same as the clients who have statistics
@@ -69,27 +73,44 @@ public class ShowStatistics extends OdinApplication {
                                 .entrySet()) {
 
                             MACAddress staHwAddr = vals_entry_rx.getKey();
-                            if (oc.getMacAddress().equals(staHwAddr) && oc.getIpAddress() != null
-                                    && !oc.getIpAddress().getHostAddress().equals("0.0.0.0")) {
+                            if (oc.getMacAddress().equals(staHwAddr)
+                                && oc.getIpAddress() != null && !oc
+                                    .getIpAddress().getHostAddress()
+                                    .equals("0.0.0.0")) {
                                 System.out.println(
-                                        "\tUplink station MAC: " + staHwAddr + " IP: " + oc
-                                                .getIpAddress().getHostAddress());
-                                System.out.println("\t\tnum packets: " + vals_entry_rx.getValue()
-                                        .get("packets"));
+                                        "\tUplink station MAC: " + staHwAddr
+                                        + " IP: " + oc.getIpAddress()
+                                                      .getHostAddress());
                                 System.out.println(
-                                        "\t\tavg rate: " + vals_entry_rx.getValue().get("avg_rate")
-                                                + " kbps");
-                                System.out.println("\t\tavg signal: " + vals_entry_rx.getValue()
-                                        .get("avg_signal") + " dBm");
-                                System.out.println("\t\tavg length: " + vals_entry_rx.getValue()
-                                        .get("avg_len_pkt") + " bytes");
+                                        "\t\tnum packets: " + vals_entry_rx
+                                                .getValue().get("packets"));
                                 System.out.println(
-                                        "\t\tair time: " + vals_entry_rx.getValue().get("air_time")
-                                                + " ms");
-                                System.out.println("\t\tinit time: " + vals_entry_rx.getValue()
-                                        .get("first_received") + " sec");
-                                System.out.println("\t\tend time: " + vals_entry_rx.getValue()
-                                        .get("last_received") + " sec");
+                                        "\t\tavg rate: " + vals_entry_rx
+                                                .getValue().get("avg_rate")
+                                        + " kbps");
+                                System.out.println(
+                                        "\t\tavg signal: " + vals_entry_rx
+                                                .getValue().get("avg_signal")
+                                        + " dBm");
+                                System.out.println(
+                                        "\t\tavg length: " + vals_entry_rx
+                                                .getValue()
+                                                .get("avg_len_pkt")
+                                        + " bytes");
+                                System.out.println(
+                                        "\t\tair time: " + vals_entry_rx
+                                                .getValue().get("air_time")
+                                        + " ms");
+                                System.out.println(
+                                        "\t\tinit time: " + vals_entry_rx
+                                                .getValue()
+                                                .get("first_received")
+                                        + " sec");
+                                System.out.println(
+                                        "\t\tend time: " + vals_entry_rx
+                                                .getValue()
+                                                .get("last_received")
+                                        + " sec");
                                 System.out.println("");
                             }
                         }
@@ -97,27 +118,44 @@ public class ShowStatistics extends OdinApplication {
                         for (Entry<MACAddress, Map<String, String>> vals_entry_tx : vals_tx
                                 .entrySet()) {
                             MACAddress staHwAddr = vals_entry_tx.getKey();
-                            if (oc.getMacAddress().equals(staHwAddr) && oc.getIpAddress() != null
-                                    && !oc.getIpAddress().getHostAddress().equals("0.0.0.0")) {
+                            if (oc.getMacAddress().equals(staHwAddr)
+                                && oc.getIpAddress() != null && !oc
+                                    .getIpAddress().getHostAddress()
+                                    .equals("0.0.0.0")) {
+                                System.out.println("\tDownlink station MAC: "
+                                                   + staHwAddr + " IP: " + oc
+                                                           .getIpAddress()
+                                                           .getHostAddress());
                                 System.out.println(
-                                        "\tDownlink station MAC: " + staHwAddr + " IP: " + oc
-                                                .getIpAddress().getHostAddress());
-                                System.out.println("\t\tnum packets: " + vals_entry_tx.getValue()
-                                        .get("packets"));
+                                        "\t\tnum packets: " + vals_entry_tx
+                                                .getValue().get("packets"));
                                 System.out.println(
-                                        "\t\tavg rate: " + vals_entry_tx.getValue().get("avg_rate")
-                                                + " kbps");
-                                System.out.println("\t\tavg signal: " + vals_entry_tx.getValue()
-                                        .get("avg_signal") + " dBm");
-                                System.out.println("\t\tavg length: " + vals_entry_tx.getValue()
-                                        .get("avg_len_pkt") + " bytes");
+                                        "\t\tavg rate: " + vals_entry_tx
+                                                .getValue().get("avg_rate")
+                                        + " kbps");
                                 System.out.println(
-                                        "\t\tair time: " + vals_entry_tx.getValue().get("air_time")
-                                                + " ms");
-                                System.out.println("\t\tinit time: " + vals_entry_tx.getValue()
-                                        .get("first_received") + " sec");
-                                System.out.println("\t\tend time: " + vals_entry_tx.getValue()
-                                        .get("last_received") + " sec");
+                                        "\t\tavg signal: " + vals_entry_tx
+                                                .getValue().get("avg_signal")
+                                        + " dBm");
+                                System.out.println(
+                                        "\t\tavg length: " + vals_entry_tx
+                                                .getValue()
+                                                .get("avg_len_pkt")
+                                        + " bytes");
+                                System.out.println(
+                                        "\t\tair time: " + vals_entry_tx
+                                                .getValue().get("air_time")
+                                        + " ms");
+                                System.out.println(
+                                        "\t\tinit time: " + vals_entry_tx
+                                                .getValue()
+                                                .get("first_received")
+                                        + " sec");
+                                System.out.println(
+                                        "\t\tend time: " + vals_entry_tx
+                                                .getValue()
+                                                .get("last_received")
+                                        + " sec");
                                 System.out.println("");
                             }
 

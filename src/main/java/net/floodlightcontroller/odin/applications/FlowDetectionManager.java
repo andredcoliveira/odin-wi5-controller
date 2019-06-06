@@ -9,7 +9,8 @@ import org.slf4j.LoggerFactory;
 
 public class FlowDetectionManager extends OdinApplication {
 
-    protected static Logger log = LoggerFactory.getLogger(FlowDetectionManager.class);
+    protected static Logger log = LoggerFactory
+            .getLogger(FlowDetectionManager.class);
 
     private final String IPSrcAddress;                // Handle a IPSrcAddress or all IPSrcAddress ("*")
     private final String IPDstAddress;                // Handle a IPDstAddress or all IPDstAddress ("*")
@@ -30,11 +31,12 @@ public class FlowDetectionManager extends OdinApplication {
      */
     private void init() {
         OdinEventFlowDetection oefd = new OdinEventFlowDetection();
-        oefd.setFlowDetection(this.IPSrcAddress, this.IPSrcAddress, this.protocol, this.SrcPort,
-                this.DstPort);
+        oefd.setFlowDetection(this.IPSrcAddress, this.IPSrcAddress,
+                              this.protocol, this.SrcPort, this.DstPort);
         FlowDetectionCallback cb = new FlowDetectionCallback() {
             @Override
-            public void exec(OdinEventFlowDetection oefd, FlowDetectionCallbackContext cntx) {
+            public void exec(OdinEventFlowDetection oefd,
+                             FlowDetectionCallbackContext cntx) {
                 handler(oefd, cntx);
             }
         };
@@ -42,8 +44,7 @@ public class FlowDetectionManager extends OdinApplication {
         registerFlowDetection(oefd, cb);
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
         /* When the application runs, you need some time to start the agents */
         this.giveTime(10000);
         init();
@@ -52,16 +53,22 @@ public class FlowDetectionManager extends OdinApplication {
     /**
      * This method show detected flows
      */
-    private void handler(OdinEventFlowDetection oefd, FlowDetectionCallbackContext cntx) {
+    private void handler(OdinEventFlowDetection oefd,
+                         FlowDetectionCallbackContext cntx) {
 
         log.info("[FlowDetectionManager] Detected flow");
-        log.info("[FlowDetectionManager]     -> Source IP: " + cntx.IPSrcAddress);
-        log.info("[FlowDetectionManager]     -> Destination IP: " + cntx.IPDstAddress);
-        log.info("[FlowDetectionManager]     -> Protocol IP: " + cntx.protocol);
-        log.info("[FlowDetectionManager]     -> Source Port: " + cntx.SrcPort);
-        log.info("[FlowDetectionManager]     -> Destination Port: " + cntx.DstPort);
-        log.info("[FlowDetectionManager] from agent: " + cntx.odinAgentAddr + " at " + System
-                .currentTimeMillis());
+        log.info("[FlowDetectionManager]     -> Source IP: "
+                 + cntx.IPSrcAddress);
+        log.info("[FlowDetectionManager]     -> Destination IP: "
+                 + cntx.IPDstAddress);
+        log.info("[FlowDetectionManager]     -> Protocol IP: "
+                 + cntx.protocol);
+        log.info("[FlowDetectionManager]     -> Source Port: "
+                 + cntx.SrcPort);
+        log.info("[FlowDetectionManager]     -> Destination Port: "
+                 + cntx.DstPort);
+        log.info("[FlowDetectionManager] from agent: " + cntx.odinAgentAddr
+                 + " at " + System.currentTimeMillis());
         log.info("");
         log.info("");
     }
