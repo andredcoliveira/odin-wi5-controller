@@ -2,14 +2,14 @@ package net.floodlightcontroller.odin.master;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import net.floodlightcontroller.util.MACAddress;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 public class ConnectedClientsResource extends ServerResource {
 
-    @Get("json")
-    public Map<MACAddress, OdinClient> retreive() {
+    @Get("json") public Map<MACAddress, OdinClient> retreive() {
         OdinMaster oc = (OdinMaster) getContext().getAttributes().
                 get(OdinMaster.class.getCanonicalName());
 

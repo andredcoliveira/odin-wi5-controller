@@ -14,7 +14,6 @@ public class OdinEventFlowDetection {
     private int SrcPort;
     private int DstPort;
 
-
     /**
      * @return the IPSrcAddress
      */
@@ -36,7 +35,6 @@ public class OdinEventFlowDetection {
         return protocol;
     }
 
-
     /**
      * @return the SrcPort
      */
@@ -51,12 +49,11 @@ public class OdinEventFlowDetection {
         return DstPort;
     }
 
-
     /**
      * Sets a FlowDetection for an event
      */
-    public void setFlowDetection(String IPSrcAddress, String IPDstAddress, int protocol,
-            int SrcPort, int DstPort) {
+    public void setFlowDetection(String IPSrcAddress, String IPDstAddress,
+                                 int protocol, int SrcPort, int DstPort) {
 
         this.IPSrcAddress = IPSrcAddress;
         this.IPDstAddress = IPDstAddress;

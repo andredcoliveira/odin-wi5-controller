@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.util.MACAddress;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -33,8 +34,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Lalith Suresh <suresh.lalith@gmail.com>
  */
-@JsonSerialize(using = OdinAgentSerializer.class)
-class OdinAgent implements IOdinAgent {
+@JsonSerialize(using = OdinAgentSerializer.class) class OdinAgent
+        implements IOdinAgent {
 
     protected static Logger log = LoggerFactory.getLogger(OdinAgent.class);
 
@@ -87,7 +88,6 @@ class OdinAgent implements IOdinAgent {
     private final int MTX_DISTANCE_RX_STAT_NUM_PROPERTIES = 1;
     private final int ODIN_AGENT_PORT = 6777;
 
-
     /**
      * Probably need a better identifier
      *
@@ -106,7 +106,6 @@ class OdinAgent implements IOdinAgent {
         return lastHeard;
     }
 
-
     /**
      * Set the lastHeard timestamp of a client
      *
@@ -115,7 +114,6 @@ class OdinAgent implements IOdinAgent {
     public void setLastHeard(long t) {
         this.lastHeard = t;
     }
-
 
     /**
      * Probe the agent for a list of VAPs its hosting. This should only be used by the master when
@@ -159,7 +157,8 @@ class OdinAgent implements IOdinAgent {
                 }
                 lvap = new Lvap(MACAddress.valueOf(properties[2]), ssidList);
                 oc = new OdinClient(MACAddress.valueOf(properties[0]),
-                        InetAddress.getByName(properties[1]), lvap);
+                                    InetAddress.getByName(properties[1]),
+                                    lvap);
                 lvap.setAgent(this);
                 clients.add(oc);
 
@@ -172,7 +171,6 @@ class OdinAgent implements IOdinAgent {
 
         return clients;
     }
-
 
     /**
      * Return a list of LVAPs that the master knows this agent is hosting. Between the time an agent
@@ -259,7 +257,6 @@ class OdinAgent implements IOdinAgent {
         return Collections.unmodifiableMap(ret);
     }
 
-
     /**
      * To be called only once, initialises a connection to the OdinAgent's control socket. We let
      * the connection persist so as to save on setup/tear-down messages with every invocation of an
@@ -290,7 +287,8 @@ class OdinAgent implements IOdinAgent {
             flow1.setMatch(match);
             flow1.setIdleTimeout((short) 0);
             flow1.setActions(actionList);
-            flow1.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH));
+            flow1.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH
+                                  + OFActionOutput.MINIMUM_LENGTH));
         }
 
         OFFlowMod flow2 = new OFFlowMod();
@@ -312,7 +310,8 @@ class OdinAgent implements IOdinAgent {
             flow2.setMatch(match);
             flow2.setIdleTimeout((short) 0);
             flow2.setActions(actionList);
-            flow2.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH));
+            flow2.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH
+                                  + OFActionOutput.MINIMUM_LENGTH));
         }
 
         OFFlowMod flow3 = new OFFlowMod();
@@ -332,7 +331,8 @@ class OdinAgent implements IOdinAgent {
             flow3.setMatch(match);
             flow3.setIdleTimeout((short) 0);
             flow3.setActions(actionList);
-            flow3.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH));
+            flow3.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH
+                                  + OFActionOutput.MINIMUM_LENGTH));
         }
 
         //TODO: flow rule for local port (TNO-Unizar)
@@ -370,10 +370,12 @@ class OdinAgent implements IOdinAgent {
 		}*/
 
         try {
-            odinAgentSocket = new Socket(host.getHostAddress(), ODIN_AGENT_PORT);
-            outBuf = new PrintWriter(odinAgentSocket.getOutputStream(), true);
-            inBuf = new BufferedReader(new InputStreamReader(odinAgentSocket
-                    .getInputStream()));
+            odinAgentSocket = new Socket(host.getHostAddress(),
+                                         ODIN_AGENT_PORT);
+            outBuf = new PrintWriter(odinAgentSocket.getOutputStream(),
+                                     true);
+            inBuf = new BufferedReader(
+                    new InputStreamReader(odinAgentSocket.getInputStream()));
             ipAddress = host;
         } catch (UnknownHostException e) {
             e.printStackTrace();
@@ -386,7 +388,6 @@ class OdinAgent implements IOdinAgent {
         return 0;
     }
 
-
     /**
      * Get the IOFSwitch for this agent
      *
@@ -395,7 +396,6 @@ class OdinAgent implements IOdinAgent {
     public IOFSwitch getSwitch() {
         return ofSwitch;
     }
-
 
     /**
      * Set the IOFSwitch entity corresponding to this agent
@@ -406,18 +406,16 @@ class OdinAgent implements IOdinAgent {
         ofSwitch = sw;
     }
 
-
     /**
      * Remove a virtual access point from the AP corresponding to this agent
      *
      * @param staHwAddr The STA's ethernet address
      */
     public void removeClientLvap(OdinClient oc) {
-        invokeWriteHandler(WRITE_HANDLER_REMOVE_VAP, oc.getMacAddress()
-                .toString());
+        invokeWriteHandler(WRITE_HANDLER_REMOVE_VAP,
+                           oc.getMacAddress().toString());
         clientList.remove(oc);
     }
-
 
     /**
      * Add a virtual access point to the AP corresponding to this agent
@@ -433,12 +431,12 @@ class OdinAgent implements IOdinAgent {
             ssidList += " " + ssid;
         }
 
-        invokeWriteHandler(WRITE_HANDLER_ADD_VAP, oc.getMacAddress().toString()
-                + " " + oc.getIpAddress().getHostAddress() + " "
-                + oc.getLvap().getBssid().toString() + ssidList);
+        invokeWriteHandler(WRITE_HANDLER_ADD_VAP,
+                           oc.getMacAddress().toString() + " " + oc
+                                   .getIpAddress().getHostAddress() + " "
+                           + oc.getLvap().getBssid().toString() + ssidList);
         clientList.add(oc);
     }
-
 
     /**
      * Update a virtual access point with possibly new IP, BSSID, or SSID
@@ -454,11 +452,11 @@ class OdinAgent implements IOdinAgent {
             ssidList += " " + ssid;
         }
 
-        invokeWriteHandler(WRITE_HANDLER_SET_VAP, oc.getMacAddress().toString()
-                + " " + oc.getIpAddress().getHostAddress() + " "
-                + oc.getLvap().getBssid().toString() + ssidList);
+        invokeWriteHandler(WRITE_HANDLER_SET_VAP,
+                           oc.getMacAddress().toString() + " " + oc
+                                   .getIpAddress().getHostAddress() + " "
+                           + oc.getLvap().getBssid().toString() + ssidList);
     }
-
 
     /**
      * Set subscriptions
@@ -468,7 +466,6 @@ class OdinAgent implements IOdinAgent {
     public void setSubscriptions(String subscriptionList) {
         invokeWriteHandler(WRITE_HANDLER_SUBSCRIPTIONS, subscriptionList);
     }
-
 
     /**
      * Internal method to invoke a read handler on the OdinAgent
@@ -481,7 +478,8 @@ class OdinAgent implements IOdinAgent {
         //log.info("[invokeReadHandler] IP address of detection agent is " + this.detectionAgentIP);
         //log.info("[invokeReadHandler] IP address of agent is " + this.ipAddress);
         if (this.ipAddress.getHostAddress().equals(this.detectionAgentIP)) {
-            outBuf.println("READ " + DETECTION_AGENT_ELEMENT + "." + handlerName);
+            outBuf.println(
+                    "READ " + DETECTION_AGENT_ELEMENT + "." + handlerName);
         } else {
             outBuf.println("READ " + ODIN_AGENT_ELEMENT + "." + handlerName);
         }
@@ -511,7 +509,6 @@ class OdinAgent implements IOdinAgent {
         return null;
     }
 
-
     /**
      * Internal method to invoke a write handler of the OdinAgent
      *
@@ -519,24 +516,27 @@ class OdinAgent implements IOdinAgent {
      * @param handlerText Write string
      */
     private synchronized void invokeWriteHandler(String handlerName,
-            String handlerText) {
+                                                 String handlerText) {
         //log.info("[invokeWriteHandler] Begin " + handlerName);
         //log.info("[invokeWriteHandler] IP address of detection agent is " + this.detectionAgentIP);
         //log.info("[invokeWriteHandler] IP address of agent is " + this.ipAddress);
         if (this.ipAddress.getHostAddress().equals(this.detectionAgentIP)) {
             outBuf.println(
-                    "WRITE " + DETECTION_AGENT_ELEMENT + "." + handlerName + " " + handlerText);
+                    "WRITE " + DETECTION_AGENT_ELEMENT + "." + handlerName
+                    + " " + handlerText);
         } else {
-            outBuf.println("WRITE " + ODIN_AGENT_ELEMENT + "." + handlerName + " " + handlerText);
+            outBuf.println(
+                    "WRITE " + ODIN_AGENT_ELEMENT + "." + handlerName + " "
+                    + handlerText);
         }
 
         //outBuf.println("WRITE " + ODIN_AGENT_ELEMENT + "." + handlerName + " " + handlerText);
         //log.info("[invokeWriteHandler] End " + handlerName);
     }
 
-
     @Override
-    public void sendProbeResponse(MACAddress clientHwAddr, MACAddress bssid, Set<String> ssidList) {
+    public void sendProbeResponse(MACAddress clientHwAddr, MACAddress bssid,
+                                  Set<String> ssidList) {
         StringBuilder sb = new StringBuilder();
         sb.append(clientHwAddr);
         sb.append(" ");
@@ -550,8 +550,7 @@ class OdinAgent implements IOdinAgent {
         invokeWriteHandler(WRITE_HANDLER_SEND_PROBE_RESPONSE, sb.toString());
     }
 
-    @Override
-    public void setChannel(int channel) {
+    @Override public void setChannel(int channel) {
         //Wi5- TODO: We should announce to the APs the change of the channel. This need futher discusssion
         if (channel != this.channel) {
             this.channel = channel;
@@ -560,8 +559,7 @@ class OdinAgent implements IOdinAgent {
         invokeWriteHandler(WRITE_HANDLER_CHANNEL, chan);
     }
 
-    @Override
-    public int getChannel() {
+    @Override public int getChannel() {
         int chan = 0;
         String handler = invokeReadHandler(READ_HANDLER_CHANNEL);
         chan = Integer.parseInt(handler.trim());
@@ -572,8 +570,8 @@ class OdinAgent implements IOdinAgent {
     }
 
     @Override
-    public void sendChannelSwitch(MACAddress clientHwAddr, MACAddress bssid, List<String> ssidList,
-            int channel) {
+    public void sendChannelSwitch(MACAddress clientHwAddr, MACAddress bssid,
+                                  List<String> ssidList, int channel) {
         StringBuilder sb = new StringBuilder();
         sb.append(clientHwAddr);
         sb.append(" ");
@@ -584,7 +582,8 @@ class OdinAgent implements IOdinAgent {
             sb.append(" ");
             sb.append(ssid);
         }
-        invokeWriteHandler(WRITE_HANDLER_CHANNEL_SWITCH_ANNOUNCEMENT, sb.toString());
+        invokeWriteHandler(WRITE_HANDLER_CHANNEL_SWITCH_ANNOUNCEMENT,
+                           sb.toString());
     }
 
     public int convertFrequencyToChannel(int freq) {
@@ -611,7 +610,6 @@ class OdinAgent implements IOdinAgent {
         }
     }
 
-
     @Override
     public int scanClient(MACAddress clientHwAddr, int channel, int time) {
         StringBuilder sb = new StringBuilder();
@@ -632,18 +630,17 @@ class OdinAgent implements IOdinAgent {
         return lastScan;
     }
 
-
     /**
      * Request scanned stations statistics from the agent
      *
      * @param agentAddr InetAddress of the agent
-     * @param #channel to scan
-     * @param time interval to scan
-     * @param ssid to scan (always is *)
+     * @param #channel  to scan
+     * @param time      interval to scan
+     * @param ssid      to scan (always is *)
      * @ If request is accepted return 1, otherwise, return 0
      */
-    @Override
-    public int requestScannedStationsStats(int channel, String ssid) { // Log disabled
+    @Override public int requestScannedStationsStats(int channel,
+                                                     String ssid) { // Log disabled
         //log.info("Sending READ_HANDLER_SCANNING_FLAGS");
         String flags = invokeReadHandler(READ_HANDLER_SCANING_FLAGS);
         //log.info("Received flags: " + flags);
@@ -652,7 +649,8 @@ class OdinAgent implements IOdinAgent {
         int AP_scanning_flag = Integer.parseInt(row[1].trim());
         int measurement_beacon_flag = Integer.parseInt(row[2].trim());
         //log.info("READ_HANDLER_SCANING_FLAGS ---- " + " client_scanning_flag:" + client_scanning_flag + " AP_scanning_flag:" + AP_scanning_flag + " measurement_beacon_flag:" + measurement_beacon_flag);
-        if (client_scanning_flag == 1 || AP_scanning_flag == 1 || measurement_beacon_flag == 1) {
+        if (client_scanning_flag == 1 || AP_scanning_flag == 1
+            || measurement_beacon_flag == 1) {
             return (0);
         }
 
@@ -665,7 +663,6 @@ class OdinAgent implements IOdinAgent {
         return (1);
     }
 
-
     /**
      * Retreive scanned stations statistics from the agent
      *
@@ -673,7 +670,8 @@ class OdinAgent implements IOdinAgent {
      * @return Key-Value entries of each recorded statistic for each station
      */
     @Override
-    public Map<MACAddress, Map<String, String>> getScannedStationsStats(String ssid) {
+    public Map<MACAddress, Map<String, String>> getScannedStationsStats(
+            String ssid) {
 
         String stats = invokeReadHandler(READ_HANDLER_SCAN_APS);
 
@@ -712,18 +710,17 @@ class OdinAgent implements IOdinAgent {
         return Collections.unmodifiableMap(ret);
     }
 
-
     /**
      * Request scanned stations statistics from the agent
      *
      * @param agentAddr InetAddress of the agent
-     * @param #channel to send measurement beacon
-     * @param time interval to send measurement beacon
-     * @param ssid to scan (e.g odin_init)
+     * @param #channel  to send measurement beacon
+     * @param time      interval to send measurement beacon
+     * @param ssid      to scan (e.g odin_init)
      * @ If request is accepted return 1, otherwise, return 0
      */
-    @Override
-    public int requestSendMesurementBeacon(int channel, String ssid) {
+    @Override public int requestSendMesurementBeacon(int channel,
+                                                     String ssid) {
         log.info("Sending READ_HANDLER_SCANING_FLAGS");
         String flags = invokeReadHandler(READ_HANDLER_SCANING_FLAGS);
         log.info("Received flags: " + flags);
@@ -732,10 +729,12 @@ class OdinAgent implements IOdinAgent {
         int AP_scanning_flag = Integer.parseInt(row[1].trim());
         int measurement_beacon_flag = Integer.parseInt(row[2].trim());
         log.info(
-                "READ_HANDLER_SCANING_FLAGS ---- " + " client_scanning_flag:" + client_scanning_flag
-                        + " AP_scanning_flag:" + AP_scanning_flag + " measurement_beacon_flag:"
-                        + measurement_beacon_flag);
-        if (client_scanning_flag == 1 || AP_scanning_flag == 1 || measurement_beacon_flag == 1) {
+                "READ_HANDLER_SCANING_FLAGS ---- " + " client_scanning_flag:"
+                + client_scanning_flag + " AP_scanning_flag:"
+                + AP_scanning_flag + " measurement_beacon_flag:"
+                + measurement_beacon_flag);
+        if (client_scanning_flag == 1 || AP_scanning_flag == 1
+            || measurement_beacon_flag == 1) {
             return (0);
         }
 
@@ -743,19 +742,19 @@ class OdinAgent implements IOdinAgent {
         sb.append(ssid);
         sb.append(" ");
         sb.append(channel);
-        log.info("Sending WRITE_HANDLER_SEND_MEASUREMENT_BEACON " + sb.toString());
-        invokeWriteHandler(WRITE_HANDLER_SEND_MEASUREMENT_BEACON, sb.toString());
+        log.info("Sending WRITE_HANDLER_SEND_MEASUREMENT_BEACON " + sb
+                .toString());
+        invokeWriteHandler(WRITE_HANDLER_SEND_MEASUREMENT_BEACON,
+                           sb.toString());
         return (1);
     }
-
 
     /**
      * Stop sending measurement beacon from the agent
      *
      * @param agentAddr InetAddress of the agent
      */
-    @Override
-    public int stopSendMesurementBeacon() {
+    @Override public int stopSendMesurementBeacon() {
         int client_scanning_flag = 0;
         int AP_scanning_flag = 0;
         int measurement_beacon_flag = 0;
@@ -770,14 +769,12 @@ class OdinAgent implements IOdinAgent {
         return (1);
     }
 
-
     /**
      * Get TxPower from the agent
      *
      * @param agentAddr InetAddress of the agent
      */
-    @Override
-    public int getTxPower() {
+    @Override public int getTxPower() {
         int txpower = 0;
         String handler = invokeReadHandler(READ_HANDLER_TXPOWER);
         txpower = Integer.parseInt(handler.trim());
@@ -816,8 +813,7 @@ class OdinAgent implements IOdinAgent {
      *
      * @return historical RSSI value
      */
-    @Override
-    public Map<MACAddress, Double> getWeightedRssi() {
+    @Override public Map<MACAddress, Double> getWeightedRssi() {
         return weightedRssi;
     }
 
@@ -826,8 +822,8 @@ class OdinAgent implements IOdinAgent {
      *
      * @param weightedRssi historical RSSI value
      */
-    @Override
-    public void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi) {
+    @Override public void setWeightedRssi(
+            HashMap<MACAddress, Double> weightedRssi) {
         this.weightedRssi = new ConcurrentHashMap<>(weightedRssi);
     }
 
@@ -837,19 +833,18 @@ class OdinAgent implements IOdinAgent {
      * @param staHwAddr Ethernet address of STA
      * @return historical RSSI value
      */
-    @Override
-    public Double getClientWeightedRssi(MACAddress staHwAddr) {
+    @Override public Double getClientWeightedRssi(MACAddress staHwAddr) {
         return weightedRssi.get(staHwAddr);
     }
 
     /**
      * Sets historical RSSI value for a single station based on its MAC address
      *
-     * @param staHwAddr Ethernet address of STA
+     * @param staHwAddr    Ethernet address of STA
      * @param weightedRssi historical RSSI value
      */
-    @Override
-    public void setClientWeightedRssi(MACAddress staHwAddr, Double weightedRssi) {
+    @Override public void setClientWeightedRssi(MACAddress staHwAddr,
+                                                Double weightedRssi) {
         this.weightedRssi.put(staHwAddr, weightedRssi);
     }
 

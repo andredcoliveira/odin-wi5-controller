@@ -3,6 +3,7 @@ package net.floodlightcontroller.odin.master;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
+
 import net.floodlightcontroller.util.MACAddress;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -12,9 +13,7 @@ import org.restlet.resource.ServerResource;
 
 public class LvapHandoffResource extends ServerResource {
 
-    @SuppressWarnings("unchecked")
-    @Post
-    public void store(String flowmod) {
+    @SuppressWarnings("unchecked") @Post public void store(String flowmod) {
         OdinMaster oc = (OdinMaster) getContext().getAttributes().
                 get(OdinMaster.class.getCanonicalName());
 
@@ -29,7 +28,7 @@ public class LvapHandoffResource extends ServerResource {
             String poolName = fmdata.get("poolName");
 
             oc.handoffClientToAp(poolName, MACAddress.valueOf(staHwAddress),
-                    InetAddress.getByName(apIpAddress));
+                                 InetAddress.getByName(apIpAddress));
         } catch (JsonParseException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

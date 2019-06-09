@@ -9,8 +9,7 @@ public class OdinAgentFactory {
     private static List<OdinClient> lvapList = new ArrayList<OdinClient>();
 
     public static void setOdinAgentType(String type) {
-        if (type.equals("OdinAgent")
-                || type.equals("MockOdinAgent")) {
+        if (type.equals("OdinAgent") || type.equals("MockOdinAgent")) {
             agentType = type;
         } else {
             System.err.println("Unknown OdinAgent type: " + type);

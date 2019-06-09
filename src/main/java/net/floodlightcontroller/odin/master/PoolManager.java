@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+
 import net.floodlightcontroller.util.MACAddress;
 
 /**
@@ -20,7 +21,7 @@ import net.floodlightcontroller.util.MACAddress;
 class PoolManager {
 
     static public final String GLOBAL_POOL = "global";
-    private final byte[] oui = {(byte) 0x00, (byte) 0x1b, (byte) 0xb3};
+    private final byte[] oui = { (byte) 0x00, (byte) 0x1b, (byte) 0xb3 };
     private final Map<InetAddress, List<String>> agentToPoolListMap = new ConcurrentHashMap<InetAddress, List<String>>();
     private final Map<String, Set<InetAddress>> poolToAgentSetMap = new ConcurrentHashMap<String, Set<InetAddress>>();
     private final Map<String, Set<String>> poolToSsidListMap = new ConcurrentHashMap<String, Set<String>>();
@@ -34,7 +35,6 @@ class PoolManager {
         poolToClientSetMap.put(GLOBAL_POOL, new TreeSet<OdinClient>());
     }
 
-
     /**
      * Get the list of pools that the agent belongs to. Note: The list will *not* include the global
      * pool.
@@ -44,18 +44,18 @@ class PoolManager {
      */
     List<String> getPoolsForAgent(InetAddress agentInetAddr) {
         if (agentToPoolListMap.containsKey(agentInetAddr)) {
-            return Collections.unmodifiableList(agentToPoolListMap.get(agentInetAddr));
+            return Collections
+                    .unmodifiableList(agentToPoolListMap.get(agentInetAddr));
         } else {
             return Collections.<String>emptyList();
         }
     }
 
-
     /**
      * Place the agent in an additional pool.
      *
      * @param agentInetAddr agent's address
-     * @param pool the pool to add the agent to
+     * @param pool          the pool to add the agent to
      */
     void addPoolForAgent(InetAddress agentInetAddr, String pool) {
         if (agentToPoolListMap.containsKey(agentInetAddr)) {
@@ -88,7 +88,6 @@ class PoolManager {
         return Collections.unmodifiableSet(poolToSsidListMap.get(pool));
     }
 
-
     /**
      * Add an SSID to a pool. Will return false if the SSID is already being used within some other
      * pool.
@@ -111,7 +110,6 @@ class PoolManager {
         return false;
     }
 
-
     /**
      * Removes a network from a pool. Returns false if the network name isn't registered with the
      * pool
@@ -133,7 +131,6 @@ class PoolManager {
         return false;
     }
 
-
     /**
      * Generates a BSSID for a client.
      *
@@ -150,14 +147,12 @@ class PoolManager {
         return bssid;
     }
 
-
     /**
      * Returns the total number of unique SSIDs that have been registered across all pools.
      */
     int getNumNetworks() {
         return numNetworks;
     }
-
 
     /**
      * Place a client in a particular pool.
@@ -176,7 +171,6 @@ class PoolManager {
         poolToClientSetMap.get(pool).add(client);
     }
 
-
     /**
      * Remove a client from a particular pool
      */
@@ -189,7 +183,6 @@ class PoolManager {
         }
     }
 
-
     /**
      * Get the set of clients that have connected to a particular pool
      *
@@ -199,7 +192,6 @@ class PoolManager {
         return Collections.unmodifiableSet(poolToClientSetMap.get(pool));
     }
 
-
     /**
      * Get the pool that the client is connected to
      */
@@ -207,7 +199,8 @@ class PoolManager {
         return clientToPoolMap.get(client);
     }
 
-    Set<InetAddress> getAgentAddrsForPool(String pool) {Set<InetAddress> ret = poolToAgentSetMap.get(pool);
+    Set<InetAddress> getAgentAddrsForPool(String pool) {
+        Set<InetAddress> ret = poolToAgentSetMap.get(pool);
 
         return (ret == null) ? Collections.<InetAddress>emptySet() : ret;
     }

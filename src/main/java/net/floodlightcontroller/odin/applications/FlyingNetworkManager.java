@@ -41,8 +41,7 @@ public class FlyingNetworkManager extends OdinApplication {
         if (VERSION.equals("TEST")) { // check that the parameter exists
             String PATH = System.getProperty("user.dir");
             String directoryName = PATH
-                    .concat("/" + FlyingNetworkManager.class.getSimpleName()
-                            + "/log");
+                    .concat("/log/" + FlyingNetworkManager.class.getSimpleName());
             String fileName =
                     FlyingNetworkManager.class.getSimpleName() + "_"
                     + getTimestamp() + ".txt";

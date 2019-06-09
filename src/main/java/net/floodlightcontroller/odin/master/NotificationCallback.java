@@ -7,5 +7,6 @@ public interface NotificationCallback {
      * master. Normally, this should plumb to some existing internal method implemented by the
      * application.
      */
-    public void exec(OdinEventSubscription oes, NotificationCallbackContext cntx);
+    public void exec(OdinEventSubscription oes,
+                     NotificationCallbackContext cntx);
 }

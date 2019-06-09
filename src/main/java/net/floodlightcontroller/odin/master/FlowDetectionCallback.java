@@ -7,5 +7,6 @@ public interface FlowDetectionCallback {
      * master. Normally, this should plumb to some existing internal method implemented by the
      * application.
      */
-    public void exec(OdinEventFlowDetection oefd, FlowDetectionCallbackContext cntx);
+    public void exec(OdinEventFlowDetection oefd,
+                     FlowDetectionCallbackContext cntx);
 }

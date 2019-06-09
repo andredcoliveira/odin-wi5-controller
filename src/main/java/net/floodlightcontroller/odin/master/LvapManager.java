@@ -3,6 +3,7 @@ package net.floodlightcontroller.odin.master;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFMessage;
@@ -22,7 +23,8 @@ public class LvapManager {
         OFFlowMod flow1 = new OFFlowMod();
         {
             OFMatch match = new OFMatch();
-            match.fromString("in_port=2,dl_type=0x0800,nw_src=" + inetAddr.getHostAddress());
+            match.fromString("in_port=2,dl_type=0x0800,nw_src=" + inetAddr
+                    .getHostAddress());
 
             OFActionOutput actionOutput = new OFActionOutput();
             actionOutput.setPort((short) 1);
@@ -37,12 +39,13 @@ public class LvapManager {
             flow1.setIdleTimeout((short) 0);
             flow1.setActions(actionList);
             flow1.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH
-                    + OFActionOutput.MINIMUM_LENGTH));
+                                  + OFActionOutput.MINIMUM_LENGTH));
         }
         OFFlowMod flow2 = new OFFlowMod();
         {
             OFMatch match = new OFMatch();
-            match.fromString("in_port=1,dl_type=0x0800,nw_dst=" + inetAddr.getHostAddress());
+            match.fromString("in_port=1,dl_type=0x0800,nw_dst=" + inetAddr
+                    .getHostAddress());
 
             OFActionOutput actionOutput = new OFActionOutput();
             actionOutput.setPort((short) 2);
@@ -56,13 +59,14 @@ public class LvapManager {
             flow2.setMatch(match);
             flow2.setIdleTimeout((short) 0);
             flow2.setActions(actionList);
-            flow2.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH + OFActionOutput.MINIMUM_LENGTH));
+            flow2.setLength(U16.t(OFFlowMod.MINIMUM_LENGTH
+                                  + OFActionOutput.MINIMUM_LENGTH));
         }
 
         ArrayList<OFMessage> list = new ArrayList<OFMessage>();
 
-//		list.add(flow1);
-//		list.add(flow2);
+        //		list.add(flow1);
+        //		list.add(flow2);
 
         return list;
     }

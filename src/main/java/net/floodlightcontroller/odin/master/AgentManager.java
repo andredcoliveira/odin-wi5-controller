@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 class AgentManager {
 
@@ -26,21 +26,21 @@ class AgentManager {
     private final Timer failureDetectionTimer = new Timer();
     private int agentTimeout = 6000;
 
-    protected AgentManager(ClientManager clientManager, PoolManager poolManager) {
+    protected AgentManager(ClientManager clientManager,
+                           PoolManager poolManager) {
         this.clientManager = clientManager;
         this.poolManager = poolManager;
     }
 
-    protected void setFloodlightProvider(final IFloodlightProviderService provider) {
+    protected void setFloodlightProvider(
+            final IFloodlightProviderService provider) {
         floodlightProvider = provider;
     }
-
 
     protected void setAgentTimeout(final int timeout) {
         assert (timeout > 0);
         agentTimeout = timeout;
     }
-
 
     /**
      * Confirm if the agent corresponding to an InetAddress is being tracked.
@@ -51,7 +51,6 @@ class AgentManager {
         return agentMap.containsKey(odinAgentInetAddress);
     }
 
-
     /**
      * Get the list of agents being tracked for a particular pool
      *
@@ -61,7 +60,6 @@ class AgentManager {
         return Collections.unmodifiableMap(agentMap);
     }
 
-
     /**
      * Get a reference to an agent
      */
@@ -69,7 +67,6 @@ class AgentManager {
         assert (agentInetAddr != null);
         return agentMap.get(agentInetAddr);
     }
-
 
     /**
      * Removes an agent from the agent manager
@@ -91,7 +88,8 @@ class AgentManager {
 
         //if we receive a ping from a new agent
         if ((!isTracked(odinAgentAddr)) && (!odinAgentAddr.getHostAddress()
-                .equals(OdinMaster.getDetectorIpAddress()))) {
+                                                          .equals(OdinMaster
+                                                                          .getDetectorIpAddress()))) {
 
             log.debug("Ping message from: " + odinAgentAddr);
 
@@ -120,7 +118,8 @@ class AgentManager {
              * We're binding by IP addresses now, because we want to pool
              * an OFSwitch with its corresponding OdinAgent, if any.
              */
-            String switchIpAddr = ((InetSocketAddress) sw.getChannel().getRemoteAddress())
+            String switchIpAddr = ((InetSocketAddress) sw.getChannel()
+                                                         .getRemoteAddress())
                     .getAddress().getHostAddress();
 
             if (switchIpAddr.equals(odinAgentAddr.getHostAddress())) {
@@ -147,7 +146,8 @@ class AgentManager {
             oa.setSwitch(ofSwitch);
             oa.init(odinAgentAddr);
             oa.setLastHeard(System.currentTimeMillis());
-            List<String> poolListForAgent = poolManager.getPoolsForAgent(odinAgentAddr);
+            List<String> poolListForAgent = poolManager
+                    .getPoolsForAgent(odinAgentAddr);
 
             /*
              * It is possible that the controller is recovering from a failure,
@@ -156,11 +156,13 @@ class AgentManager {
              */
             for (OdinClient client : oa.getLvapsRemote()) {
 
-                OdinClient trackedClient = clientManager.getClients().get(client.getMacAddress());
+                OdinClient trackedClient = clientManager.getClients()
+                                                        .get(client.getMacAddress());
 
                 if (trackedClient == null) {
                     clientManager.addClient(client);
-                    trackedClient = clientManager.getClients().get(client.getMacAddress());
+                    trackedClient = clientManager.getClients()
+                                                 .get(client.getMacAddress());
 
                     /*
                      * We need to find the pool the client was previously assigned to.
@@ -175,7 +177,8 @@ class AgentManager {
                          * of the lvap's SSIDs to find the right pool.
                          */
                         String ssid = client.getLvap().getSsids().get(0);
-                        if (poolManager.getSsidListForPool(pool).contains(ssid)) {
+                        if (poolManager.getSsidListForPool(pool)
+                                       .contains(ssid)) {
                             poolManager.mapClientToPool(trackedClient, pool);
                             break;
                         }
@@ -186,7 +189,7 @@ class AgentManager {
                 if (trackedClient.getLvap().getAgent() == null) {
                     trackedClient.getLvap().setAgent(oa);
                 } else if (!trackedClient.getLvap().getAgent().getIpAddress()
-                        .equals(odinAgentAddr)) {
+                                         .equals(odinAgentAddr)) {
                     /*
                      * Race condition:
                      * - client associated at AP1 before the master failure,
@@ -202,18 +205,19 @@ class AgentManager {
 
             agentMap.put(odinAgentAddr, oa);
 
-            log.info("Adding OdinAgent to map: " + odinAgentAddr.getHostAddress());
+            log.info("Adding OdinAgent to map: " + odinAgentAddr
+                    .getHostAddress());
 
             /* This TimerTask checks the lastHeard value
              * of the agent in order to handle failure detection
              */
-            failureDetectionTimer
-                    .scheduleAtFixedRate(new OdinAgentFailureDetectorTask(oa), 1, agentTimeout / 2);
+            failureDetectionTimer.scheduleAtFixedRate(
+                    new OdinAgentFailureDetectorTask(oa), 1,
+                    agentTimeout / 2);
         }
 
         return true;
     }
-
 
     private class OdinAgentFailureDetectorTask extends TimerTask {
 
@@ -223,11 +227,12 @@ class AgentManager {
             this.agent = oa;
         }
 
-        @Override
-        public void run() {
+        @Override public void run() {
             //log.info("Executing failure check against: " + agent.getIpAddress());
-            if ((System.currentTimeMillis() - agent.getLastHeard()) >= agentTimeout) {
-                log.error("Agent: " + agent.getIpAddress() + " has timed out");
+            if ((System.currentTimeMillis() - agent.getLastHeard())
+                >= agentTimeout) {
+                log.error(
+                        "Agent: " + agent.getIpAddress() + " has timed out");
 
                 /* This is default behaviour, maybe we should
                  * re-assign the client based on some specific
@@ -237,7 +242,8 @@ class AgentManager {
                 // TODO: There should be a way to lock the master
                 // during such operations
                 for (OdinClient oc : agent.getLvapsLocal()) {
-                    clientManager.getClients().get(oc.getMacAddress()).getLvap().setAgent(null);
+                    clientManager.getClients().get(oc.getMacAddress())
+                                 .getLvap().setAgent(null);
                 }
 
                 // Agent should now be cleared out

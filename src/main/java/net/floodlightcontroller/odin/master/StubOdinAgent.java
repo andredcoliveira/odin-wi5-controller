@@ -1,10 +1,12 @@
 package net.floodlightcontroller.odin.master;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.util.MACAddress;
 
@@ -26,53 +28,43 @@ class StubOdinAgent implements IOdinAgent {
     private int lastScan;
     private int txpower;
 
-    @Override
-    public void addClientLvap(OdinClient oc) {
+    @Override public void addClientLvap(OdinClient oc) {
         clientList.add(oc);
     }
 
-    @Override
-    public InetAddress getIpAddress() {
+    @Override public InetAddress getIpAddress() {
         return ipAddr;
     }
 
-    @Override
-    public Map<MACAddress, Map<String, String>> getTxStats() {
+    @Override public Map<MACAddress, Map<String, String>> getTxStats() {
         return null;
     }
 
-    @Override
-    public Map<MACAddress, Map<String, String>> getRxStats() {
+    @Override public Map<MACAddress, Map<String, String>> getRxStats() {
         return null;
     }
 
-    @Override
-    public IOFSwitch getSwitch() {
+    @Override public IOFSwitch getSwitch() {
         return sw;
     }
 
-    @Override
-    public Set<OdinClient> getLvapsRemote() {
+    @Override public Set<OdinClient> getLvapsRemote() {
         return clientList;
     }
 
-    @Override
-    public int init(InetAddress host) {
+    @Override public int init(InetAddress host) {
         this.ipAddr = host;
 
         return 0;
     }
 
-    @Override
-    public void removeClientLvap(OdinClient oc) {
+    @Override public void removeClientLvap(OdinClient oc) {
         clientList.remove(oc);
     }
 
-    @Override
-    public void setSwitch(IOFSwitch sw) {
+    @Override public void setSwitch(IOFSwitch sw) {
         this.sw = sw;
     }
-
 
     public long getLastHeard() {
         return lastHeard;
@@ -82,27 +74,23 @@ class StubOdinAgent implements IOdinAgent {
         this.lastHeard = t;
     }
 
-    @Override
-    public Set<OdinClient> getLvapsLocal() {
+    @Override public Set<OdinClient> getLvapsLocal() {
         return clientList;
     }
 
-    @Override
-    public void setSubscriptions(String subscriptionList) {
+    @Override public void setSubscriptions(String subscriptionList) {
         // Do nothing.
     }
 
-    @Override
-    public void updateClientLvap(OdinClient oc) {
+    @Override public void updateClientLvap(OdinClient oc) {
     }
 
     @Override
     public void sendProbeResponse(MACAddress clientHwAddr, MACAddress bssid,
-            Set<String> ssidLists) {
+                                  Set<String> ssidLists) {
     }
 
-    @Override
-    public void setChannel(int channel) {
+    @Override public void setChannel(int channel) {
         this.channel = channel;
     }
 
@@ -111,18 +99,16 @@ class StubOdinAgent implements IOdinAgent {
     }
 
     @Override
-    public void sendChannelSwitch(MACAddress clientHwAddr, MACAddress bssid, List<String> ssidList,
-            int channel) {
+    public void sendChannelSwitch(MACAddress clientHwAddr, MACAddress bssid,
+                                  List<String> ssidList, int channel) {
         // Do nothing.
     }
 
-    @Override
-    public int convertFrequencyToChannel(int freq) {
+    @Override public int convertFrequencyToChannel(int freq) {
         return chan;
     }
 
-    @Override
-    public int convertChannelToFrequency(int chan) {
+    @Override public int convertChannelToFrequency(int chan) {
         return freq;
     }
 
@@ -136,20 +122,18 @@ class StubOdinAgent implements IOdinAgent {
         return 1;
     }
 
-
     @Override
-    public Map<MACAddress, Map<String, String>> getScannedStationsStats(String ssid) {
+    public Map<MACAddress, Map<String, String>> getScannedStationsStats(
+            String ssid) {
         return null;
     }
-
 
     @Override
     public int requestSendMesurementBeacon(int channel, String ssid) {
         return 1;
     }
 
-    @Override
-    public int stopSendMesurementBeacon() {
+    @Override public int stopSendMesurementBeacon() {
         return 1;
     }
 
@@ -161,10 +145,29 @@ class StubOdinAgent implements IOdinAgent {
         return txpower;
     }
 
-    @Override
-    public String getScannedStaRssi() {
+    @Override public String getScannedStaRssi() {
         return null;
     }
 
+    @Override public Map<MACAddress, Double> getWeightedRssi() {
+        // Do nothing.
+        return null;
+    }
+
+    @Override
+    public void setWeightedRssi(HashMap<MACAddress, Double> weightedRssi) {
+        // Do nothing.
+    }
+
+    @Override public Double getClientWeightedRssi(MACAddress staHwAddr) {
+        // Do nothing.
+        return null;
+    }
+
+    @Override
+    public void setClientWeightedRssi(MACAddress staHwAddr,
+                                      Double weightedRssi) {
+        // Do nothing.
+    }
 
 }

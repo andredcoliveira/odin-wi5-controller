@@ -112,8 +112,7 @@ import java.util.*;
         //        }
         String PATH = System.getProperty("user.dir");
         String directoryName = PATH
-                .concat("/" + SmartApSelection.class.getSimpleName()
-                        + "/log");
+                .concat("/log/" + SmartApSelection.class.getSimpleName());
         String fileName =
                 SmartApSelection.class.getSimpleName() + "_" + getTimestamp()
                 + ".txt";

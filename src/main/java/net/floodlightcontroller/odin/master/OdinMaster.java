@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFMessageListener;
@@ -48,11 +49,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Lalith Suresh <suresh.lalith@gmail.com>
  */
-public class OdinMaster
-        implements IFloodlightModule,
-        IOFSwitchListener,
-        IOdinMasterToApplicationInterface,
-        IOFMessageListener,
+public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
+        IOdinMasterToApplicationInterface, IOFMessageListener,
         IFloodlightService {
 
     protected static Logger log = LoggerFactory.getLogger(OdinMaster.class);
@@ -73,11 +71,9 @@ public class OdinMaster
     private String flowdetectionList = "";
     private int idleLvapTimeout = 60; // Seconds
 
-    private final ConcurrentMap<Long, SubscriptionCallbackTuple> subscriptions =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, SubscriptionCallbackTuple> subscriptions = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<Long, FlowDetectionCallbackTuple> flowsdetection =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, FlowDetectionCallbackTuple> flowsdetection = new ConcurrentHashMap<>();
 
     private static String detector_ip_address = "0.0.0.0"; // Detector Ip Address not assigned
 
@@ -108,11 +104,8 @@ public class OdinMaster
         lock = new Object();
     }
 
-    public OdinMaster(
-            AgentManager agentManager,
-            ClientManager clientManager,
-            LvapManager lvapManager,
-            PoolManager poolManager) {
+    public OdinMaster(AgentManager agentManager, ClientManager clientManager,
+                      LvapManager lvapManager, PoolManager poolManager) {
         this.agentManager = agentManager;
         this.clientManager = clientManager;
         this.lvapManager = lvapManager;
@@ -129,8 +122,7 @@ public class OdinMaster
      */
     synchronized void receivePing(final InetAddress odinAgentAddr) {
 
-        if (agentManager.receivePing(odinAgentAddr)
-                && (!odinAgentAddr
+        if (agentManager.receivePing(odinAgentAddr) && (!odinAgentAddr
                 .getHostAddress()
                 .equals(OdinMaster.detector_ip_address))) { // Detector does not need to be checked
             log.info(odinAgentAddr.getHostAddress() + " is a new agent");
@@ -142,38 +134,42 @@ public class OdinMaster
 
             // Reclaim idle lvaps and also attach flows to lvaps
             for (OdinClient client : agent.getLvapsLocal()) {
-                executor.schedule(new IdleLvapReclaimTask(client), idleLvapTimeout,
-                        TimeUnit.SECONDS);
+                executor.schedule(new IdleLvapReclaimTask(client),
+                                  idleLvapTimeout, TimeUnit.SECONDS);
 
                 // Assign flow tables
-                if (!client.getIpAddress().getHostAddress().equals("0.0.0.0")) {
+                if (!client.getIpAddress().getHostAddress()
+                           .equals("0.0.0.0")) {
 
                     // Obtain reference to client entity from clientManager, because agent.getLvapsLocal()
                     // returns a separate copy of the client objects.
                     OdinClient trackedClient = clientManager.getClients()
-                            .get(client.getMacAddress());
+                                                            .get(client.getMacAddress());
                     Lvap lvap = trackedClient.getLvap();
                     assert (lvap != null);
-                    lvap.setOFMessageList(lvapManager.getDefaultOFModList(client.getIpAddress()));
+                    lvap.setOFMessageList(lvapManager.getDefaultOFModList(
+                            client.getIpAddress()));
 
                     // Push flow messages associated with the client
                     try {
-                        lvap.getAgent().getSwitch().write(lvap.getOFMessageList(), null);
+                        lvap.getAgent().getSwitch()
+                            .write(lvap.getOFMessageList(), null);
                     } catch (IOException e) {
-                        log.error("Failed to update switch's flow tables " + lvap.getAgent()
-                                .getSwitch());
+                        log.error("Failed to update switch's flow tables "
+                                  + lvap.getAgent().getSwitch());
                     }
                 }
             }
         } else {
-            if (!odinAgentAddr.getHostAddress().equals(OdinMaster.detector_ip_address)) {
+            if (!odinAgentAddr.getHostAddress()
+                              .equals(OdinMaster.detector_ip_address)) {
                 updateAgentLastHeard(odinAgentAddr);
             }
         }
     }
 
-    synchronized void receiveDeauth(
-            final InetAddress odinAgentAddr, final MACAddress clientHwAddress) {
+    synchronized void receiveDeauth(final InetAddress odinAgentAddr,
+                                    final MACAddress clientHwAddress) {
 
         if (clientHwAddress == null || odinAgentAddr == null) {
             return;
@@ -186,20 +182,16 @@ public class OdinMaster
             return;
         }
 
-        log.info(
-                "Clearing Lvap "
-                        + clientHwAddress
-                        + " from agent:"
-                        + agent.getIpAddress()
-                        + " due to deauthentication/inactivity");
+        log.info("Clearing Lvap " + clientHwAddress + " from agent:" + agent
+                .getIpAddress() + " due to deauthentication/inactivity");
         poolManager.removeClientPoolMapping(oc);
         agent.removeClientLvap(oc);
         clientManager.removeClient(clientHwAddress);
     }
 
     /* This method stops the timer that clears the lvap if an IP is not received for the client */
-    synchronized void receiveAssoc(
-            final InetAddress odinAgentAddr, final MACAddress clientHwAddress) {
+    synchronized void receiveAssoc(final InetAddress odinAgentAddr,
+                                   final MACAddress clientHwAddress) {
 
         if (clientHwAddress == null || odinAgentAddr == null) {
             return;
@@ -225,18 +217,17 @@ public class OdinMaster
     /**
      * Handle a probe message from an agent, triggered by a particular client.
      *
-     * @param odinAgentAddr InetAddress of agent
+     * @param odinAgentAddr   InetAddress of agent
      * @param clientHwAddress MAC address of client that performed probe scan
      */
-    synchronized void receiveProbe(
-            final InetAddress odinAgentAddr, final MACAddress clientHwAddress, String ssid) {
+    synchronized void receiveProbe(final InetAddress odinAgentAddr,
+                                   final MACAddress clientHwAddress,
+                                   String ssid) {
 
-        if (odinAgentAddr == null
-                || clientHwAddress == null
-                || clientHwAddress.isBroadcast()
-                || clientHwAddress.isMulticast()
-                || !agentManager.isTracked(odinAgentAddr)
-                || poolManager.getNumNetworks() == 0) {
+        if (odinAgentAddr == null || clientHwAddress == null
+            || clientHwAddress.isBroadcast() || clientHwAddress.isMulticast()
+            || !agentManager.isTracked(odinAgentAddr)
+            || poolManager.getNumNetworks() == 0) {
             return;
         }
 
@@ -250,7 +241,8 @@ public class OdinMaster
                 "")) { // FIXMeE:  Are you sure this is right, the client can delete the network.
             // we just send probe responses
             IOdinAgent agent = agentManager.getAgent(odinAgentAddr);
-            MACAddress bssid = poolManager.generateBssidForClient(clientHwAddress);
+            MACAddress bssid = poolManager
+                    .generateBssidForClient(clientHwAddress);
 
             // FIXME: Sub-optimal. We'll end up generating redundant probe requests
             Set<String> ssidSet = new TreeSet<>();
@@ -264,8 +256,10 @@ public class OdinMaster
                 ssidSet.addAll(poolManager.getSsidListForPool(pool));
             }
 
-            executor.execute(
-                    new OdinAgentSendProbeResponseRunnable(agent, clientHwAddress, bssid, ssidSet));
+            executor.execute(new OdinAgentSendProbeResponseRunnable(agent,
+                                                                    clientHwAddress,
+                                                                    bssid,
+                                                                    ssidSet));
 
             return;
         }
@@ -281,15 +275,17 @@ public class OdinMaster
 
                 // Hearing from this client for the first time
                 if (oc == null) {
-                    List<String> ssidList = new ArrayList<>(poolManager.getSsidListForPool(pool));
+                    List<String> ssidList = new ArrayList<>(
+                            poolManager.getSsidListForPool(pool));
 
-                    Lvap lvap = new Lvap(poolManager.generateBssidForClient(clientHwAddress),
-                            ssidList);
+                    Lvap lvap = new Lvap(poolManager.generateBssidForClient(
+                            clientHwAddress), ssidList);
                     // FIXME: WHy not before also? -- because only when you connect to the network u store it.
 
                     try {
-                        oc = new OdinClient(clientHwAddress, InetAddress.getByName("0.0.0.0"),
-                                lvap);
+                        oc = new OdinClient(clientHwAddress,
+                                            InetAddress.getByName("0.0.0.0"),
+                                            lvap);
                     } catch (UnknownHostException e) {
                         e.printStackTrace();
                     }
@@ -305,8 +301,9 @@ public class OdinMaster
                     // disconnected, or knocked
                     // out at as a result of an agent
                     // failure.pr first time connections
-                    handoffClientToApInternal(PoolManager.GLOBAL_POOL, clientHwAddress,
-                            odinAgentAddr);
+                    handoffClientToApInternal(PoolManager.GLOBAL_POOL,
+                                              clientHwAddress,
+                                              odinAgentAddr);
                 }
 
                 poolManager.mapClientToPool(oc, pool);
@@ -320,18 +317,18 @@ public class OdinMaster
      * Handle an event publication from an agent
      *
      * @param clientHwAddress client which triggered the event
-     * @param odinAgentAddr agent at which the event was triggered
+     * @param odinAgentAddr   agent at which the event was triggered
      * @param subscriptionIds list of subscription Ids that the event matches
      */
-    synchronized void receivePublish(
-            final MACAddress clientHwAddress,
-            final InetAddress odinAgentAddr,
-            final Map<Long, Long> subscriptionIds) {
+    synchronized void receivePublish(final MACAddress clientHwAddress,
+                                     final InetAddress odinAgentAddr,
+                                     final Map<Long, Long> subscriptionIds) {
 
         // The check for null clientHwAddress might go away
         // in the future if we end up having events
         // that are not related to clients at all.
-        if (clientHwAddress == null || odinAgentAddr == null || subscriptionIds == null) {
+        if (clientHwAddress == null || odinAgentAddr == null
+            || subscriptionIds == null) {
             return;
         }
 
@@ -346,7 +343,8 @@ public class OdinMaster
         oa.setLastHeard(System.currentTimeMillis());
 
         for (Entry<Long, Long> entry : subscriptionIds.entrySet()) {
-            SubscriptionCallbackTuple tup = subscriptions.get(entry.getKey());
+            SubscriptionCallbackTuple tup = subscriptions
+                    .get(entry.getKey());
 
             /* This might occur as a race condition when the master
              * has cleared all subscriptions, but hasn't notified
@@ -356,8 +354,8 @@ public class OdinMaster
                 continue;
             }
 
-            NotificationCallbackContext cntx =
-                    new NotificationCallbackContext(clientHwAddress, oa, entry.getValue(), 0, 0);
+            NotificationCallbackContext cntx = new NotificationCallbackContext(
+                    clientHwAddress, oa, entry.getValue(), 0, 0);
 
             tup.cb.exec(tup.oes, cntx);
         }
@@ -366,12 +364,12 @@ public class OdinMaster
     /**
      * Handle an event flow detection from an agent
      *
-     * @param odinAgentAddr InetAddress of the agent at which the event was triggered
+     * @param odinAgentAddr   InetAddress of the agent at which the event was triggered
      * @param detectedFlowIds list of detected flow Ids that the event matches. String contains the
-     * detected flow: "IPSrcAddress IPDstAddress Protocol SrcPort DstPort"
+     *                        detected flow: "IPSrcAddress IPDstAddress Protocol SrcPort DstPort"
      */
-    synchronized void receiveDetectedFlow(
-            final InetAddress odinAgentAddr, final Map<Long, String> detectedFlowIds) {
+    synchronized void receiveDetectedFlow(final InetAddress odinAgentAddr,
+                                          final Map<Long, String> detectedFlowIds) {
 
         if (odinAgentAddr == null || detectedFlowIds == null) {
             return;
@@ -388,7 +386,8 @@ public class OdinMaster
         // destination address = *, Protocol = 0, Source Port = 0 and Destination Port = 0)
         // list of detected flow Ids have a only ID (always is 1)
         for (Entry<Long, String> entry : detectedFlowIds.entrySet()) {
-            FlowDetectionCallbackTuple tup = flowsdetection.get(entry.getKey());
+            FlowDetectionCallbackTuple tup = flowsdetection
+                    .get(entry.getKey());
 
             if (tup == null) {
                 continue;
@@ -405,9 +404,9 @@ public class OdinMaster
             // + " " + SrcPort + " " + DstPort + " " + "registered as Id: " + entry.getKey() + "  from: "
             // + odinAgentAddr.getHostAddress());
 
-            FlowDetectionCallbackContext cntx =
-                    new FlowDetectionCallbackContext(
-                            odinAgentAddr, IPSrcAddress, IPDstAddress, protocol, SrcPort, DstPort);
+            FlowDetectionCallbackContext cntx = new FlowDetectionCallbackContext(
+                    odinAgentAddr, IPSrcAddress, IPDstAddress, protocol,
+                    SrcPort, DstPort);
             // FlowDetectionCallbackContext cntx = new FlowDetectionCallbackContext(oa, IPSrcAddress,
             // IPDstAddress, protocol, SrcPort, DstPort );
 
@@ -419,22 +418,19 @@ public class OdinMaster
      * VAP-Handoff a client to a new AP. This operation is idempotent.
      *
      * @param clientHwAddr Ethernet address of STA to be handed off
-     * @param newApIpAddr IPv4 address of new access point
+     * @param newApIpAddr  IPv4 address of new access point
      */
-    private void handoffClientToApInternal(
-            String pool, final MACAddress clientHwAddr, final InetAddress newApIpAddr) {
+    private void handoffClientToApInternal(String pool,
+                                           final MACAddress clientHwAddr,
+                                           final InetAddress newApIpAddr) {
 
         // As an optimisation, we probably need to get the accessing done first,
         // prime both nodes, and complete a handoff.
 
         if (pool == null || clientHwAddr == null || newApIpAddr == null) {
-            log.error(
-                    "null argument in handoffClientToAp(): pool: "
-                            + pool
-                            + "clientHwAddr: "
-                            + clientHwAddr
-                            + " newApIpAddr: "
-                            + newApIpAddr);
+            log.error("null argument in handoffClientToAp(): pool: " + pool
+                      + "clientHwAddr: " + clientHwAddr + " newApIpAddr: "
+                      + newApIpAddr);
             return;
         }
 
@@ -443,7 +439,8 @@ public class OdinMaster
 
             // If new agent doesn't exist, ignore request
             if (newAgent == null) {
-                log.error("Handoff request ignored: OdinAgent " + newApIpAddr + " doesn't exist");
+                log.error("Handoff request ignored: OdinAgent " + newApIpAddr
+                          + " doesn't exist");
                 return;
             }
 
@@ -451,7 +448,9 @@ public class OdinMaster
 
             // Ignore request if we don't know the client
             if (client == null) {
-                log.error("Handoff request ignored: OdinClient " + clientHwAddr + " doesn't exist");
+                log.error(
+                        "Handoff request ignored: OdinClient " + clientHwAddr
+                        + " doesn't exist");
                 return;
             }
 
@@ -463,23 +462,23 @@ public class OdinMaster
              * doesn't have a VAP associated with it already
              */
             if (lvap.getAgent() == null) {
-                log.info(
-                        "Client: "
-                                + clientHwAddr
-                                + " connecting for first time. Assigning to: "
-                                + newAgent.getIpAddress());
+                log.info("Client: " + clientHwAddr
+                         + " connecting for first time. Assigning to: "
+                         + newAgent.getIpAddress());
 
                 // Push flow messages associated with the client
                 try {
-                    newAgent.getSwitch().write(lvap.getOFMessageList(), null);
+                    newAgent.getSwitch()
+                            .write(lvap.getOFMessageList(), null);
                 } catch (IOException e) {
-                    log.error("Failed to update switch's flow tables " + newAgent.getSwitch());
+                    log.error("Failed to update switch's flow tables "
+                              + newAgent.getSwitch());
                 }
 
                 newAgent.addClientLvap(client);
                 lvap.setAgent(newAgent);
-                executor.schedule(new IdleLvapReclaimTask(client), idleLvapTimeout,
-                        TimeUnit.SECONDS);
+                executor.schedule(new IdleLvapReclaimTask(client),
+                                  idleLvapTimeout, TimeUnit.SECONDS);
                 return;
             }
 
@@ -487,9 +486,10 @@ public class OdinMaster
              * the request.
              */
             InetAddress currentApIpAddress = lvap.getAgent().getIpAddress();
-            if (currentApIpAddress.getHostAddress().equals(newApIpAddr.getHostAddress())) {
-                log.info(
-                        "Client " + clientHwAddr + " is already associated with AP " + newApIpAddr);
+            if (currentApIpAddress.getHostAddress()
+                                  .equals(newApIpAddr.getHostAddress())) {
+                log.info("Client " + clientHwAddr
+                         + " is already associated with AP " + newApIpAddr);
                 return;
             }
 
@@ -507,38 +507,30 @@ public class OdinMaster
             String clientPool = poolManager.getPoolForClient(client);
 
             if (clientPool == null || !clientPool.equals(pool)) {
-                log.error(
-                        "Cannot handoff client '"
-                                + client.getMacAddress()
-                                + "' from "
-                                + clientPool
-                                + " domain when in domain: '"
-                                + pool
-                                + "'");
+                log.error("Cannot handoff client '" + client.getMacAddress()
+                          + "' from " + clientPool
+                          + " domain when in domain: '" + pool + "'");
             }
 
             if (!(poolManager.getPoolsForAgent(newApIpAddr).contains(pool)
-                    && poolManager.getPoolsForAgent(currentApIpAddress).contains(pool))) {
-                log.info(
-                        "Agents "
-                                + newApIpAddr
-                                + " and "
-                                + currentApIpAddress
-                                + " are not in the same pool: "
-                                + pool);
+                  && poolManager.getPoolsForAgent(currentApIpAddress)
+                                .contains(pool))) {
+                log.info("Agents " + newApIpAddr + " and "
+                         + currentApIpAddress + " are not in the same pool: "
+                         + pool);
                 return;
             }
 
             // Wi5 Add: Are the APs in the same channel? If not, start CSA procedure.
             if ((agentManager.getAgent(currentApIpAddress)).getChannel()
-                    != (agentManager.getAgent(newApIpAddr)).getChannel()) {
+                != (agentManager.getAgent(newApIpAddr)).getChannel()) {
                 // Send CSA messages and wait.
-                sendChannelSwitchToClient(
-                        clientPool,
-                        currentApIpAddress,
-                        clientHwAddr,
-                        client.getLvap().getSsids(),
-                        (agentManager.getAgent(newApIpAddr)).getChannel());
+                sendChannelSwitchToClient(clientPool, currentApIpAddress,
+                                          clientHwAddr,
+                                          client.getLvap().getSsids(),
+                                          (agentManager
+                                                  .getAgent(newApIpAddr))
+                                                  .getChannel());
                 // void sendChannelSwitchToClient (String pool, InetAddress agentAddr, MACAddress
                 // clientHwAddr, List<String> lvapSsids, int channel);
 
@@ -548,7 +540,8 @@ public class OdinMaster
             try {
                 newAgent.getSwitch().write(lvap.getOFMessageList(), null);
             } catch (IOException e) {
-                log.error("Failed to update switch's flow tables " + newAgent.getSwitch());
+                log.error("Failed to update switch's flow tables " + newAgent
+                        .getSwitch());
             }
 
             /* Client is with another AP. We remove the VAP from
@@ -560,9 +553,8 @@ public class OdinMaster
              */
             lvap.setAgent(newAgent);
             executor.execute(new OdinAgentLvapAddRunnable(newAgent, client));
-            executor.execute(
-                    new OdinAgentLvapRemoveRunnable(agentManager.getAgent(currentApIpAddress),
-                            client));
+            executor.execute(new OdinAgentLvapRemoveRunnable(
+                    agentManager.getAgent(currentApIpAddress), client));
         }
     }
 
@@ -581,8 +573,7 @@ public class OdinMaster
      *
      * @return String VIP AP Ip Address
      */
-    @Override
-    public String getVipAPIpAddress() {
+    @Override public String getVipAPIpAddress() {
         return OdinMaster.vip_ap_ip_address;
     }
 
@@ -592,13 +583,13 @@ public class OdinMaster
     /**
      * VAP-Handoff a client to a new AP. This operation is idempotent.
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool         Pool that the invoking application corresponds to
      * @param clientHwAddr Ethernet address of STA to be handed off
-     * @param newApIpAddr InetAddress of the future agent
+     * @param newApIpAddr  InetAddress of the future agent
      */
-    @Override
-    public void handoffClientToAp(
-            String pool, final MACAddress clientHwAddr, final InetAddress newApIpAddr) {
+    @Override public void handoffClientToAp(String pool,
+                                            final MACAddress clientHwAddr,
+                                            final InetAddress newApIpAddr) {
         handoffClientToApInternal(pool, clientHwAddr, newApIpAddr);
     }
 
@@ -608,41 +599,40 @@ public class OdinMaster
      * @param pool Pool that the invoking application corresponds to
      * @return a map of OdinClient objects keyed by HW Addresses
      */
-    @Override
-    public Set<OdinClient> getClients(String pool) {
+    @Override public Set<OdinClient> getClients(String pool) {
         return poolManager.getClientsFromPool(pool);
     }
 
     /**
      * Get the OdinClient type from the client's MACAddress
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool            Pool that the invoking application corresponds to
      * @param clientHwAddress MACAddress of the client
      * @return a OdinClient instance corresponding to clientHwAddress
      */
-    @Override
-    public OdinClient getClientFromHwAddress(String pool, MACAddress clientHwAddress) {
+    @Override public OdinClient getClientFromHwAddress(String pool,
+                                                       MACAddress clientHwAddress) {
         OdinClient client = clientManager.getClient(clientHwAddress);
-        return (client != null && poolManager.getPoolForClient(client).equals(pool)) ? client
-                : null;
+        return (client != null && poolManager.getPoolForClient(client)
+                                             .equals(pool)) ? client : null;
     }
 
     /**
      * Retrieve LastHeard from the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return timestamp of the last ping heard from the agent
      */
-    @Override
-    public long getLastHeardFromAgent(String pool, InetAddress agentAddr) {
+    @Override public long getLastHeardFromAgent(String pool,
+                                                InetAddress agentAddr) {
         return agentManager.getAgent(agentAddr).getLastHeard();
     }
 
     /**
      * Retrieve TxStats from the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return Key-Value entries of each recorded statistic for each client
      */
@@ -655,7 +645,7 @@ public class OdinMaster
     /**
      * Retrieve RxStats from the agent
      *
-     * @param pool that the invoking application corresponds to
+     * @param pool      that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return Key-Value entries of each recorded statistic for each client
      */
@@ -667,53 +657,58 @@ public class OdinMaster
     /**
      * Request scanned stations statistics from the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
-     * @param channel Channel to scan
-     * @param ssid Network to scan (always is *)
+     * @param channel   Channel to scan
+     * @param ssid      Network to scan (always is *)
      * @return If request is accepted return 1, otherwise, return 0
      */
-    @Override
-    public int requestScannedStationsStatsFromAgent(
-            String pool, InetAddress agentAddr, int channel, String ssid) {
-        return agentManager.getAgent(agentAddr).requestScannedStationsStats(channel, ssid);
+    @Override public int requestScannedStationsStatsFromAgent(String pool,
+                                                              InetAddress agentAddr,
+                                                              int channel,
+                                                              String ssid) {
+        return agentManager.getAgent(agentAddr)
+                           .requestScannedStationsStats(channel, ssid);
     }
 
     /**
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
-     * @param ssid Network name
+     * @param ssid      Network name
      * @return Key-Value entries of each recorded statistic for each station
      */
     @Override
     public Map<MACAddress, Map<String, String>> getScannedStationsStatsFromAgent(
             String pool, InetAddress agentAddr, String ssid) {
-        return agentManager.getAgent(agentAddr).getScannedStationsStats(ssid);
+        return agentManager.getAgent(agentAddr)
+                           .getScannedStationsStats(ssid);
     }
 
     /**
      * Request scanned stations statistics from the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
-     * @param channel Channel to send measurement beacon to
-     * @param ssid Network to scan (e.g odin_init)
+     * @param channel   Channel to send measurement beacon to
+     * @param ssid      Network to scan (e.g odin_init)
      * @return If request is accepted return 1, otherwise, return 0
      */
-    @Override
-    public int requestSendMesurementBeaconFromAgent(
-            String pool, InetAddress agentAddr, int channel, String ssid) {
-        return agentManager.getAgent(agentAddr).requestSendMesurementBeacon(channel, ssid);
+    @Override public int requestSendMesurementBeaconFromAgent(String pool,
+                                                              InetAddress agentAddr,
+                                                              int channel,
+                                                              String ssid) {
+        return agentManager.getAgent(agentAddr)
+                           .requestSendMesurementBeacon(channel, ssid);
     }
 
     /**
      * Stop sending measurement beacon from the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      */
-    @Override
-    public int stopSendMesurementBeaconFromAgent(String pool, InetAddress agentAddr) {
+    @Override public int stopSendMesurementBeaconFromAgent(String pool,
+                                                           InetAddress agentAddr) {
         return agentManager.getAgent(agentAddr).stopSendMesurementBeacon();
     }
 
@@ -723,8 +718,7 @@ public class OdinMaster
      * @param pool Pool that the invoking application corresponds to
      * @return a set of Ipv4 addresses of the agents
      */
-    @Override
-    public Set<InetAddress> getAgentAddrs(String pool) {
+    @Override public Set<InetAddress> getAgentAddrs(String pool) {
         return poolManager.getAgentAddrsForPool(pool);
     }
 
@@ -735,13 +729,13 @@ public class OdinMaster
      * later.
      *
      * @param pool Pool that the invoking application corresponds to
-     * @param oes the subscription
-     * @param cb the callback
+     * @param oes  the subscription
+     * @param cb   the callback
      */
-    @SuppressWarnings("Duplicates")
-    @Override
-    public synchronized long registerSubscription(
-            String pool, final OdinEventSubscription oes, final NotificationCallback cb) {
+    @SuppressWarnings("Duplicates") @Override
+    public synchronized long registerSubscription(String pool,
+                                                  final OdinEventSubscription oes,
+                                                  final NotificationCallback cb) {
         // FIXME: Need to calculate subscriptions per pool
         assert (oes != null);
         assert (cb != null);
@@ -759,27 +753,27 @@ public class OdinMaster
     */
         subscriptionList = "";
         int count = 0;
-        for (Entry<Long, SubscriptionCallbackTuple> entry : subscriptions.entrySet()) {
+        for (Entry<Long, SubscriptionCallbackTuple> entry : subscriptions
+                .entrySet()) {
             count++;
             final String addr = entry.getValue().oes.getClient();
             subscriptionList =
-                    subscriptionList
-                            + entry.getKey()
-                            + " "
-                            + (addr.equals("*") ? MACAddress.valueOf("00:00:00:00:00:00") : addr)
-                            + " "
-                            + entry.getValue().oes.getStatistic()
-                            + " "
-                            + entry.getValue().oes.getRelation().ordinal()
-                            + " "
-                            + entry.getValue().oes.getValue()
-                            + " ";
+                    subscriptionList + entry.getKey() + " " + (addr.equals(
+                            "*") ?
+                                                               MACAddress
+                                                                       .valueOf(
+                                                                               "00:00:00:00:00:00") :
+                                                               addr) + " "
+                    + entry.getValue().oes.getStatistic() + " " + entry
+                            .getValue().oes.getRelation().ordinal() + " "
+                    + entry.getValue().oes.getValue() + " ";
         }
 
         subscriptionList = count + " " + subscriptionList;
 
         /* Should probably have threads to do this */
-        for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
+        for (InetAddress agentAddr : poolManager
+                .getAgentAddrsForPool(pool)) {
             pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
         }
 
@@ -790,37 +784,37 @@ public class OdinMaster
      * Remove a subscription from the list
      *
      * @param pool Pool that the invoking application corresponds to
-     * @param id subscription id to remove
+     * @param id   subscription id to remove
      */
-    @SuppressWarnings("Duplicates")
-    @Override
-    public synchronized void unregisterSubscription(String pool, final long id) {
+    @SuppressWarnings("Duplicates") @Override
+    public synchronized void unregisterSubscription(String pool,
+                                                    final long id) {
         // FIXME: Need to calculate subscriptions per pool
         subscriptions.remove(id);
 
         subscriptionList = "";
         int count = 0;
-        for (Entry<Long, SubscriptionCallbackTuple> entry : subscriptions.entrySet()) {
+        for (Entry<Long, SubscriptionCallbackTuple> entry : subscriptions
+                .entrySet()) {
             count++;
             final String addr = entry.getValue().oes.getClient();
             subscriptionList =
-                    subscriptionList
-                            + entry.getKey()
-                            + " "
-                            + (addr.equals("*") ? MACAddress.valueOf("00:00:00:00:00:00") : addr)
-                            + " "
-                            + entry.getValue().oes.getStatistic()
-                            + " "
-                            + entry.getValue().oes.getRelation().ordinal()
-                            + " "
-                            + entry.getValue().oes.getValue()
-                            + " ";
+                    subscriptionList + entry.getKey() + " " + (addr.equals(
+                            "*") ?
+                                                               MACAddress
+                                                                       .valueOf(
+                                                                               "00:00:00:00:00:00") :
+                                                               addr) + " "
+                    + entry.getValue().oes.getStatistic() + " " + entry
+                            .getValue().oes.getRelation().ordinal() + " "
+                    + entry.getValue().oes.getValue() + " ";
         }
 
         subscriptionList = count + " " + subscriptionList;
 
         /* Should probably have threads to do this */
-        for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
+        for (InetAddress agentAddr : poolManager
+                .getAgentAddrsForPool(pool)) {
             pushSubscriptionListToAgent(agentManager.getAgent(agentAddr));
         }
     }
@@ -833,12 +827,12 @@ public class OdinMaster
      *
      * @param pool Pool that the invoking application corresponds to
      * @param oefd the flow detection
-     * @param cb the callback
+     * @param cb   the callback
      */
-    @SuppressWarnings("Duplicates")
-    @Override
-    public synchronized long registerFlowDetection(
-            String pool, final OdinEventFlowDetection oefd, final FlowDetectionCallback cb) {
+    @SuppressWarnings("Duplicates") @Override
+    public synchronized long registerFlowDetection(String pool,
+                                                   final OdinEventFlowDetection oefd,
+                                                   final FlowDetectionCallback cb) {
         // FIXME: Need to calculate subscriptions per pool
 
         assert (oefd != null);
@@ -858,22 +852,16 @@ public class OdinMaster
     */
         flowdetectionList = "";
         int count = 0;
-        for (Entry<Long, FlowDetectionCallbackTuple> entry : flowsdetection.entrySet()) {
+        for (Entry<Long, FlowDetectionCallbackTuple> entry : flowsdetection
+                .entrySet()) {
             count++;
             flowdetectionList =
-                    flowdetectionList
-                            + entry.getKey()
-                            + " "
-                            + entry.getValue().oefd.getIPSrcAddress()
-                            + " "
-                            + entry.getValue().oefd.getIPDstAddress()
-                            + " "
-                            + entry.getValue().oefd.getProtocol()
-                            + " "
-                            + entry.getValue().oefd.getSrcPort()
-                            + " "
-                            + entry.getValue().oefd.getDstPort()
-                            + " ";
+                    flowdetectionList + entry.getKey() + " " + entry
+                            .getValue().oefd.getIPSrcAddress() + " " + entry
+                            .getValue().oefd.getIPDstAddress() + " " + entry
+                            .getValue().oefd.getProtocol() + " " + entry
+                            .getValue().oefd.getSrcPort() + " " + entry
+                            .getValue().oefd.getDstPort() + " ";
         }
 
         flowdetectionList = count + " " + flowdetectionList;
@@ -896,32 +884,26 @@ public class OdinMaster
      * Remove a flow detection from the list
      *
      * @param pool Pool that the invoking application corresponds to
-     * @param id flow detection id to remove
+     * @param id   flow detection id to remove
      */
-    @SuppressWarnings("Duplicates")
-    @Override
-    public synchronized void unregisterFlowDetection(String pool, final long id) {
+    @SuppressWarnings("Duplicates") @Override
+    public synchronized void unregisterFlowDetection(String pool,
+                                                     final long id) {
         // FIXME: Need to calculate subscriptions per pool
         flowsdetection.remove(id);
 
         flowdetectionList = "";
         int count = 0;
-        for (Entry<Long, FlowDetectionCallbackTuple> entry : flowsdetection.entrySet()) {
+        for (Entry<Long, FlowDetectionCallbackTuple> entry : flowsdetection
+                .entrySet()) {
             count++;
             flowdetectionList =
-                    flowdetectionList
-                            + entry.getKey()
-                            + " "
-                            + entry.getValue().oefd.getIPSrcAddress()
-                            + " "
-                            + entry.getValue().oefd.getIPDstAddress()
-                            + " "
-                            + entry.getValue().oefd.getProtocol()
-                            + " "
-                            + entry.getValue().oefd.getSrcPort()
-                            + " "
-                            + entry.getValue().oefd.getDstPort()
-                            + " ";
+                    flowdetectionList + entry.getKey() + " " + entry
+                            .getValue().oefd.getIPSrcAddress() + " " + entry
+                            .getValue().oefd.getIPDstAddress() + " " + entry
+                            .getValue().oefd.getProtocol() + " " + entry
+                            .getValue().oefd.getSrcPort() + " " + entry
+                            .getValue().oefd.getDstPort() + " ";
         }
 
         flowdetectionList = count + " " + flowdetectionList;
@@ -946,8 +928,8 @@ public class OdinMaster
      * @param ssid Network name
      * @return true if the network could be added, false otherwise
      */
-    @Override
-    public synchronized boolean addNetwork(String pool, String ssid) {
+    @Override public synchronized boolean addNetwork(String pool,
+                                                     String ssid) {
         if (poolManager.addNetworkForPool(pool, ssid)) {
 
             for (OdinClient oc : poolManager.getClientsFromPool(pool)) {
@@ -976,8 +958,8 @@ public class OdinMaster
      * @param ssid Network name
      * @return true if the network could be removed, false otherwise
      */
-    @Override
-    public synchronized boolean removeNetwork(String pool, String ssid) {
+    @Override public synchronized boolean removeNetwork(String pool,
+                                                        String ssid) {
         if (poolManager.removeNetworkFromPool(pool, ssid)) {
             // need to update all existing lvaps in the network as well
 
@@ -1004,24 +986,25 @@ public class OdinMaster
     /**
      * Change the Wi-Fi channel of a specific agent (AP)
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
-     * @param channel Wi-Fi Channel
+     * @param channel   Wi-Fi Channel
      */
-    @Override
-    public void setChannelToAgent(String pool, InetAddress agentAddr, int channel) {
+    @Override public void setChannelToAgent(String pool,
+                                            InetAddress agentAddr,
+                                            int channel) {
         agentManager.getAgent(agentAddr).setChannel(channel);
     }
 
     /**
      * Get channel from a specific agent (AP)
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return Channel number
      */
-    @Override
-    public int getChannelFromAgent(String pool, InetAddress agentAddr) {
+    @Override public int getChannelFromAgent(String pool,
+                                             InetAddress agentAddr) {
         // log.info("Getting channel OdinMaster");
         return agentManager.getAgent(agentAddr).getChannel();
     }
@@ -1033,36 +1016,39 @@ public class OdinMaster
     /**
      * Channel Switch Announcement, to the clients of an specific agent (AP) -> Must it be private?
      *
-     * @param pool Pool that the invoking application corresponds to
-     * @param agentAddr InetAddress of the agent
+     * @param pool         Pool that the invoking application corresponds to
+     * @param agentAddr    InetAddress of the agent
      * @param clientHwAddr MAC address of the client
-     * @param lvapSsids Network names
-     * @param channel Channel number
+     * @param lvapSsids    Network names
+     * @param channel      Channel number
      */
     //    @Override
-    private void sendChannelSwitchToClient(
-            String pool,
-            InetAddress agentAddr,
-            MACAddress clientHwAddr,
-            List<String> lvapSsids,
-            int channel) {
+    private void sendChannelSwitchToClient(String pool,
+                                           InetAddress agentAddr,
+                                           MACAddress clientHwAddr,
+                                           List<String> lvapSsids,
+                                           int channel) {
         MACAddress bssid = poolManager.generateBssidForClient(clientHwAddr);
-        agentManager.getAgent(agentAddr).sendChannelSwitch(clientHwAddr, bssid, lvapSsids, channel);
+        agentManager.getAgent(agentAddr)
+                    .sendChannelSwitch(clientHwAddr, bssid, lvapSsids,
+                                       channel);
     }
 
     /**
      * Scanning for a client in a specific agent (AP)
      *
-     * @param pool Pool that the invoking application corresponds to
-     * @param agentAddr InetAddress of the agent
+     * @param pool         Pool that the invoking application corresponds to
+     * @param agentAddr    InetAddress of the agent
      * @param clientHwAddr MAC address of the client
-     * @param channel Channel number
-     * @param time Scanning time
+     * @param channel      Channel number
+     * @param time         Scanning time
      */
-    @Override
-    public int scanClientFromAgent(
-            String pool, InetAddress agentAddr, MACAddress clientHwAddr, int channel, int time) {
-        return agentManager.getAgent(agentAddr).scanClient(clientHwAddr, channel, time);
+    @Override public int scanClientFromAgent(String pool,
+                                             InetAddress agentAddr,
+                                             MACAddress clientHwAddr,
+                                             int channel, int time) {
+        return agentManager.getAgent(agentAddr)
+                           .scanClient(clientHwAddr, channel, time);
     }
 
     /**
@@ -1070,8 +1056,7 @@ public class OdinMaster
      *
      * @return MobilityManager parameters
      */
-    @Override
-    public MobilityParams getMobilityParams() {
+    @Override public MobilityParams getMobilityParams() {
         return OdinMaster.mobility_params;
     }
 
@@ -1080,8 +1065,7 @@ public class OdinMaster
      *
      * @return Matrix parameters
      */
-    @Override
-    public ScannParams getMatrixParams() {
+    @Override public ScannParams getMatrixParams() {
         return OdinMaster.matrix_params;
     }
 
@@ -1090,8 +1074,7 @@ public class OdinMaster
      *
      * @return Interference parameters
      */
-    @Override
-    public ScannParams getInterferenceParams() {
+    @Override public ScannParams getInterferenceParams() {
         return OdinMaster.interference_params;
     }
 
@@ -1100,8 +1083,7 @@ public class OdinMaster
      *
      * @return ChannelAssignment parameters
      */
-    @Override
-    public ChannelAssignmentParams getChannelAssignmentParams() {
+    @Override public ChannelAssignmentParams getChannelAssignmentParams() {
         return OdinMaster.channel_params;
     }
 
@@ -1110,20 +1092,19 @@ public class OdinMaster
      *
      * @return SmartApSelection parameters
      */
-    @Override
-    public SmartApSelectionParams getSmartApSelectionParams() {
+    @Override public SmartApSelectionParams getSmartApSelectionParams() {
         return OdinMaster.smartap_params;
     }
 
     /**
      * Get TxPower from a specific agent (AP)
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return TxPower in dBm
      */
-    @Override
-    public int getTxPowerFromAgent(String pool, InetAddress agentAddr) {
+    @Override public int getTxPowerFromAgent(String pool,
+                                             InetAddress agentAddr) {
         // log.info("Getting TxPower OdinMaster");
         return agentManager.getAgent(agentAddr).getTxPower();
     }
@@ -1131,24 +1112,24 @@ public class OdinMaster
     /**
      * Retrieve scanned wi5 stations' RSSI from the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return Key-Value entries of each recorded rssi for each wi5 station
      */
-    @Override
-    public String getScannedStaRssiFromAgent(String pool, InetAddress agentAddr) {
+    @Override public String getScannedStaRssiFromAgent(String pool,
+                                                       InetAddress agentAddr) {
         return agentManager.getAgent(agentAddr).getScannedStaRssi();
     }
 
     /**
      * Retrieve associated wi5 stations in the agent
      *
-     * @param pool Pool that the invoking application corresponds to
+     * @param pool      Pool that the invoking application corresponds to
      * @param agentAddr InetAddress of the agent
      * @return Set of OdinClient associated in the agent
      */
-    @Override
-    public Set<OdinClient> getClientsFromAgent(String pool, InetAddress agentAddr) {
+    @Override public Set<OdinClient> getClientsFromAgent(String pool,
+                                                         InetAddress agentAddr) {
         return agentManager.getAgent(agentAddr).getLvapsLocal();
     }
 
@@ -1160,22 +1141,25 @@ public class OdinMaster
      * @return historical RSSI value
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    @Override
-    public Double getStaWeightedRssiFromAgent(MACAddress staHwAddr, InetAddress agentAddr) {
-        return agentManager.getAgent(agentAddr).getClientWeightedRssi(staHwAddr);
+    @Override public Double getStaWeightedRssiFromAgent(MACAddress staHwAddr,
+                                                        InetAddress agentAddr) {
+        return agentManager.getAgent(agentAddr)
+                           .getClientWeightedRssi(staHwAddr);
     }
 
     /**
      * Store the historical RSSI value in the agent, for a certain station
      *
-     * @param staHwAddr Ethernet address of the client (Sta)
-     * @param agentAddr InetAddress of the agent
+     * @param staHwAddr    Ethernet address of the client (Sta)
+     * @param agentAddr    InetAddress of the agent
      * @param weightedRssi historical RSSI value
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    @Override
-    public void setStaWeightedRssiForAgent(MACAddress staHwAddr, InetAddress agentAddr, double weightedRssi) {
-        agentManager.getAgent(agentAddr).setClientWeightedRssi(staHwAddr, weightedRssi);
+    @Override public void setStaWeightedRssiForAgent(MACAddress staHwAddr,
+                                                     InetAddress agentAddr,
+                                                     double weightedRssi) {
+        agentManager.getAgent(agentAddr)
+                    .setClientWeightedRssi(staHwAddr, weightedRssi);
     }
 
     /**
@@ -1184,9 +1168,9 @@ public class OdinMaster
      * @param pool Pool that the invoking application corresponds to
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    @Override
-    public void clearWeightedRssis(String pool) {
-        for (InetAddress agentAddr : poolManager.getAgentAddrsForPool(pool)) {
+    @Override public void clearWeightedRssis(String pool) {
+        for (InetAddress agentAddr : poolManager
+                .getAgentAddrsForPool(pool)) {
             agentManager.getAgent(agentAddr).getWeightedRssi().clear();
         }
     }
@@ -1198,9 +1182,9 @@ public class OdinMaster
      * @return the application's state
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    @Override
-    public State getApplicationState(String applicationName) {
-        OdinApplication application = applicationInstances.get(applicationName);
+    @Override public State getApplicationState(String applicationName) {
+        OdinApplication application = applicationInstances
+                .get(applicationName);
         if (application == null) {
             return null;
         }
@@ -1217,9 +1201,9 @@ public class OdinMaster
      * @return true if the application exists and its previous state was RUNNING, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    @Override
-    public boolean tryHaltApplication(String applicationName) {
-        OdinApplication application = applicationInstances.get(applicationName);
+    @Override public boolean tryHaltApplication(String applicationName) {
+        OdinApplication application = applicationInstances
+                .get(applicationName);
         if (application == null) {
             return false;
         }
@@ -1235,9 +1219,9 @@ public class OdinMaster
      * @return true if the application exists and its previous state was HALTED, false otherwise
      * @author André Oliveira <andreduartecoliveira@gmail.com>
      */
-    @Override
-    public boolean resumeApplication(String applicationName) {
-        OdinApplication application = applicationInstances.get(applicationName);
+    @Override public boolean resumeApplication(String applicationName) {
+        OdinApplication application = applicationInstances
+                .get(applicationName);
         if (application == null) {
             return false;
         }
@@ -1267,16 +1251,17 @@ public class OdinMaster
         return m;
     }
 
-    @Override
-    public void init(FloodlightModuleContext context) throws FloodlightModuleException {
-        floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
+    @Override public void init(FloodlightModuleContext context)
+            throws FloodlightModuleException {
+        floodlightProvider = context
+                .getServiceImpl(IFloodlightProviderService.class);
         restApi = context.getServiceImpl(IRestApiService.class);
-        IThreadPoolService tp = context.getServiceImpl(IThreadPoolService.class);
+        IThreadPoolService tp = context
+                .getServiceImpl(IThreadPoolService.class);
         executor = tp.getScheduledExecutor();
     }
 
-    @Override
-    public void startUp(FloodlightModuleContext context) {
+    @Override public void startUp(FloodlightModuleContext context) {
         floodlightProvider.addOFSwitchListener(this);
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
         restApi.addRestletRoutable(new OdinMasterWebRoutable());
@@ -1297,7 +1282,8 @@ public class OdinMaster
         List<OdinApplication> applicationList = new ArrayList<>();
         applicationInstances = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         try {
-            BufferedReader br = new BufferedReader(new FileReader(agentAuthListFile));
+            BufferedReader br = new BufferedReader(
+                    new FileReader(agentAuthListFile));
 
             String strLine;
 
@@ -1325,7 +1311,8 @@ public class OdinMaster
                 }
 
                 if (fields.length != 2) {
-                    log.error("A NAME field should specify a single string as a pool name");
+                    log.error(
+                            "A NAME field should specify a single string as a pool name");
                     log.error("Offending line: " + strLine);
                     System.exit(1);
                 }
@@ -1336,10 +1323,11 @@ public class OdinMaster
                 strLine = br.readLine();
 
                 if (strLine == null) {
-                    log.error("Unexpected EOF after NAME field for pool: " + poolName);
+                    log.error("Unexpected EOF after NAME field for pool: "
+                              + poolName);
                     System.exit(1);
-                } else if (strLine.startsWith("#")
-                        || (strLine.length() == 0)) // comment or blank line between params
+                } else if (strLine.startsWith("#") || (strLine.length()
+                                                       == 0)) // comment or blank line between params
                 {
                     strLine = br.readLine();
                 }
@@ -1347,29 +1335,33 @@ public class OdinMaster
                 fields = strLine.split(" ");
 
                 if (!fields[0].equals("NODES")) {
-                    log.error("A NAME field should be followed by a NODES field");
+                    log.error(
+                            "A NAME field should be followed by a NODES field");
                     log.error("Offending line: " + strLine);
                     System.exit(1);
                 }
 
                 if (fields.length == 1) {
-                    log.error("A pool must have at least one node defined for it");
+                    log.error(
+                            "A pool must have at least one node defined for it");
                     log.error("Offending line: " + strLine);
                     System.exit(1);
                 }
 
                 for (int i = 1; i < fields.length; i++) {
-                    poolManager.addPoolForAgent(InetAddress.getByName(fields[i]), poolName);
+                    poolManager.addPoolForAgent(
+                            InetAddress.getByName(fields[i]), poolName);
                 }
 
                 // NETWORKS
                 strLine = br.readLine();
 
                 if (strLine == null) {
-                    log.error("Unexpected EOF after NODES field for pool: " + poolName);
+                    log.error("Unexpected EOF after NODES field for pool: "
+                              + poolName);
                     System.exit(1);
-                } else if (strLine.startsWith("#")
-                        || (strLine.length() == 0)) // comment or blank line between params
+                } else if (strLine.startsWith("#") || (strLine.length()
+                                                       == 0)) // comment or blank line between params
                 {
                     strLine = br.readLine();
                 }
@@ -1377,7 +1369,8 @@ public class OdinMaster
                 fields = strLine.split(" ");
 
                 if (!fields[0].equals("NETWORKS")) {
-                    log.error("A NODES field should be followed by a NETWORKS field");
+                    log.error(
+                            "A NODES field should be followed by a NETWORKS field");
                     log.error("Offending line: " + strLine);
                     System.exit(1);
                 }
@@ -1390,8 +1383,8 @@ public class OdinMaster
 
                 while ((strLine = br.readLine()) != null) {
 
-                    if (strLine.startsWith("#")
-                            || (strLine.length() == 0)) { // comment or blank line between params
+                    if (strLine.startsWith("#") || (strLine.length()
+                                                    == 0)) { // comment or blank line between params
                         br.mark(1000);
                         continue;
                     }
@@ -1399,15 +1392,16 @@ public class OdinMaster
                     fields = strLine.split(" ");
 
                     if (fields[0].equals("APPLICATION")) { // APPLICATION
-                        OdinApplication appInstance = (OdinApplication) Class.forName(fields[1])
-                                .newInstance();
+                        OdinApplication appInstance = (OdinApplication) Class
+                                .forName(fields[1]).newInstance();
                         appInstance.setOdinInterface(this);
                         appInstance.setPool(poolName);
                         appInstance.setLock(lock);
                         applicationList.add(appInstance);
 
-                        applicationInstances.put(
-                                fields[1].substring(fields[1].lastIndexOf(".") + 1), appInstance);
+                        applicationInstances.put(fields[1].substring(
+                                fields[1].lastIndexOf(".") + 1),
+                                                 appInstance);
 
                         br.mark(1000);
                         continue;
@@ -1415,81 +1409,91 @@ public class OdinMaster
 
                     if (fields[0].equals("DETECTION")) { // DETECTION AGENT
                         detector_ip_address = fields[1];
-                        log.info("Detector ip address " + detector_ip_address);
+                        log.info("Detector ip address "
+                                 + detector_ip_address);
                         br.mark(1000);
                         continue;
                     }
 
                     if (fields[0].equals("MOBILITY")) { // MOBILITY MANAGER
-                        mobility_params =
-                                new MobilityParams(
-                                        Integer.parseInt(fields[1]),
-                                        Long.parseLong(fields[2]),
-                                        Long.parseLong(fields[3]),
-                                        Long.parseLong(fields[4]),
-                                        Integer.parseInt(fields[5]),
-                                        Integer.parseInt(fields[6]),
-                                        Long.parseLong(fields[7]));
+                        mobility_params = new MobilityParams(
+                                Integer.parseInt(fields[1]),
+                                Long.parseLong(fields[2]),
+                                Long.parseLong(fields[3]),
+                                Long.parseLong(fields[4]),
+                                Integer.parseInt(fields[5]),
+                                Integer.parseInt(fields[6]),
+                                Long.parseLong(fields[7]));
                         log.info("Mobility Manager configured:");
-                        log.info("\t\tTime_to_start: " + mobility_params.time_to_start);
+                        log.info("\t\tTime_to_start: "
+                                 + mobility_params.time_to_start);
                         log.info("\t\tIdle_client_threshold: "
-                                + mobility_params.idle_client_threshold);
+                                 + mobility_params.idle_client_threshold);
                         log.info("\t\tHysteresis_threshold: "
-                                + mobility_params.hysteresis_threshold);
-                        log.info("\t\tSignal_threshold: " + mobility_params.signal_threshold);
-                        log.info("\t\tScanning_time: " + mobility_params.scanning_time);
-                        log.info("\t\tNumber_of_triggers: " + mobility_params.number_of_triggers);
-                        log.info("\t\tTime_reset_triggers: " + mobility_params.time_reset_triggers);
+                                 + mobility_params.hysteresis_threshold);
+                        log.info("\t\tSignal_threshold: "
+                                 + mobility_params.signal_threshold);
+                        log.info("\t\tScanning_time: "
+                                 + mobility_params.scanning_time);
+                        log.info("\t\tNumber_of_triggers: "
+                                 + mobility_params.number_of_triggers);
+                        log.info("\t\tTime_reset_triggers: "
+                                 + mobility_params.time_reset_triggers);
                         br.mark(1000);
                         continue;
                     }
 
                     if (fields[0].equals("MATRIX")) { // MATRIX OF DISTANCES
-                        matrix_params =
-                                new ScannParams(
-                                        Integer.parseInt(fields[1]),
-                                        Integer.parseInt(fields[2]),
-                                        Integer.parseInt(fields[3]),
-                                        Integer.parseInt(fields[4]),
-                                        Integer.parseInt(fields[5]),
-                                        "");
+                        matrix_params = new ScannParams(
+                                Integer.parseInt(fields[1]),
+                                Integer.parseInt(fields[2]),
+                                Integer.parseInt(fields[3]),
+                                Integer.parseInt(fields[4]),
+                                Integer.parseInt(fields[5]), "");
                         log.info("ShowMatrixOfDistancedBs configured:");
-                        log.info("\t\tTime_to_start: " + matrix_params.time_to_start);
-                        log.info("\t\tReporting_period: " + matrix_params.reporting_period);
-                        log.info("\t\tScanning_interval: " + matrix_params.scanning_interval);
-                        log.info("\t\tAdded_time: " + matrix_params.added_time);
+                        log.info("\t\tTime_to_start: "
+                                 + matrix_params.time_to_start);
+                        log.info("\t\tReporting_period: "
+                                 + matrix_params.reporting_period);
+                        log.info("\t\tScanning_interval: "
+                                 + matrix_params.scanning_interval);
+                        log.info("\t\tAdded_time: "
+                                 + matrix_params.added_time);
                         log.info("\t\tChannel: " + matrix_params.channel);
                         br.mark(1000);
                         continue;
                     }
 
                     if (fields[0].equals("INTERFERENCES")) { // INTERFERENCES
-                        if (fields.length == 6) { // Filename added in poolfile
-                            interference_params =
-                                    new ScannParams(
-                                            Integer.parseInt(fields[1]),
-                                            Integer.parseInt(fields[2]),
-                                            Integer.parseInt(fields[3]),
-                                            Integer.parseInt(fields[4]),
-                                            Integer.parseInt("0"),
-                                            fields[5]);
+                        if (fields.length
+                            == 6) { // Filename added in poolfile
+                            interference_params = new ScannParams(
+                                    Integer.parseInt(fields[1]),
+                                    Integer.parseInt(fields[2]),
+                                    Integer.parseInt(fields[3]),
+                                    Integer.parseInt(fields[4]),
+                                    Integer.parseInt("0"), fields[5]);
                         } else { // Not filename added in poolfile
-                            interference_params =
-                                    new ScannParams(
-                                            Integer.parseInt(fields[1]),
-                                            Integer.parseInt(fields[2]),
-                                            Integer.parseInt(fields[3]),
-                                            Integer.parseInt(fields[4]),
-                                            Integer.parseInt("0"),
-                                            "");
+                            interference_params = new ScannParams(
+                                    Integer.parseInt(fields[1]),
+                                    Integer.parseInt(fields[2]),
+                                    Integer.parseInt(fields[3]),
+                                    Integer.parseInt(fields[4]),
+                                    Integer.parseInt("0"), "");
                         }
-                        log.info("ShowScannedStationsStatistics configured:");
-                        log.info("\t\tTime_to_start: " + interference_params.time_to_start);
-                        log.info("\t\tReporting_period: " + interference_params.reporting_period);
-                        log.info("\t\tScanning_interval: " + interference_params.scanning_interval);
-                        log.info("\t\tAdded_time: " + interference_params.added_time);
+                        log.info(
+                                "ShowScannedStationsStatistics configured:");
+                        log.info("\t\tTime_to_start: "
+                                 + interference_params.time_to_start);
+                        log.info("\t\tReporting_period: "
+                                 + interference_params.reporting_period);
+                        log.info("\t\tScanning_interval: "
+                                 + interference_params.scanning_interval);
+                        log.info("\t\tAdded_time: "
+                                 + interference_params.added_time);
                         if (interference_params.filename.length() > 0) {
-                            log.info("\t\tFilename: " + interference_params.filename);
+                            log.info("\t\tFilename: "
+                                     + interference_params.filename);
                         } else {
                             log.info("\t\tFilename not assigned");
                         }
@@ -1498,48 +1502,53 @@ public class OdinMaster
                     }
 
                     if (fields[0].equals("CHANNEL")) { // CHANNEL ASSIGNMENT
-                        if (fields.length == 12) { // Filename added in poolfile
-                            channel_params =
-                                    new ChannelAssignmentParams(
-                                            Integer.parseInt(fields[1]),
-                                            Integer.parseInt(fields[2]),
-                                            Integer.parseInt(fields[3]),
-                                            Integer.parseInt(fields[4]),
-                                            Integer.parseInt(fields[5]),
-                                            Integer.parseInt(fields[6]),
-                                            Integer.parseInt(fields[7]),
-                                            Integer.parseInt(fields[8]),
-                                            Double.parseDouble(fields[9]),
-                                            fields[10],
-                                            fields[11]);
+                        if (fields.length
+                            == 12) { // Filename added in poolfile
+                            channel_params = new ChannelAssignmentParams(
+                                    Integer.parseInt(fields[1]),
+                                    Integer.parseInt(fields[2]),
+                                    Integer.parseInt(fields[3]),
+                                    Integer.parseInt(fields[4]),
+                                    Integer.parseInt(fields[5]),
+                                    Integer.parseInt(fields[6]),
+                                    Integer.parseInt(fields[7]),
+                                    Integer.parseInt(fields[8]),
+                                    Double.parseDouble(fields[9]),
+                                    fields[10], fields[11]);
                         } else {
-                            channel_params =
-                                    new ChannelAssignmentParams(
-                                            Integer.parseInt(fields[1]),
-                                            Integer.parseInt(fields[2]),
-                                            Integer.parseInt(fields[3]),
-                                            Integer.parseInt(fields[4]),
-                                            Integer.parseInt(fields[5]),
-                                            Integer.parseInt(fields[6]),
-                                            Integer.parseInt(fields[7]),
-                                            Integer.parseInt(fields[8]),
-                                            Double.parseDouble(fields[9]),
-                                            fields[10],
-                                            "");
+                            channel_params = new ChannelAssignmentParams(
+                                    Integer.parseInt(fields[1]),
+                                    Integer.parseInt(fields[2]),
+                                    Integer.parseInt(fields[3]),
+                                    Integer.parseInt(fields[4]),
+                                    Integer.parseInt(fields[5]),
+                                    Integer.parseInt(fields[6]),
+                                    Integer.parseInt(fields[7]),
+                                    Integer.parseInt(fields[8]),
+                                    Double.parseDouble(fields[9]),
+                                    fields[10], "");
                         }
                         log.info("ChannelAssignment configured:");
-                        log.info("\t\tTime_to_start: " + channel_params.time_to_start);
-                        log.info("\t\tPause between scans: " + channel_params.pause);
-                        log.info("\t\tScanning_interval: " + channel_params.scanning_interval);
-                        log.info("\t\tAdded_time: " + channel_params.added_time);
-                        log.info("\t\tNumber of scans: " + channel_params.number_scans);
-                        log.info("\t\tIdle time: " + channel_params.idle_time);
+                        log.info("\t\tTime_to_start: "
+                                 + channel_params.time_to_start);
+                        log.info("\t\tPause between scans: "
+                                 + channel_params.pause);
+                        log.info("\t\tScanning_interval: "
+                                 + channel_params.scanning_interval);
+                        log.info("\t\tAdded_time: "
+                                 + channel_params.added_time);
+                        log.info("\t\tNumber of scans: "
+                                 + channel_params.number_scans);
+                        log.info("\t\tIdle time: "
+                                 + channel_params.idle_time);
                         log.info("\t\tChannel: " + channel_params.channel);
                         log.info("\t\tMethod: " + channel_params.method);
-                        log.info("\t\tThreshold: " + channel_params.threshold);
+                        log.info("\t\tThreshold: "
+                                 + channel_params.threshold);
                         log.info("\t\tMode: " + channel_params.mode);
                         if (channel_params.filename.length() > 0) {
-                            log.info("\t\tFilename: " + channel_params.filename);
+                            log.info("\t\tFilename: "
+                                     + channel_params.filename);
                         } else {
                             log.info("\t\tFilename not assigned");
                         }
@@ -1547,50 +1556,55 @@ public class OdinMaster
                         continue;
                     }
 
-                    if (fields[0].equals("SMARTAPSELECTION")) { // SMART AP SELECTION
-                        if (fields.length == 12) { // Filename added in poolfile
-                            smartap_params =
-                                    new SmartApSelectionParams(
-                                            Integer.parseInt(fields[1]),
-                                            Integer.parseInt(fields[2]),
-                                            Integer.parseInt(fields[3]),
-                                            Double.parseDouble(fields[4]),
-                                            Long.parseLong(fields[5]),
-                                            Double.parseDouble(fields[6]),
-                                            Integer.parseInt(fields[7]),
-                                            fields[8],
-                                            Integer.parseInt(fields[9]),
-                                            Double.parseDouble(fields[10]),
-                                            fields[11]);
+                    if (fields[0]
+                            .equals("SMARTAPSELECTION")) { // SMART AP SELECTION
+                        if (fields.length
+                            == 12) { // Filename added in poolfile
+                            smartap_params = new SmartApSelectionParams(
+                                    Integer.parseInt(fields[1]),
+                                    Integer.parseInt(fields[2]),
+                                    Integer.parseInt(fields[3]),
+                                    Double.parseDouble(fields[4]),
+                                    Long.parseLong(fields[5]),
+                                    Double.parseDouble(fields[6]),
+                                    Integer.parseInt(fields[7]), fields[8],
+                                    Integer.parseInt(fields[9]),
+                                    Double.parseDouble(fields[10]),
+                                    fields[11]);
                         } else {
-                            smartap_params =
-                                    new SmartApSelectionParams(
-                                            Integer.parseInt(fields[1]),
-                                            Integer.parseInt(fields[2]),
-                                            Integer.parseInt(fields[3]),
-                                            Double.parseDouble(fields[4]),
-                                            Long.parseLong(fields[5]),
-                                            Double.parseDouble(fields[6]),
-                                            Integer.parseInt(fields[7]),
-                                            fields[8],
-                                            Integer.parseInt(fields[9]),
-                                            Double.parseDouble(fields[10]),
-                                            "");
+                            smartap_params = new SmartApSelectionParams(
+                                    Integer.parseInt(fields[1]),
+                                    Integer.parseInt(fields[2]),
+                                    Integer.parseInt(fields[3]),
+                                    Double.parseDouble(fields[4]),
+                                    Long.parseLong(fields[5]),
+                                    Double.parseDouble(fields[6]),
+                                    Integer.parseInt(fields[7]), fields[8],
+                                    Integer.parseInt(fields[9]),
+                                    Double.parseDouble(fields[10]), "");
                         }
                         log.info("SmartApSelection configured:");
-                        log.info("\t\tTime_to_start: " + smartap_params.time_to_start);
-                        log.info("\t\tScanning_interval: " + smartap_params.scanning_interval);
-                        log.info("\t\tAdded_time: " + smartap_params.added_time);
-                        log.info("\t\tSignal_threshold: " + smartap_params.signal_threshold);
-                        log.info(
-                                "\t\tHysteresis_threshold: " + smartap_params.hysteresis_threshold);
-                        log.info("\t\tPrevius_data_weight (alpha): " + smartap_params.weight);
-                        log.info("\t\tPause between scans: " + smartap_params.pause);
+                        log.info("\t\tTime_to_start: "
+                                 + smartap_params.time_to_start);
+                        log.info("\t\tScanning_interval: "
+                                 + smartap_params.scanning_interval);
+                        log.info("\t\tAdded_time: "
+                                 + smartap_params.added_time);
+                        log.info("\t\tSignal_threshold: "
+                                 + smartap_params.signal_threshold);
+                        log.info("\t\tHysteresis_threshold: "
+                                 + smartap_params.hysteresis_threshold);
+                        log.info("\t\tPrevius_data_weight (alpha): "
+                                 + smartap_params.weight);
+                        log.info("\t\tPause between scans: "
+                                 + smartap_params.pause);
                         log.info("\t\tMode: " + smartap_params.mode);
-                        log.info("\t\tTxpowerSTA: " + smartap_params.txpowerSTA);
+                        log.info("\t\tTxpowerSTA: "
+                                 + smartap_params.txpowerSTA);
                         log.info("\t\tThReqSTA: " + smartap_params.thReqSTA);
                         if (smartap_params.filename.length() > 0) {
-                            log.info("\t\tFilename: " + smartap_params.filename);
+                            log.info("\t\tFilename: "
+                                     + smartap_params.filename);
                         } else {
                             log.info("\t\tFilename not assigned");
                         }
@@ -1638,7 +1652,8 @@ public class OdinMaster
         }
 
         try {
-            BufferedReader br = new BufferedReader(new FileReader(clientListFile));
+            BufferedReader br = new BufferedReader(
+                    new FileReader(clientListFile));
 
             String strLine;
 
@@ -1650,13 +1665,15 @@ public class OdinMaster
 
                 ArrayList<String> ssidList = new ArrayList<>();
                 ssidList.add(fields[3]); // FIXME: assumes a single ssid
-                Lvap lvap = new Lvap(MACAddress.valueOf(fields[2]), ssidList);
+                Lvap lvap = new Lvap(MACAddress.valueOf(fields[2]),
+                                     ssidList);
 
                 log.info(
-                        "Adding client: " + fields[0] + " " + fields[1] + " " + fields[2] + " "
-                                + fields[3]);
+                        "Adding client: " + fields[0] + " " + fields[1] + " "
+                        + fields[2] + " " + fields[3]);
                 clientManager.addClient(hwAddress, ipaddr, lvap);
-                lvap.setOFMessageList(lvapManager.getDefaultOFModList(ipaddr));
+                lvap.setOFMessageList(
+                        lvapManager.getDefaultOFModList(ipaddr));
             }
 
             br.close();
@@ -1683,7 +1700,8 @@ public class OdinMaster
             port = Integer.parseInt(portNum);
         }
 
-        IThreadPoolService tp = context.getServiceImpl(IThreadPoolService.class);
+        IThreadPoolService tp = context
+                .getServiceImpl(IThreadPoolService.class);
         executor = tp.getScheduledExecutor();
         // Spawn threads for different services
         executor.execute(new OdinAgentProtocolServer(this, port, executor));
@@ -1697,22 +1715,20 @@ public class OdinMaster
     /**
      * IOFSwitchListener methods
      */
-    @Override
-    public void addedSwitch(IOFSwitch sw) {
+    @Override public void addedSwitch(IOFSwitch sw) {
         // inform-agent manager
     }
 
-    @Override
-    public String getName() {
+    @Override public String getName() {
         return "OdinMaster";
     }
 
-    @Override
-    public void removedSwitch(IOFSwitch sw) {
+    @Override public void removedSwitch(IOFSwitch sw) {
         // Not all OF switches are Odin agents. We should immediately remove
         // any associated Odin agent then.
-        final InetAddress switchIpAddr =
-                ((InetSocketAddress) sw.getChannel().getRemoteAddress()).getAddress();
+        final InetAddress switchIpAddr = ((InetSocketAddress) sw.getChannel()
+                                                                .getRemoteAddress())
+                .getAddress();
         agentManager.removeAgent(switchIpAddr);
     }
 
@@ -1722,15 +1738,15 @@ public class OdinMaster
     //	}
 
     @Override
-    public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+    public Command receive(IOFSwitch sw, OFMessage msg,
+                           FloodlightContext cntx) {
 
         // We use this to pick up DHCP response frames
         // and update a client's IP address details accordingly
         // we use the update_client_lvap function to send the IP address once the DHCP server has
         // assigned it to the STA
-        Ethernet frame =
-                IFloodlightProviderService.bcStore
-                        .get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+        Ethernet frame = IFloodlightProviderService.bcStore
+                .get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
 
         IPacket payload = frame.getPayload(); // IP
         if (payload == null) {
@@ -1750,14 +1766,14 @@ public class OdinMaster
                 // log.info("DHCP packet received...");
                 final MACAddress clientHwAddr = MACAddress
                         .valueOf(packet.getClientHardwareAddress());
-                final OdinClient oc = clientManager.getClients().get(clientHwAddr);
+                final OdinClient oc = clientManager.getClients()
+                                                   .get(clientHwAddr);
 
                 // Don't bother if we're not tracking the client
                 // or if the client is unassociated with the agent
                 // or the agent's switch hasn't been registered yet
-                if (oc == null
-                        || oc.getLvap().getAgent() == null
-                        || oc.getLvap().getAgent().getSwitch() == null) {
+                if (oc == null || oc.getLvap().getAgent() == null
+                    || oc.getLvap().getAgent().getSwitch() == null) {
                     return Command.CONTINUE;
                 }
 
@@ -1767,8 +1783,9 @@ public class OdinMaster
                 if (packet.getYourIPAddress() != 0) {
 
                     // int -> byte array -> InetAddr
-                    final byte[] arr = ByteBuffer.allocate(4).putInt(packet.getYourIPAddress())
-                            .array();
+                    final byte[] arr = ByteBuffer.allocate(4)
+                                                 .putInt(packet.getYourIPAddress())
+                                                 .array();
                     final InetAddress yourIp = InetAddress.getByAddress(arr);
 
                     // No need to invoke agent update protocol if the node
@@ -1777,7 +1794,8 @@ public class OdinMaster
                         return Command.CONTINUE;
                     }
 
-                    log.info("Updating client: " + clientHwAddr + " with ipAddr: " + yourIp);
+                    log.info("Updating client: " + clientHwAddr
+                             + " with ipAddr: " + yourIp);
                     oc.setIpAddress(yourIp);
           /*	oc.getLvap().setOFMessageList(lvapManager.getDefaultOFModList(yourIp));
 
@@ -1842,8 +1860,7 @@ public class OdinMaster
             this.oc = oc;
         }
 
-        @Override
-        public void run() {
+        @Override public void run() {
             oa.addClientLvap(oc);
         }
     }
@@ -1858,8 +1875,7 @@ public class OdinMaster
             this.oc = oc;
         }
 
-        @Override
-        public void run() {
+        @Override public void run() {
             oa.removeClientLvap(oc);
         }
     }
@@ -1871,16 +1887,17 @@ public class OdinMaster
         final MACAddress bssid;
         final Set<String> ssidList;
 
-        OdinAgentSendProbeResponseRunnable(
-                IOdinAgent oa, MACAddress clientHwAddr, MACAddress bssid, Set<String> ssidList) {
+        OdinAgentSendProbeResponseRunnable(IOdinAgent oa,
+                                           MACAddress clientHwAddr,
+                                           MACAddress bssid,
+                                           Set<String> ssidList) {
             this.oa = oa;
             this.clientHwAddr = clientHwAddr;
             this.bssid = bssid;
             this.ssidList = ssidList;
         }
 
-        @Override
-        public void run() {
+        @Override public void run() {
             oa.sendProbeResponse(clientHwAddr, bssid, ssidList);
         }
     }
@@ -1893,9 +1910,9 @@ public class OdinMaster
             this.oc = oc;
         }
 
-        @Override
-        public void run() {
-            OdinClient client = clientManager.getClients().get(oc.getMacAddress());
+        @Override public void run() {
+            OdinClient client = clientManager.getClients()
+                                             .get(oc.getMacAddress());
 
             if (client == null) {
                 return;
@@ -1907,12 +1924,9 @@ public class OdinMaster
                 IOdinAgent agent = client.getLvap().getAgent();
 
                 if (agent != null) {
-                    log.info(
-                            "Clearing Lvap "
-                                    + client.getMacAddress()
-                                    + " from agent:"
-                                    + agent.getIpAddress()
-                                    + " due to association not completed");
+                    log.info("Clearing Lvap " + client.getMacAddress()
+                             + " from agent:" + agent.getIpAddress()
+                             + " due to association not completed");
                     poolManager.removeClientPoolMapping(client);
                     agent.removeClientLvap(client);
                     clientManager.removeClient(client.getMacAddress());
@@ -1967,14 +1981,11 @@ public class OdinMaster
         public int number_of_triggers;
         public long time_reset_triggers;
 
-        public MobilityParams(
-                int time_to_start,
-                long idle_client_threshold,
-                long hysteresis_threshold,
-                long signal_threshold,
-                int scanning_time,
-                int number_of_triggers,
-                long time_reset_triggers) {
+        public MobilityParams(int time_to_start, long idle_client_threshold,
+                              long hysteresis_threshold,
+                              long signal_threshold, int scanning_time,
+                              int number_of_triggers,
+                              long time_reset_triggers) {
             this.time_to_start = time_to_start * 1000;
             this.idle_client_threshold = idle_client_threshold * 1000;
             this.hysteresis_threshold = hysteresis_threshold * 1000;
@@ -1994,13 +2005,9 @@ public class OdinMaster
         public int channel;
         public String filename;
 
-        public ScannParams(
-                int time_to_start,
-                int reporting_period,
-                int scanning_interval,
-                int added_time,
-                int channel,
-                String filename) {
+        public ScannParams(int time_to_start, int reporting_period,
+                           int scanning_interval, int added_time,
+                           int channel, String filename) {
             this.time_to_start = time_to_start * 1000;
             this.reporting_period = reporting_period * 1000;
             this.scanning_interval = scanning_interval * 1000;
@@ -2024,18 +2031,12 @@ public class OdinMaster
         public String mode;
         public String filename;
 
-        public ChannelAssignmentParams(
-                int time_to_start,
-                int pause,
-                int scanning_interval,
-                int added_time,
-                int number_scans,
-                int idle_time,
-                int channel,
-                int method,
-                Double threshold,
-                String mode,
-                String filename) {
+        public ChannelAssignmentParams(int time_to_start, int pause,
+                                       int scanning_interval, int added_time,
+                                       int number_scans, int idle_time,
+                                       int channel, int method,
+                                       Double threshold, String mode,
+                                       String filename) {
             this.time_to_start = time_to_start * 1000;
             this.pause = pause * 1000;
             this.scanning_interval = scanning_interval * 1000;
@@ -2064,18 +2065,13 @@ public class OdinMaster
         public Double thReqSTA;
         public String filename;
 
-        public SmartApSelectionParams(
-                int time_to_start,
-                int scanning_interval,
-                int added_time,
-                Double signal_threshold,
-                long hysteresis_threshold,
-                Double weight,
-                int pause,
-                String mode,
-                int txpowerSTA,
-                Double thReqSTA,
-                String filename) {
+        public SmartApSelectionParams(int time_to_start,
+                                      int scanning_interval, int added_time,
+                                      Double signal_threshold,
+                                      long hysteresis_threshold,
+                                      Double weight, int pause, String mode,
+                                      int txpowerSTA, Double thReqSTA,
+                                      String filename) {
             this.time_to_start = time_to_start * 1000;
             this.scanning_interval = scanning_interval;
             this.added_time = added_time;

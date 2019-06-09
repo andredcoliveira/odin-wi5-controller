@@ -7,13 +7,15 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+
 import net.floodlightcontroller.util.MACAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class OdinAgentProtocolServer implements Runnable {
 
-    protected static Logger log = LoggerFactory.getLogger(OdinAgentProtocolServer.class);
+    protected static Logger log = LoggerFactory
+            .getLogger(OdinAgentProtocolServer.class);
 
     // Odin Message types
     private final String ODIN_MSG_PING = "ping";
@@ -23,21 +25,20 @@ class OdinAgentProtocolServer implements Runnable {
     private final String ODIN_MSG_DEAUTH = "deauthentication";
     private final String ODIN_MSG_ASSOC = "association";
 
-
     private final int ODIN_SERVER_PORT;
 
     private DatagramSocket controllerSocket;
     private final ExecutorService executor;
     private final OdinMaster odinMaster;
 
-    public OdinAgentProtocolServer(OdinMaster om, int port, ExecutorService executor) {
+    public OdinAgentProtocolServer(OdinMaster om, int port,
+                                   ExecutorService executor) {
         this.odinMaster = om;
         this.ODIN_SERVER_PORT = port;
         this.executor = executor;
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
 
         try {
             controllerSocket = new DatagramSocket(ODIN_SERVER_PORT);
@@ -49,13 +50,15 @@ class OdinAgentProtocolServer implements Runnable {
 
             try {
                 final byte[] receiveData = new byte[1024]; // We can probably live with less
-                final DatagramPacket receivedPacket = new DatagramPacket(receiveData,
-                        receiveData.length);
+                final DatagramPacket receivedPacket = new DatagramPacket(
+                        receiveData, receiveData.length);
                 controllerSocket.receive(receivedPacket);
 
-                executor.execute(new OdinAgentConnectionHandler(receivedPacket));
+                executor.execute(
+                        new OdinAgentConnectionHandler(receivedPacket));
             } catch (IOException e) {
-                log.error("controllerSocket.accept() failed: " + ODIN_SERVER_PORT);
+                log.error("controllerSocket.accept() failed: "
+                          + ODIN_SERVER_PORT);
                 e.printStackTrace();
                 System.exit(-1);
             }
@@ -70,26 +73,31 @@ class OdinAgentProtocolServer implements Runnable {
         odinMaster.receivePing(odinAgentAddr);
     }
 
-    private void receiveProbe(final InetAddress odinAgentAddr, final MACAddress clientHwAddress,
-            final String ssid) {
+    private void receiveProbe(final InetAddress odinAgentAddr,
+                              final MACAddress clientHwAddress,
+                              final String ssid) {
         odinMaster.receiveProbe(odinAgentAddr, clientHwAddress, ssid);
     }
 
-    private void receivePublish(final MACAddress clientHwAddress, final InetAddress odinAgentAddr,
-            final Map<Long, Long> subscriptionIds) {
-        odinMaster.receivePublish(clientHwAddress, odinAgentAddr, subscriptionIds);
+    private void receivePublish(final MACAddress clientHwAddress,
+                                final InetAddress odinAgentAddr,
+                                final Map<Long, Long> subscriptionIds) {
+        odinMaster.receivePublish(clientHwAddress, odinAgentAddr,
+                                  subscriptionIds);
     }
 
     private void receiveDetectedFlow(final InetAddress odinAgentAddr,
-            final Map<Long, String> detectedFlowIds) {
+                                     final Map<Long, String> detectedFlowIds) {
         odinMaster.receiveDetectedFlow(odinAgentAddr, detectedFlowIds);
     }
 
-    private void receiveDeauth(final InetAddress odinAgentAddr, final MACAddress clientHwAddress) {
+    private void receiveDeauth(final InetAddress odinAgentAddr,
+                               final MACAddress clientHwAddress) {
         odinMaster.receiveDeauth(odinAgentAddr, clientHwAddress);
     }
 
-    private void receiveAssoc(final InetAddress odinAgentAddr, final MACAddress clientHwAddress) {
+    private void receiveAssoc(final InetAddress odinAgentAddr,
+                              final MACAddress clientHwAddress) {
         odinMaster.receiveAssoc(odinAgentAddr, clientHwAddress);
     }
 
@@ -103,7 +111,8 @@ class OdinAgentProtocolServer implements Runnable {
 
         // Agent message handler
         public void run() {
-            final String msg = new String(receivedPacket.getData()).trim().toLowerCase();
+            final String msg = new String(receivedPacket.getData()).trim()
+                                                                   .toLowerCase();
             final String[] fields = msg.split(" ");
             final String msg_type = fields[0];
             final InetAddress odinAgentAddr = receivedPacket.getAddress();
@@ -118,21 +127,27 @@ class OdinAgentProtocolServer implements Runnable {
 
                 if (fields.length > 2) {
                     //SSID is specified in the scan
-                    ssid = msg.substring(ODIN_MSG_PROBE.length() + staAddress.length() + 2);
+                    ssid = msg.substring(
+                            ODIN_MSG_PROBE.length() + staAddress.length()
+                            + 2);
                 }
 
-                receiveProbe(odinAgentAddr, MACAddress.valueOf(staAddress), ssid);
+                receiveProbe(odinAgentAddr, MACAddress.valueOf(staAddress),
+                             ssid);
             } else if (msg_type.equals(ODIN_MSG_PUBLISH)) {
                 final String staAddress = fields[1];
                 final int count = Integer.parseInt(fields[2]);
                 final Map<Long, Long> matchingIds = new HashMap<Long, Long>();
 
                 for (int i = 0; i < count; i++) {
-                    matchingIds.put(Long.parseLong(fields[3 + i].split(":")[0]),
-                            Long.parseLong(fields[3 + i].split(":")[1]));
+                    matchingIds
+                            .put(Long.parseLong(fields[3 + i].split(":")[0]),
+                                 Long.parseLong(
+                                         fields[3 + i].split(":")[1]));
                 }
 
-                receivePublish(MACAddress.valueOf(staAddress), odinAgentAddr, matchingIds);
+                receivePublish(MACAddress.valueOf(staAddress), odinAgentAddr,
+                               matchingIds);
 
             } else if (msg_type.equals(ODIN_MSG_DETECTED_FLOW)) {
 
@@ -147,8 +162,8 @@ class OdinAgentProtocolServer implements Runnable {
                 //final int DstPort = Integer.parseInt(fields[5]);
 
                 final String detectedFlow =
-                        fields[1] + " " + fields[2] + " " + fields[3] + " " + fields[4] + " "
-                                + fields[5];
+                        fields[1] + " " + fields[2] + " " + fields[3] + " "
+                        + fields[4] + " " + fields[5];
                 //log.info("We receive a detected flow "+ detectedFlow +  "from: " + odinAgentAddr.getHostAddress());
                 final Map<Long, String> matchingId = new HashMap<Long, String>();
                 // There is a only Id. It is always 1
