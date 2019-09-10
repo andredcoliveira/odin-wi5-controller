@@ -1,9 +1,9 @@
 package net.floodlightcontroller.odin.master;
 
-import java.util.Set;
-
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
+
+import java.util.Set;
 
 public class AllClientsResource extends ServerResource {
 

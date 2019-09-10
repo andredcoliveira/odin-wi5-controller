@@ -1,6 +1,5 @@
 package net.floodlightcontroller.flowcache;
 
-
 import org.openflow.protocol.OFMatchWithSwDpid;
 
 /**
@@ -13,50 +12,60 @@ import org.openflow.protocol.OFMatchWithSwDpid;
  */
 public class QRFlowCacheObj {
 
-    /** The open flow match object. */
+    /**
+     * The open flow match object.
+     */
     public OFMatchWithSwDpid ofmWithSwDpid;
-    /** The flow-mod priority. */
-    public short   priority;
-    /** flow-mod cookie */
-    public long    cookie;
-    /** The action - PERMIT or DENY. */
-    public byte    action;
-    /** The reserved byte to align with 8 bytes. */
-    public byte    reserved;
+    /**
+     * The flow-mod priority.
+     */
+    public short priority;
+    /**
+     * flow-mod cookie
+     */
+    public long cookie;
+    /**
+     * The action - PERMIT or DENY.
+     */
+    public byte action;
+    /**
+     * The reserved byte to align with 8 bytes.
+     */
+    public byte reserved;
 
     /**
      * Instantiates a new flow cache query object.
      *
      * @param priority the priority
-     * @param action the action
+     * @param action   the action
      */
     public QRFlowCacheObj(short priority, byte action, long cookie) {
         ofmWithSwDpid = new OFMatchWithSwDpid();
-        this.action   = action;
+        this.action = action;
         this.priority = priority;
-        this.cookie   = cookie;
+        this.cookie = cookie;
     }
 
     /**
      * Populate a given OFMatchReconcile object from the values of this
      * class.
      *
-     * @param ofmRc the given OFMatchReconcile object
+     * @param ofmRc       the given OFMatchReconcile object
      * @param appInstName the application instance name
-     * @param rcAction the reconcile action
+     * @param rcAction    the reconcile action
      */
-    public   void toOFMatchReconcile(OFMatchReconcile ofmRc,
-                            String appInstName, OFMatchReconcile.ReconcileAction rcAction) {
-        ofmRc.ofmWithSwDpid   = ofmWithSwDpid; // not copying
-        ofmRc.appInstName     = appInstName;
-        ofmRc.rcAction        = rcAction;
-        ofmRc.priority        = priority;
-        ofmRc.cookie          = cookie;
-        ofmRc.action          = action;
+    public void toOFMatchReconcile(OFMatchReconcile ofmRc,
+                                   String appInstName,
+                                   OFMatchReconcile.ReconcileAction rcAction) {
+        ofmRc.ofmWithSwDpid = ofmWithSwDpid; // not copying
+        ofmRc.appInstName = appInstName;
+        ofmRc.rcAction = rcAction;
+        ofmRc.priority = priority;
+        ofmRc.cookie = cookie;
+        ofmRc.action = action;
     }
-    
-    @Override
-    public String toString() {
+
+    @Override public String toString() {
         String str = "ofmWithSwDpid: " + this.ofmWithSwDpid.toString() + " ";
         str += "priority: " + this.priority + " ";
         str += "cookie: " + this.cookie + " ";

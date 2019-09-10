@@ -1,30 +1,27 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
-import java.util.Arrays;
-import java.util.List;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.factory.OFActionFactory;
 import org.openflow.protocol.factory.OFActionFactoryAware;
 import org.openflow.util.U16;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents an ofp_packet_out message
@@ -150,26 +147,25 @@ public class OFPacketOut extends OFMessage implements OFActionFactoryAware {
         return this;
     }
 
-    @Override
-    public void setActionFactory(OFActionFactory actionFactory) {
+    @Override public void setActionFactory(OFActionFactory actionFactory) {
         this.actionFactory = actionFactory;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         super.readFrom(data);
         this.bufferId = data.readInt();
         this.inPort = data.readShort();
         this.actionsLength = data.readShort();
-        if ( this.actionFactory == null)
+        if (this.actionFactory == null)
             throw new RuntimeException("ActionFactory not set");
-        this.actions = this.actionFactory.parseActions(data, getActionsLengthU());
-        this.packetData = new byte[getLengthU() - MINIMUM_LENGTH - getActionsLengthU()];
+        this.actions = this.actionFactory
+                .parseActions(data, getActionsLengthU());
+        this.packetData = new byte[getLengthU() - MINIMUM_LENGTH
+                                   - getActionsLengthU()];
         data.readBytes(this.packetData);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         super.writeTo(data);
         data.writeInt(bufferId);
         data.writeShort(inPort);
@@ -181,11 +177,12 @@ public class OFPacketOut extends OFMessage implements OFActionFactoryAware {
             data.writeBytes(this.packetData);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 293;
         int result = super.hashCode();
-        result = prime * result + ((actions == null) ? 0 : actions.hashCode());
+        result = prime * result + ((actions == null) ?
+                                   0 :
+                                   actions.hashCode());
         result = prime * result + actionsLength;
         result = prime * result + bufferId;
         result = prime * result + inPort;
@@ -193,8 +190,7 @@ public class OFPacketOut extends OFMessage implements OFActionFactoryAware {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -230,11 +226,11 @@ public class OFPacketOut extends OFMessage implements OFActionFactoryAware {
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "OFPacketOut [actionFactory=" + actionFactory + ", actions="
-                + actions + ", actionsLength=" + actionsLength + ", bufferId=0x"
-                + Integer.toHexString(bufferId) + ", inPort=" + inPort + ", packetData="
-                + Arrays.toString(packetData) + "]";
+               + actions + ", actionsLength=" + actionsLength
+               + ", bufferId=0x" + Integer.toHexString(bufferId)
+               + ", inPort=" + inPort + ", packetData=" + Arrays
+                       .toString(packetData) + "]";
     }
 }

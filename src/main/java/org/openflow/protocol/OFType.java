@@ -1,19 +1,16 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
 
@@ -28,106 +25,101 @@ import java.lang.reflect.Constructor;
  *
  */
 public enum OFType {
-    HELLO               (0, OFHello.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFHello();
-                            }}),
-    ERROR               (1, OFError.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFError();
-                            }}),
-    ECHO_REQUEST        (2, OFEchoRequest.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFEchoRequest();
-                            }}),
-    ECHO_REPLY          (3, OFEchoReply.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFEchoReply();
-                            }}),
-    VENDOR              (4, OFVendor.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFVendor();
-                            }}),
-    FEATURES_REQUEST    (5, OFFeaturesRequest.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFFeaturesRequest();
-                            }}),
-    FEATURES_REPLY      (6, OFFeaturesReply.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFFeaturesReply();
-                            }}),
-    GET_CONFIG_REQUEST  (7, OFGetConfigRequest.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFGetConfigRequest();
-                            }}),
-    GET_CONFIG_REPLY    (8, OFGetConfigReply.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFGetConfigReply();
-                            }}),
-    SET_CONFIG          (9, OFSetConfig.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFSetConfig();
-                            }}),
-    PACKET_IN           (10, OFPacketIn.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFPacketIn();
-                            }}),
-    FLOW_REMOVED        (11, OFFlowRemoved.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFFlowRemoved();
-                            }}),
-    PORT_STATUS         (12, OFPortStatus.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFPortStatus();
-                            }}),
-    PACKET_OUT          (13, OFPacketOut.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFPacketOut();
-                            }}),
-    FLOW_MOD            (14, OFFlowMod.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFFlowMod();
-                            }}),
-    PORT_MOD            (15, OFPortMod.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFPortMod();
-                            }}),
-    STATS_REQUEST       (16, OFStatisticsRequest.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFStatisticsRequest();
-                            }}),
-    STATS_REPLY         (17, OFStatisticsReply.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFStatisticsReply();
-                            }}),
-    BARRIER_REQUEST     (18, OFBarrierRequest.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFBarrierRequest();
-                            }}),
-    BARRIER_REPLY       (19, OFBarrierReply.class, new Instantiable<OFMessage>() {
-                            @Override
-                            public OFMessage instantiate() {
-                                return new OFBarrierReply();
-                            }});
+    HELLO(0, OFHello.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFHello();
+        }
+    }), ERROR(1, OFError.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFError();
+        }
+    }), ECHO_REQUEST(2, OFEchoRequest.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFEchoRequest();
+        }
+    }), ECHO_REPLY(3, OFEchoReply.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFEchoReply();
+        }
+    }), VENDOR(4, OFVendor.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFVendor();
+        }
+    }), FEATURES_REQUEST(5, OFFeaturesRequest.class,
+                         new Instantiable<OFMessage>() {
+                             @Override public OFMessage instantiate() {
+                                 return new OFFeaturesRequest();
+                             }
+                         }), FEATURES_REPLY(6, OFFeaturesReply.class,
+                                            new Instantiable<OFMessage>() {
+                                                @Override
+                                                public OFMessage instantiate() {
+                                                    return new OFFeaturesReply();
+                                                }
+                                            }), GET_CONFIG_REQUEST(7,
+                                                                   OFGetConfigRequest.class,
+                                                                   new Instantiable<OFMessage>() {
+                                                                       @Override
+                                                                       public OFMessage instantiate() {
+                                                                           return new OFGetConfigRequest();
+                                                                       }
+                                                                   }), GET_CONFIG_REPLY(
+            8, OFGetConfigReply.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFGetConfigReply();
+        }
+    }), SET_CONFIG(9, OFSetConfig.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFSetConfig();
+        }
+    }), PACKET_IN(10, OFPacketIn.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFPacketIn();
+        }
+    }), FLOW_REMOVED(11, OFFlowRemoved.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFFlowRemoved();
+        }
+    }), PORT_STATUS(12, OFPortStatus.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFPortStatus();
+        }
+    }), PACKET_OUT(13, OFPacketOut.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFPacketOut();
+        }
+    }), FLOW_MOD(14, OFFlowMod.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFFlowMod();
+        }
+    }), PORT_MOD(15, OFPortMod.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFPortMod();
+        }
+    }), STATS_REQUEST(16, OFStatisticsRequest.class,
+                      new Instantiable<OFMessage>() {
+                          @Override public OFMessage instantiate() {
+                              return new OFStatisticsRequest();
+                          }
+                      }), STATS_REPLY(17, OFStatisticsReply.class,
+                                      new Instantiable<OFMessage>() {
+                                          @Override
+                                          public OFMessage instantiate() {
+                                              return new OFStatisticsReply();
+                                          }
+                                      }), BARRIER_REQUEST(18,
+                                                          OFBarrierRequest.class,
+                                                          new Instantiable<OFMessage>() {
+                                                              @Override
+                                                              public OFMessage instantiate() {
+                                                                  return new OFBarrierRequest();
+                                                              }
+                                                          }), BARRIER_REPLY(
+            19, OFBarrierReply.class, new Instantiable<OFMessage>() {
+        @Override public OFMessage instantiate() {
+            return new OFBarrierReply();
+        }
+    });
 
     static OFType[] mapping;
 
@@ -146,12 +138,13 @@ public enum OFType {
      * @param instantiator An Instantiator<OFMessage> implementation that creates an
      *          instance of the specified OFMessage
      */
-    OFType(int type, Class<? extends OFMessage> clazz, Instantiable<OFMessage> instantiator) {
+    OFType(int type, Class<? extends OFMessage> clazz,
+           Instantiable<OFMessage> instantiator) {
         this.type = (byte) type;
         this.clazz = clazz;
         this.instantiable = instantiator;
         try {
-            this.constructor = clazz.getConstructor(new Class[]{});
+            this.constructor = clazz.getConstructor(new Class[] {});
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failure getting constructor for class: " + clazz, e);

@@ -1,15 +1,13 @@
 /**
- *    Licensed under the Apache License, Version 2.0 (the "License"); you may
- *    not use this file except in compliance with the License. You may obtain
- *    a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- *    License for the specific language governing permissions and limitations
- *    under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  **/
 
 package net.floodlightcontroller.packet;
@@ -44,8 +42,9 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
      */
     public LLDPOrganizationalTLV setOUI(byte[] oui) {
         if (oui.length != OUI_LENGTH) {
-            throw new IllegalArgumentException("The length of OUI must be " + OUI_LENGTH +
-                ", but it is " + oui.length);
+            throw new IllegalArgumentException(
+                    "The length of OUI must be " + OUI_LENGTH
+                    + ", but it is " + oui.length);
         }
         this.oui = Arrays.copyOf(oui, oui.length);
         return this;
@@ -84,7 +83,9 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
      */
     public LLDPOrganizationalTLV setInfoString(byte[] infoString) {
         if (infoString.length > MAX_INFOSTRING_LENGTH) {
-            throw new IllegalArgumentException("The length of infoString cannot exceed " + MAX_INFOSTRING_LENGTH);
+            throw new IllegalArgumentException(
+                    "The length of infoString cannot exceed "
+                    + MAX_INFOSTRING_LENGTH);
         }
         this.infoString = Arrays.copyOf(infoString, infoString.length);
         return this;
@@ -97,7 +98,8 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
      * @return This LLDP Organizationally Specific TLV.
      */
     public LLDPOrganizationalTLV setInfoString(String infoString) {
-        byte[] infoStringBytes = infoString.getBytes(Charset.forName("UTF-8"));
+        byte[] infoStringBytes = infoString
+                .getBytes(Charset.forName("UTF-8"));
         return setInfoString(infoStringBytes);
     }
 
@@ -109,8 +111,7 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
         return Arrays.copyOf(infoString, infoString.length);
     }
 
-    @Override
-    public byte[] serialize() {
+    @Override public byte[] serialize() {
         int valueLength = OUI_LENGTH + SUBTYPE_LENGTH + infoString.length;
         value = new byte[valueLength];
         ByteBuffer bb = ByteBuffer.wrap(value);
@@ -120,8 +121,7 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
         return super.serialize();
     }
 
-    @Override
-    public LLDPTLV deserialize(ByteBuffer bb) {
+    @Override public LLDPTLV deserialize(ByteBuffer bb) {
         super.deserialize(bb);
         ByteBuffer optionalField = ByteBuffer.wrap(value);
 
@@ -131,14 +131,14 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
 
         setSubType(optionalField.get());
 
-        byte[] infoString = new byte[getLength() - OUI_LENGTH - SUBTYPE_LENGTH];
+        byte[] infoString = new byte[getLength() - OUI_LENGTH
+                                     - SUBTYPE_LENGTH];
         optionalField.get(infoString);
         setInfoString(infoString);
         return this;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 1423;
         int result = 1;
         result = prime * result + type;
@@ -149,8 +149,7 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
         return result;
     }
 
-    @Override
-    public boolean equals(Object o) {
+    @Override public boolean equals(Object o) {
         if (o == this) {
             return true;
         }
@@ -159,7 +158,7 @@ public class LLDPOrganizationalTLV extends LLDPTLV {
             return false;
         }
 
-        LLDPOrganizationalTLV other = (LLDPOrganizationalTLV)o;
+        LLDPOrganizationalTLV other = (LLDPOrganizationalTLV) o;
         if (this.type != other.type) {
             return false;
         }

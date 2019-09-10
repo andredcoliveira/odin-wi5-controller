@@ -5,12 +5,12 @@ import java.util.Map;
 
 /**
  * Class to contain some statically initialized data
- * @author readams
  *
+ * @author readams
  */
 public class TypeAliases {
-    protected static final Map<String,String> l3TypeAliasMap = 
-            new HashMap<String, String>();
+    protected static final Map<String, String> l3TypeAliasMap = new HashMap<String, String>();
+
     static {
         l3TypeAliasMap.put("0599", "L3_V1Ether");
         l3TypeAliasMap.put("0800", "L3_IPv4");
@@ -43,9 +43,9 @@ public class TypeAliases {
         l3TypeAliasMap.put("9100", "L3_Q_in_Q");
         l3TypeAliasMap.put("cafe", "L3_LLT");
     }
-    
-    protected static final Map<String,String> l4TypeAliasMap = 
-            new HashMap<String, String>();
+
+    protected static final Map<String, String> l4TypeAliasMap = new HashMap<String, String>();
+
     static {
         l4TypeAliasMap.put("00", "L4_HOPOPT");
         l4TypeAliasMap.put("01", "L4_ICMP");

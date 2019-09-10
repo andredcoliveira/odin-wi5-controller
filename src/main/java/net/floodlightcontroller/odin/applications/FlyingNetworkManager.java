@@ -15,6 +15,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,11 +38,14 @@ public class FlyingNetworkManager extends OdinApplication {
 
     @Override public void run() {
 
+        TEE("Running", null);
+
         // Integration of write on file functionality
         if (VERSION.equals("TEST")) { // check that the parameter exists
             String PATH = System.getProperty("user.dir");
             String directoryName = PATH
-                    .concat("/log/" + FlyingNetworkManager.class.getSimpleName());
+                    .concat("/log/" + FlyingNetworkManager.class
+                            .getSimpleName());
             String fileName =
                     FlyingNetworkManager.class.getSimpleName() + "_"
                     + getTimestamp() + ".txt";
@@ -75,7 +79,7 @@ public class FlyingNetworkManager extends OdinApplication {
                 e.printStackTrace();
                 continue;
             }
-            long receiveTime = System.nanoTime();
+            Instant receiveTime = Instant.now();
 
             if (!possibleJson(message)) {
                 continue;
@@ -86,22 +90,28 @@ public class FlyingNetworkManager extends OdinApplication {
             // Wait until it's safe
             tryHaltApplication("SmartApSelection");
             synchronized (getLock()) {
+                TEE("Halted", null);
                 while (!getApplicationState("SmartApSelection")
                         .equals(State.HALTED)) {
+                    TEE("Waiting", null);
                     try {
                         getLock().wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    TEE("Woke up", null);
                 }
 
                 TEE("Handling handoffs", ps);
                 // Handle handoffs
                 long resumeDelay = 0L;
                 if (VERSION.equals("PRODUCTION")) {
-                    resumeDelay = handleHandoffs(message, receiveTime);
+                    resumeDelay = handleHandoffs(message,
+                                                 Timestamp.from(receiveTime)
+                                                          .getTime());  // Confirmar
                 } else if (VERSION.equals("TEST")) {
                     resumeDelay = handleHandoffsTest(message, receiveTime);
+                    TEE("resumeDelay: " + resumeDelay, null);
                 }
 
                 ScheduledExecutorService scheduler = Executors
@@ -111,14 +121,23 @@ public class FlyingNetworkManager extends OdinApplication {
                 scheduler.schedule(
                         new RunResumeApplication("SmartApSelection",
                                                  getLock()),
-                        resumeDelay - (System.nanoTime() - receiveTime),
-                        TimeUnit.NANOSECONDS);
+                        resumeDelay - Duration
+                                .between(receiveTime, Instant.now())
+                                .toNanos(), TimeUnit.NANOSECONDS);
                 scheduler.shutdown();
 
                 getLock().notifyAll();
             }
 
             TEE("Done", ps);
+            out.println("DONE_" + getTimestamp());
+            try {
+                in.close();
+                out.close();
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         try {
@@ -126,7 +145,7 @@ public class FlyingNetworkManager extends OdinApplication {
             out.close();
             clientSocket.close();
             serverSocket.close();
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             e.printStackTrace();
         }
     }
@@ -153,6 +172,9 @@ public class FlyingNetworkManager extends OdinApplication {
      * @param receiveTime time [ns] used as reference to begin operations
      * @return the duration [ns] of the longest UAV flight (operation time)
      */
+    //TODO: follow handleHandoffsTest()'s reasoning - the return must take
+    // into account the time between receiveTime and startTime. I.e.,
+    // longest overall delay, not longest flight.
     private long handleHandoffs(String message, long receiveTime) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, ApRelocation> apRelocations;
@@ -302,7 +324,7 @@ public class FlyingNetworkManager extends OdinApplication {
                 // Schedule handoff
                 scheduler.schedule(
                         new RunHandoffClientToAp(client.getMacAddress(),
-                                                 futureAgent),
+                                                 currentAgent, futureAgent),
                         Math.round(delay * 1000)
                         - (System.nanoTime() - receiveTime) / 1000000,
                         TimeUnit.MILLISECONDS);
@@ -354,15 +376,20 @@ public class FlyingNetworkManager extends OdinApplication {
     public class RunHandoffClientToAp implements Runnable {
 
         private final MACAddress staHwAddr;
+        private final InetAddress currentAgent;
         private final InetAddress futureAgent;
 
         public RunHandoffClientToAp(MACAddress staHwAddr,
+                                    InetAddress currentAgent,
                                     InetAddress futureAgent) {
             this.staHwAddr = staHwAddr;
+            this.currentAgent = currentAgent;
             this.futureAgent = futureAgent;
         }
 
         @Override public void run() {
+            TEE("[HANDOVER] " + staHwAddr + ": " + currentAgent + " -> "
+                + futureAgent, ps);
             handoffClientToAp(staHwAddr, futureAgent);
         }
     }
@@ -381,7 +408,7 @@ public class FlyingNetworkManager extends OdinApplication {
             synchronized (lock) {
                 if (resumeApplication(appName)) {
                     lock.notifyAll();
-                    TEE("Resume " + appName, ps);
+                    TEE("[RESUME] " + appName, ps);
                 }
             }
         }
@@ -541,7 +568,7 @@ public class FlyingNetworkManager extends OdinApplication {
     /**
      * TEST
      */
-    private long handleHandoffsTest(String message, long receiveTime) {
+    private long handleHandoffsTest(String message, Instant receiveTime) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, ApRelocationTest> oldApRelocations;
         try {
@@ -561,10 +588,11 @@ public class FlyingNetworkManager extends OdinApplication {
 
         // Convert Strings to InetAddresses and get the longest flight time
         Map<InetAddress, ApRelocationTest> apRelocations = new HashMap<>();
-        long longestFlight = 0L;
+        long longestDelay = 0L;
 
         for (Map.Entry<String, ApRelocationTest> entry : oldApRelocations
                 .entrySet()) {
+            TEE("Agent: " + entry.getKey(), null);
             String agent = entry.getKey();
             ApRelocationTest apRelocation = entry.getValue();
 
@@ -578,10 +606,29 @@ public class FlyingNetworkManager extends OdinApplication {
             if (agentAddress != null) {
                 apRelocations.put(agentAddress, apRelocation);
 
-                long delayMillis = 2 * (apRelocation.handoffTime.getTime()
-                                        - apRelocation.startTime.getTime());
-                if (delayMillis > longestFlight) {
-                    longestFlight = delayMillis;
+                long delayNanos;
+                System.err.println("receiveTime: " + receiveTime);
+                System.err.println(
+                        "startTime: " + apRelocation.startTime.toInstant());
+                System.err.println("handoffTime: " + apRelocation.handoffTime
+                        .toInstant());
+                delayNanos = Duration.between(receiveTime,
+                                              apRelocation.handoffTime
+                                                      .toInstant()).toNanos()
+                             + Duration.between(
+                        apRelocation.startTime.toInstant(),
+                        apRelocation.handoffTime.toInstant()).toNanos();
+                System.err.println(
+                        "delayNanos:  " + delayNanos + " = " + Duration
+                                .between(receiveTime,
+                                         apRelocation.handoffTime
+                                                 .toInstant()).toNanos()
+                        + " + " + Duration
+                                .between(apRelocation.startTime.toInstant(),
+                                         apRelocation.handoffTime
+                                                 .toInstant()).toNanos());
+                if (delayNanos > longestDelay) {
+                    longestDelay = delayNanos;
                 }
             }
         }
@@ -605,24 +652,26 @@ public class FlyingNetworkManager extends OdinApplication {
                 continue;
             }
 
-            long delay = apRelocations.get(futureAgent).handoffTime.getTime()
-                         - apRelocations.get(futureAgent).startTime
-                                 .getTime();
+            long delayNanos = Duration.between(
+                    apRelocations.get(futureAgent).startTime.toInstant(),
+                    apRelocations.get(futureAgent).handoffTime.toInstant())
+                                      .toNanos();
 
-            if (delay > 0) {
+            if (delayNanos > 0) {
                 // Schedule handoff
                 scheduler.schedule(
                         new RunHandoffClientToAp(client.getMacAddress(),
-                                                 futureAgent),
-                        delay - (System.nanoTime() - receiveTime) / 1000000,
-                        TimeUnit.MILLISECONDS);
+                                                 currentAgent, futureAgent),
+                        delayNanos - Duration
+                                .between(receiveTime, Instant.now())
+                                .toNanos(), TimeUnit.NANOSECONDS);
             }
         }
 
         // Gracefully shutdown the scheduler (i.e., still finishes old tasks)
         scheduler.shutdown();
 
-        return longestFlight;
+        return longestDelay;
     }
 
     /**

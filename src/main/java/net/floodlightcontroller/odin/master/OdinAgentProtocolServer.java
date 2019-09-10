@@ -1,5 +1,9 @@
 package net.floodlightcontroller.odin.master;
 
+import net.floodlightcontroller.util.MACAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -7,10 +11,6 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-
-import net.floodlightcontroller.util.MACAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class OdinAgentProtocolServer implements Runnable {
 

@@ -1,26 +1,26 @@
 package net.floodlightcontroller.packetstreamer;
 
-import net.floodlightcontroller.packetstreamer.thrift.*;
+import net.floodlightcontroller.packetstreamer.thrift.Message;
+import net.floodlightcontroller.packetstreamer.thrift.PacketStreamer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The PacketStreamer handler class that implements the service APIs.
  */
 public class PacketStreamerHandler implements PacketStreamer.Iface {
 
-	/**
-	 * The queue wrapper class that contains the queue for the streamed packets.
-	 */
+    /**
+     * The queue wrapper class that contains the queue for the streamed packets.
+     */
     protected class SessionQueue {
         protected BlockingQueue<ByteBuffer> pQueue;
 
@@ -38,12 +38,13 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
             return this.pQueue;
         }
     }
-    
+
     /**
      * The class logger object
      */
-    protected static Logger log = LoggerFactory.getLogger(PacketStreamerServer.class);
-    
+    protected static Logger log = LoggerFactory
+            .getLogger(PacketStreamerServer.class);
+
     /**
      * A sessionId-to-queue mapping
      */
@@ -59,16 +60,15 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
     /**
      * The implementation for getPackets() function.
      * This is a blocking API.
-     * 
+     *
      * @param sessionid
      * @return A list of packets associated with the session
      */
-    @Override
-    public List<ByteBuffer> getPackets(String sessionid)
+    @Override public List<ByteBuffer> getPackets(String sessionid)
             throws org.apache.thrift.TException {
         List<ByteBuffer> packets = new ArrayList<ByteBuffer>();
         int count = 0;
-        
+
         while (!msgQueues.containsKey(sessionid) && count++ < 100) {
             log.debug("Queue for session {} doesn't exist yet.", sessionid);
             try {
@@ -79,15 +79,15 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
         }
 
         if (count < 100) {
-	        SessionQueue pQueue = msgQueues.get(sessionid);
-	        BlockingQueue<ByteBuffer> queue = pQueue.getQueue();
-	        // Block if queue is empty
-	        try {
-	            packets.add(queue.take());
-	            queue.drainTo(packets);
-	        } catch (InterruptedException e) {
-	            log.error(e.toString());
-	        }
+            SessionQueue pQueue = msgQueues.get(sessionid);
+            BlockingQueue<ByteBuffer> queue = pQueue.getQueue();
+            // Block if queue is empty
+            try {
+                packets.add(queue.take());
+                queue.drainTo(packets);
+            } catch (InterruptedException e) {
+                log.error(e.toString());
+            }
         }
 
         return packets;
@@ -95,13 +95,12 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
 
     /**
      * The implementation for pushMessageSync() function.
-     * 
+     *
      * @param msg
      * @return 1 for success, 0 for failure
      * @throws TException
      */
-    @Override
-    public int pushMessageSync(Message msg)
+    @Override public int pushMessageSync(Message msg)
             throws org.apache.thrift.TException {
 
         if (msg == null) {
@@ -120,7 +119,8 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
                 pQueue = msgQueues.get(sid);
             }
 
-            log.debug("pushMessageSync: SessionId: " + sid + " Receive a message, " + msg.toString() + "\n");
+            log.debug("pushMessageSync: SessionId: " + sid
+                      + " Receive a message, " + msg.toString() + "\n");
             ByteBuffer bb = ByteBuffer.wrap(msg.getPacket().getData());
             //ByteBuffer dst = ByteBuffer.wrap(msg.getPacket().toString().getBytes());
             BlockingQueue<ByteBuffer> queue = pQueue.getQueue();
@@ -140,12 +140,11 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
 
     /**
      * The implementation for pushMessageAsync() function.
-     * 
+     *
      * @param msg
      * @throws TException
      */
-    @Override
-    public void pushMessageAsync(Message msg)
+    @Override public void pushMessageAsync(Message msg)
             throws org.apache.thrift.TException {
         pushMessageSync(msg);
         return;
@@ -154,11 +153,11 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
     /**
      * The implementation for terminateSession() function.
      * It removes the session to queue association.
+     *
      * @param sessionid
      * @throws TException
      */
-    @Override
-    public void terminateSession(String sessionid)
+    @Override public void terminateSession(String sessionid)
             throws org.apache.thrift.TException {
         if (!msgQueues.containsKey(sessionid)) {
             return;
@@ -172,7 +171,8 @@ public class PacketStreamerHandler implements PacketStreamer.Iface {
         BlockingQueue<ByteBuffer> queue = pQueue.getQueue();
         if (queue != null) {
             if (!queue.offer(bb)) {
-                log.error("Failed to queue message for session: " + sessionid);
+                log.error(
+                        "Failed to queue message for session: " + sessionid);
             }
             msgQueues.remove(sessionid);
         } else {

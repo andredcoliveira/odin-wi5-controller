@@ -4,6 +4,7 @@ import net.floodlightcontroller.odin.master.*;
 import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
 import net.floodlightcontroller.util.MACAddress;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -13,18 +14,18 @@ import java.util.*;
         extends OdinApplication {
 
     // IMPORTANT: this application only works if all the agents in the
-    // poolfile are activated before the end of the INITIAL_INTERVAL.
+    //poolfile are activated before the end of the INITIAL_INTERVAL.
     // Otherwise, the application looks for an object that does not exist
-    // and gets stopped
+    //and gets stopped
 
     // SSID to scan
     private final String SCANNED_SSID = "*";
 
-    // Params
+    //Params
     private SmartApSelectionParams SMARTAP_PARAMS;
 
     // Scanning agents
-    Map<InetAddress, Integer> scanningAgents = new HashMap<>();
+    Map<InetAddress, Integer> scanningAgents = new HashMap<InetAddress, Integer>();
     int result; // Result for scanning
 
     HashSet<OdinClient> clients;
@@ -45,18 +46,17 @@ import java.util.*;
     /**
      * Flow detection
      */
-    private final String IPSrcAddress; // Handle a IPSrcAddress or all IPSrcAddress ("*")
+    private final String IPSrcAddress;        // Handle a IPSrcAddress or all IPSrcAddress ("*")
+    private final String IPDstAddress;        // Handle a IPDstAddress or all IPDstAddress ("*")
+    private final int protocol;           // Handle a protocol or all protocol ("*")
+    private final int SrcPort;            // Handle a SrcPort or all SrcPort ("*")
+    private final int DstPort;            // Handle a DstPort or all DstPort ("*")
 
-    private final String IPDstAddress; // Handle a IPDstAddress or all IPDstAddress ("*")
-    private final int protocol; // Handle a protocol or all protocol ("*")
-    private final int SrcPort; // Handle a SrcPort or all SrcPort ("*")
-    private final int DstPort; // Handle a DstPort or all DstPort ("*")
-
-    Map<InetAddress, DetectedFlow> flowsReceived = new HashMap<>();
+    Map<InetAddress, DetectedFlow> flowsReceived = new HashMap<InetAddress, DetectedFlow>();
 
     // Initialize the variables
     public SmartApSelection() {
-        this.IPSrcAddress = "*"; // The controller will handle subscriptions from every IP source accress
+        this.IPSrcAddress = "*";    // The controller will handle subscriptions from every IP source accress
         this.IPDstAddress = "*";
         this.protocol = 0;
         this.SrcPort = 0;
@@ -64,13 +64,20 @@ import java.util.*;
     }
 
     /**
-     * Register flow detection Configure the detection of flows
+     * Register flow detection
+     * Configure the detection of flows
      */
     private void initDetection() {
         OdinEventFlowDetection oefd = new OdinEventFlowDetection();
         oefd.setFlowDetection(this.IPSrcAddress, this.IPSrcAddress,
                               this.protocol, this.SrcPort, this.DstPort);
-        FlowDetectionCallback cb = this::handler;
+        FlowDetectionCallback cb = new FlowDetectionCallback() {
+            @Override
+            public void exec(OdinEventFlowDetection oefd,
+                             FlowDetectionCallbackContext cntx) {
+                handler(oefd, cntx);
+            }
+        };
         /* Before executing this line, make sure the agents declared in poolfile are started */
         registerFlowDetection(oefd, cb);
     }
@@ -78,17 +85,15 @@ import java.util.*;
     /**
      * Condition for a hand off
      * Example of params in poolfile imported in SMARTAP_PARAMS:
-     * SMARTAP_PARAMS.HYSTERESIS_THRESHOLD = 4; SMARTAP_PARAMS.SIGNAL_THRESHOLD = -56;
+     * SMARTAP_PARAMS.HYSTERESIS_THRESHOLD = 4;
+     * SMARTAP_PARAMS.SIGNAL_THRESHOLD = -56;
      * With these parameters a hand off will start when:
-     * The Rssi received from a specific client is below -56 dBm, there is
-     * another AP with better received Rssi and a previous hand off has
-     * not happened in the last 4000 ms
+     * The Rssi received from a specific client is below -56 dBm, there is another AP with better received Rssi and a previous hand off has not happened in the last 4000 ms
      */
-    @Override public void run() {
 
+    @Override public void run() {
         System.out.println("[SmartAPSelection] Start");
-        // Import the parameters of Poolfile, using this function of Odin Master
-        this.SMARTAP_PARAMS = getSmartApSelectionParams();
+        this.SMARTAP_PARAMS = getSmartApSelectionParams();  // Import the parameters of Poolfile, using this function of Odin Master
 
         // Wait a period in order to let the user start the agents
         try {
@@ -102,28 +107,20 @@ import java.util.*;
         // Integration of write on file functionality
         PrintStream ps = null;
 
-        //        if (SMARTAP_PARAMS.filename.length() > 0) { // check that the parameter exists
-        //            File f = new File(SMARTAP_PARAMS.filename);
-        //            try {
-        //                ps = new PrintStream(f);
-        //            } catch (Exception e) {
-        //                e.printStackTrace();
-        //            }
-        //        }
-        String PATH = System.getProperty("user.dir");
-        String directoryName = PATH
-                .concat("/log/" + SmartApSelection.class.getSimpleName());
-        String fileName =
-                SmartApSelection.class.getSimpleName() + "_" + getTimestamp()
-                + ".txt";
-
-        ps = getPrintStream(directoryName, fileName);
-        SMARTAP_PARAMS.filename = fileName;
+        if (SMARTAP_PARAMS.filename.length()
+            > 0) { // check that the parameter exists
+            File f = new File(SMARTAP_PARAMS.filename);
+            try {
+                ps = new PrintStream(f);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         agents = getAgents(); // Fill the array of agents
         num_agents = agents.size(); // Number of agents
         channels = new int[num_agents]; // Array to store the channels in use
-        int[] channelsAux = new int[num_agents]; // Channels in use by the auxiliary interfaces of each AP
+        int[] channelsAux = new int[num_agents];  // Array of the channels in use by the auxiliary interfaces of each AP
 
         // Add this information to the log file
         ps.println("[SmartAPSelection] Log file "
@@ -140,17 +137,17 @@ import java.util.*;
                 "\tPrevious_data_weight (alpha): " + SMARTAP_PARAMS.weight);
         ps.println("\tPause between scans: " + SMARTAP_PARAMS.pause);
         ps.println("\tMode: " + SMARTAP_PARAMS.mode);
-        ps.println("\tTxPowerSTA: " + SMARTAP_PARAMS.txpowerSTA);
-        ps.println("\tTxPowerSTA: " + SMARTAP_PARAMS.thReqSTA);
+        ps.println("\tTxpowerSTA: " + SMARTAP_PARAMS.txpowerSTA);
+        ps.println("\tTxpowerSTA: " + SMARTAP_PARAMS.thReqSTA);
         ps.println("\tFilename: " + SMARTAP_PARAMS.filename);
 
         // Array created to show the line with the names of the APs
-        StringBuilder showAPsLine = new StringBuilder(
-                "\033[K\r[SmartAPSelection] ");
+        String showAPsLine = "\033[K\r[SmartAPSelection] ";
 
         try { // Create IP to compare with clients not assigned
             nullAddr = InetAddress.getByName("0.0.0.0");
-            vipAPAddr = InetAddress.getByName(getVipAPIpAddress()); // VIP AP
+            vipAPAddr = InetAddress
+                    .getByName(getVipAPIpAddress());   // VIP AP
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -162,22 +159,21 @@ import java.util.*;
 
             String hostIP = agentAddr
                     .getHostAddress(); // Build line for user interface
-            showAPsLine.append("\033[0;1m[ AP")
-                       .append(hostIP.substring(hostIP.lastIndexOf('.') + 1))
-                       .append(" ]");
+            showAPsLine = showAPsLine + "\033[0;1m[ AP" + hostIP
+                    .substring(hostIP.lastIndexOf('.') + 1, hostIP.length())
+                          + " ]";
 
             int chann = getChannelFromAgent(agentAddr);
-            // System.out.println("[SmartAPSelection] = Channels " + Arrays.toString(channels));
+            //System.out.println("[SmartAPSelection] = Channels " + Arrays.toString(channels));
             Arrays.sort(
-                    channelsAux); // ordered list of channels used by the main interface of the APs. A channel is only added once
-            // System.out.println("[SmartAPSelection] = Search for " + chann + ": " +
-            // Arrays.binarySearch(channelsAux, chann));
+                    channelsAux);   // ordered list of channels used by the main interface of the APs. A channel is only added once
+            //System.out.println("[SmartAPSelection] = Search for "+chann+": " + Arrays.binarySearch(channelsAux, chann));
 
             if (Arrays.binarySearch(channelsAux, chann)
-                < 0) { // if already in array, not necessary to add it
+                < 0) {// if already in array, not necessary to add it
                 channelsAux[num_channels] = chann;
                 channels[num_channels] = chann;
-                // System.out.println("[SmartAPSelection] Chann added " + chann);
+                //System.out.println("[SmartAPSelection] Chann added "+chann);
             }
             System.out.println(
                     "[SmartAPSelection] AP " + agentAddr + " in channel: "
@@ -197,9 +193,9 @@ import java.util.*;
         ps.flush(); // write in the log file (empty the buffer)
 
         vals_rx = new String[num_channels][num_agents]; // Matrix to store the results from agents
-        Map<MACAddress, Double[]> rssiData = new HashMap<>(); // Map to store RSSI for each STA in all APs
-        Map<MACAddress, Long> handoffDate = new HashMap<>(); // Map to store last handoff for each STA FIXME: Maybe create struct
-        Map<MACAddress, Double[]> ffData = new HashMap<>(); // Map to store Throughput available for each STA in all APs
+        Map<MACAddress, Double[]> rssiData = new HashMap<MACAddress, Double[]>(); // Map to store RSSI for each STA in all APs
+        Map<MACAddress, Long> handoffDate = new HashMap<MACAddress, Long>(); // Map to store last handoff for each STA FIXME: Maybe create struct
+        Map<MACAddress, Double[]> ffData = new HashMap<MACAddress, Double[]>(); // Map to store Throughput available for each STA in all APs
 
         System.out.print("\033[2J"); // Clear screen and cursor to 0,0
         char[] progressChar = new char[] { '-', '\\', '|', '/' };
@@ -211,7 +207,7 @@ import java.util.*;
         // Main loop
         while (true) {
             try {
-                Thread.sleep(100); // milliseconds
+                Thread.sleep(100);  // milliseconds
 
                 /* * * * * * * * * * * * * * * * * * * * *
                  *                                       *
@@ -220,12 +216,12 @@ import java.util.*;
                  * * * * * * * * * * * * * * * * * * * * */
                 if (checkpoint()) {
                     softReset(rssiData, handoffDate, ffData);
-                    ps.println("Soft Resetting...");
+                    TEE("Soft Resetting...", ps);
                     continue;
                 }
 
                 // restart the clients hashset in order to see if there are new STAs
-                clients = new HashSet<>(getClients());
+                clients = new HashSet<OdinClient>(getClients());
 
                 int num_clients = clients.size(); // Number of STAs
 
@@ -235,12 +231,13 @@ import java.util.*;
                     System.out.println(
                             "\033[K\r[SmartAPSelection] Proactive AP Handoff");
                     System.out.println("\033[K\r[SmartAPSelection]");
-                    System.out.println(
-                            "\033[K\r[SmartAPSelection] " + progressChar[
-                                    progressIndex++ % 4]
-                            + "No clients associated, waiting for connection");
+                    System.out.println("\033[K\r[SmartAPSelection] "
+                                       + progressChar[progressIndex++]
+                                       + "No clients associated, waiting for connection");
                     System.out.println(
                             "\033[K\r[SmartAPSelection] ====================");
+                    if (progressIndex == 3)
+                        progressIndex = 0;
                     System.out
                             .print("\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[0;0H"); // Clear lines above and return to console 0,0
                     continue;
@@ -251,7 +248,8 @@ import java.util.*;
 
                 // Various indexes
                 int client_index = 0;
-                int client_channel;
+                int client_channel = 0;
+                ind_aux = 0;
 
                 System.out.println(
                         "\033[K\r[SmartAPSelection] ====================");
@@ -274,9 +272,11 @@ import java.util.*;
                             clientsChannels[client_index] = ind_aux;
                             client_index++;
                             break;
+
                         }
                         ind_aux++;
                     }
+
                 }
 
                 /* * * * * * * * * * * * * * * * * * * * *
@@ -286,18 +286,17 @@ import java.util.*;
                  * * * * * * * * * * * * * * * * * * * * */
                 if (checkpoint()) {
                     softReset(rssiData, handoffDate, ffData);
-                    ps.println("Soft Resetting...");
+                    TEE("Soft Resetting...", ps);
                     continue;
                 }
 
                 time = System.currentTimeMillis();
 
-                // For each channel used in our APs
+                //For each channel used in our APs
                 for (int channel = 0; channel < num_channels; ++channel) {
 
-                    if (channels[channel] == 0) {
+                    if (channels[channel] == 0)
                         continue;
-                    }
 
                     int agent = 0;
                     scanningAgents.clear();
@@ -336,7 +335,7 @@ import java.util.*;
                                 agentAddr);
                         agent++;
                     }
-                    // Thread.sleep(200); // Give some time to the AP
+                    //Thread.sleep(200); // Give some time to the AP
                 }
 
                 System.out.println(
@@ -350,7 +349,7 @@ import java.util.*;
                  * * * * * * * * * * * * * * * * * * * * */
                 if (checkpoint()) {
                     softReset(rssiData, handoffDate, ffData);
-                    ps.println("Soft Resetting...");
+                    TEE("Soft Resetting...", ps);
                     continue;
                 }
 
@@ -361,6 +360,7 @@ import java.util.*;
                 // All the statistics stored, now process
                 time = System.currentTimeMillis();
                 client_index = 0;
+                ind_aux = 0;
 
                 // For each STA (client) associated, store the RSSI value with which the APs "see" it
                 for (OdinClient oc : clients) {
@@ -370,44 +370,47 @@ import java.util.*;
                     client_channel = clientsChannels[client_index]; // row in the matrix
 
                     for (ind_aux = 0;
-                         ind_aux < num_agents; ind_aux++) { // For
+                         ind_aux < num_agents; ind_aux++) {// For
 
                         String arr = vals_rx[client_channel][ind_aux]; // String with "MAC rssi\nMAC rssi\n..."
 
                         Double rssi = getRssiFromRxStats(eth,
                                                          arr); // rssi or -99.9
 
+                        Double[] client_average_dBm = new Double[num_agents];
+
                         // get the stored RSSI averaged value (historical data)
-                        Double[] client_average_dBm = rssiData.get(eth);
+                        client_average_dBm = rssiData.get(eth);
 
                         if (client_average_dBm
-                            == null) { // First time STA is associated
+                            == null) {// First time STA is associated
 
                             client_average_dBm = new Double[num_agents];
                             Arrays.fill(client_average_dBm,
                                         -99.9); // first, we put -99.9 everywhere
-                            client_average_dBm[ind_aux] = rssi; // put the last value instead of -99.9
+                            client_average_dBm[ind_aux] = rssi;   // put the last value instead of -99.9
 
                         } else {
 
                             // Recalculate the new average
-                            if ((client_average_dBm[ind_aux] != null) && (
-                                    client_average_dBm[ind_aux] != -99.9)) {
+                            if ((client_average_dBm[ind_aux] != -99.9) && (
+                                    client_average_dBm[ind_aux] != null)) {
                                 if (rssi != -99.9) {
-                                    double client_signal = Math.pow(10.0,
+                                    Double client_signal = Math.pow(10.0,
                                                                     (rssi)
                                                                     / 10.0); // Linear power
-                                    double client_average = Math.pow(10.0,
+                                    Double client_average = Math.pow(10.0,
                                                                      (client_average_dBm[ind_aux])
                                                                      / 10.0); // Linear power average
                                     client_average = client_average * (1
                                                                        - SMARTAP_PARAMS.weight)
                                                      + client_signal
                                                        * SMARTAP_PARAMS.weight; // use the "alpha" parameter (weight) to calculate the new value
-                                    client_average_dBm[ind_aux] =
-                                            (double) Math.round(1000 * Math
-                                                    .log10(client_average))
-                                            / 100; // Average power in dBm with 2 decimals
+                                    client_average_dBm[ind_aux] = Double
+                                            .valueOf((double) Math
+                                                    .round(1000 * Math
+                                                            .log10(client_average))
+                                                     / 100); //Average power in dBm with 2 decimals
                                 }
                             } else {
                                 // It is the first time we have data of this STA in this AP
@@ -438,7 +441,7 @@ import java.util.*;
                  * * * * * * * * * * * * * * * * * * * * */
                 if (checkpoint()) {
                     softReset(rssiData, handoffDate, ffData);
-                    ps.println("Soft Resetting...");
+                    TEE("Soft Resetting...", ps);
                     continue;
                 }
 
@@ -454,35 +457,33 @@ import java.util.*;
 
                     MACAddress eth = oc.getMacAddress(); // client MAC
 
-                    Double[] client_dBm;
+                    Double[] client_dBm = new Double[num_agents];
 
                     InetAddress clientAddr = oc.getIpAddress();
                     InetAddress agentAddr = oc.getLvap().getAgent()
                                               .getIpAddress();
 
                     if (clientAddr
-                            .equals(nullAddr)) { // If client not assigned, go to next one (associated, but without IP address)
+                            .equals(nullAddr))// If client not assigned, go to next one (associated, but without IP address)
                         continue;
-                    }
 
-                    System.out.println(
-                            "\033[K\r[SmartAPSelection] \t\t\t\tClient "
-                            + clientAddr + " in agent " + agentAddr);
+                    System.out.println("\033[K\r[SmartAPSelection] \tClient "
+                                       + clientAddr + " in agent "
+                                       + agentAddr);
                     ps.println("\tClient " + clientAddr + " in agent "
                                + agentAddr); // Log in file
 
                     // Recover the information
                     client_dBm = rssiData.get(eth);
 
-                    if (client_dBm != null) { // Array with rssi
+                    if (client_dBm != null) {// Array with rssi
 
                         Double maxRssi = client_dBm[0]; // Start with first rssi
 
                         Double currentRssi = null;
 
                         for (ind_aux = 1; ind_aux
-                                          < client_dBm.length; ind_aux++) { // Get the index of the AP where the STA has the highest RSSI, VIP AP
-                            // not considered
+                                          < client_dBm.length; ind_aux++) {//Get the index of the AP where the STA has the highest RSSI, VIP AP not considered
 
                             if ((client_dBm[ind_aux] > maxRssi)
                                 && (!vipAPAddr
@@ -555,35 +556,31 @@ import java.util.*;
                                 }
                             }
                         }
-                        // End printf with colours
+                        // End prinft with colours
 
-                        // this is used for all the modes except FF. If you also want a threshold in FF mode,
-                        // substitute the next line with if(true){
-                        // if(!SMARTAP_PARAMS.mode.equals("FF")){ // In BALANCER mode, it will assign STAs to
-                        // APs always with higher RSSI than threshold, so there is not ping pong effect
-                        if (true) { // In BALANCER mode, it will assign STAs to APs always with higher RSSI than
-                            // threshold, so there is not ping pong effect
+                        // this is used for all the modes except FF. If you also want a threshold in FF mode, substitute the next line with if(true){
+                        //if(!SMARTAP_PARAMS.mode.equals("FF")){ // In BALANCER mode, it will assign STAs to APs always with higher RSSI than threshold, so there is not ping pong effect
+                        if (true) { // In BALANCER mode, it will assign STAs to APs always with higher RSSI than threshold, so there is not ping pong effect
                             if (!agentsArray[client_index]
-                                    .equals(agentAddr)) { // If the agent to which the STA is associated is not the one with
-                                // the highest RSSI, change to the best RSSI
+                                    .equals(agentAddr)) { // If the agent to which the STA is associated is not the one with the highest RSSI, change to the best RSSI
 
-                                // If Rssi threshold is reached, check hystheresis
+                                //If Rssi threshold is reached, check hystheresis
                                 if (currentRssi
                                     < SMARTAP_PARAMS.signal_threshold) {
 
                                     Long handoffTime = handoffDate.get(eth);
 
-                                    // If hystheresis has expired, handoff to the AP with the highest RSSI
+                                    //If hystheresis has expired, handoff to the AP with the highest RSSI
                                     if ((handoffTime == null) || (
                                             (System.currentTimeMillis()
-                                             - handoffTime) / 1000
+                                             - handoffTime.longValue())
+                                            / 1000
                                             > SMARTAP_PARAMS.hysteresis_threshold)) {
 
                                         handoffClientToAp(eth,
                                                           agentsArray[client_index]);
-                                        handoffDate.put(eth,
-                                                        System.currentTimeMillis()); // store the time for checking the hysteresis
-                                        // next time
+                                        handoffDate.put(eth, Long.valueOf(
+                                                System.currentTimeMillis())); // store the time for checking the hysteresis next time
                                         System.out.println(
                                                 " - Handoff >--->--->---> "
                                                 + agentsArray[client_index]);
@@ -600,39 +597,32 @@ import java.util.*;
 
                                 } else {
                                     // The threshold is not reached
-                                    switch (SMARTAP_PARAMS.mode) {
-                                        case "RSSI":
-                                            System.out.println(
-                                                    " - No Handoff: Rssi Threshold not reached");
-                                            ps.println(
-                                                    "\t\t[No Action] No Handoff: Rssi Threshold not reached"); // Log in file
-
-                                            break;
-                                        case "DETECTOR":
-                                            System.out.println(
-                                                    " - Assigned by DETECTOR");
-                                            ps.println(
-                                                    "\t\t[No Action] No Handoff: Assigned by DETECTOR"); // Log in file
-
-                                            break;
-                                        case "FF":
-                                            System.out.println(
-                                                    " - Assigned by FF");
-                                            ps.println(
-                                                    "\t\t[No Action] No Handoff: Assigned by FF"); // Log in file
-
-                                            break;
-                                        default:
-                                            System.out.println(
-                                                    " - Assigned by BALANCER");
-                                            ps.println(
-                                                    "\t\t[No Action] No Handoff: Assigned by BALANCER"); // Log in file
-
-                                            break;
+                                    if (SMARTAP_PARAMS.mode.equals("RSSI")) {
+                                        System.out.println(
+                                                " - No Handoff: Rssi Threshold not reached");
+                                        ps.println(
+                                                "\t\t[No Action] No Handoff: Rssi Threshold not reached"); // Log in file
+                                    } else if (SMARTAP_PARAMS.mode
+                                            .equals("DETECTOR")) {
+                                        System.out.println(
+                                                " - Assigned by DETECTOR");
+                                        ps.println(
+                                                "\t\t[No Action] No Handoff: Assigned by DETECTOR"); // Log in file
+                                    } else if (SMARTAP_PARAMS.mode
+                                            .equals("FF")) {
+                                        System.out.println(
+                                                " - Assigned by FF");
+                                        ps.println(
+                                                "\t\t[No Action] No Handoff: Assigned by FF"); // Log in file
+                                    } else {
+                                        System.out.println(
+                                                " - Assigned by BALANCER");
+                                        ps.println(
+                                                "\t\t[No Action] No Handoff: Assigned by BALANCER"); // Log in file
                                     }
                                 }
                             } else {
-                                System.out.println(); // Best AP already
+                                System.out.println(""); // Best AP already
                                 ps.println(
                                         "\t\t[No Action] There is no better Rssi heard"); // Log in file
                             }
@@ -649,34 +639,30 @@ import java.util.*;
                             for (InetAddress agentAddrFF : agents) {
 
                                 if (oc.getLvap().getAgent().getIpAddress()
-                                      .equals(agentAddrFF)) { // If the STA is associated to this agent, use the real
-                                    // statistics
+                                      .equals(agentAddrFF)) { // If the STA is associated to this agent, use the real statistics
                                     // Reception statistics
                                     Map<MACAddress, Map<String, String>> vals_rx_FF = getRxStatsFromAgent(
                                             agentAddrFF);
                                     Map<String, String> vals_entry_rx = vals_rx_FF
-                                            .get(eth); // Look for the statistics corresponding to this client (using the
-                                    // eth address)
+                                            .get(eth);  // Look for the statistics corresponding to this client (using the eth address)
                                     if (vals_entry_rx != null) {
-                                        // System.out.println("\033[K\r[SmartAPSelection] avg rate: " +
-                                        // vals_entry_rx.get("avg_rate") + " kbps");
-                                        double clientRate = Double
+                                        //System.out.println("\033[K\r[SmartAPSelection] avg rate: " + vals_entry_rx.get("avg_rate") + " kbps");
+                                        Double clientRate = Double
                                                 .parseDouble(vals_entry_rx
                                                                      .get("avg_rate"));
                                         // t and T
                                         double[] tTValues = getTransmissionTime(
-                                                clientRate);
+                                                clientRate.doubleValue());
                                         double p = 0.98 * (tTValues[1]
                                                            / tTValues[0]);
-                                        // System.out.println("\033[K\r[SmartAPSelection] Th_av["+ind_aux+"]: " +
-                                        // String.format("%.2f",clientRate.doubleValue()*p));
-                                        TH_av[ind_aux] = clientRate * p;
+                                        //System.out.println("\033[K\r[SmartAPSelection] Th_av["+ind_aux+"]: " + String.format("%.2f",clientRate.doubleValue()*p));
+                                        TH_av[ind_aux] =
+                                                clientRate.doubleValue() * p;
                                     } else {
                                         TH_av[ind_aux] = 0.0;
                                     }
 
-                                } else { // if the STA is NOT associated to this agent, estimate the available
-                                    // throughput
+                                } else { // if the STA is NOT associated to this agent, estimate the available throughput
                                     double txpowerAP = Math.pow(10.0,
                                                                 (getTxPowerFromAgent(
                                                                         agentAddrFF))
@@ -693,15 +679,14 @@ import java.util.*;
                                     double[] tTValues = getTransmissionTime(
                                             maxRate);
 
-                                    HashSet<OdinClient> clients_FF = new HashSet<>(
+                                    HashSet<OdinClient> clients_FF = new HashSet<OdinClient>(
                                             getClientsFromAgent(
                                                     agentAddrFF));
                                     double t2Value = calculateT2(
                                             clients_FF.size(), tTValues[0]);
                                     double p =
                                             0.98 * (tTValues[1] / t2Value);
-                                    // System.out.println("\033[K\r[SmartAPSelection] Th_av["+ind_aux+"]: " +
-                                    // String.format("%.2f",maxRate*p));
+                                    //System.out.println("\033[K\r[SmartAPSelection] Th_av["+ind_aux+"]: " + String.format("%.2f",maxRate*p));
                                     TH_av[ind_aux] = maxRate * p;
                                 }
                                 ind_aux++;
@@ -722,7 +707,7 @@ import java.util.*;
                  * * * * * * * * * * * * * * * * * * * * */
                 if (checkpoint()) {
                     softReset(rssiData, handoffDate, ffData);
-                    ps.println("Soft Resetting...");
+                    TEE("Soft Resetting...", ps);
                     continue;
                 }
 
@@ -743,9 +728,8 @@ import java.util.*;
                                                   .getIpAddress();
 
                         if (clientAddr
-                                .equals(nullAddr)) { // If client not assigned, next one
+                                .equals(nullAddr))// If client not assigned, next one
                             continue;
-                        }
 
                         System.out.println(
                                 "\033[K\r[SmartAPSelection] \t\t\t\tClient "
@@ -754,7 +738,7 @@ import java.util.*;
                                    + agentAddr); // Log in file
 
                         Double[] th_avFF = ffData.get(eth);
-                        // System.out.println("\033[K\r[SmartAPSelection] th_avFF= "+Arrays.toString(th_avFF));
+                        //System.out.println("\033[K\r[SmartAPSelection] th_avFF= "+Arrays.toString(th_avFF));
                         Double maxFF = calculateFittingnessFactor(
                                 SMARTAP_PARAMS.thReqSTA,
                                 th_avFF[0]); // Start with first Th_av
@@ -764,11 +748,11 @@ import java.util.*;
                                                  .format("%.3f", maxFF)
                                          + " ");
 
-                        ArrayList<Integer> th_list = new ArrayList<>(); // To sort FF
+                        ArrayList<Integer> th_list = new ArrayList<Integer>(); // To sort FF
                         th_list.add(0); // First FF
 
                         for (ind_aux = 1; ind_aux
-                                          < th_avFF.length; ind_aux++) { // Get max position and calculate FF
+                                          < th_avFF.length; ind_aux++) { //Get max position and calculate FF
 
                             Double currentFF = calculateFittingnessFactor(
                                     SMARTAP_PARAMS.thReqSTA,
@@ -786,14 +770,13 @@ import java.util.*;
                                     break;
                                 }
                             }
-                            if (!added_FF) {
+                            if (!added_FF)
                                 th_list.add(ind_aux); // Not max FF
-                            }
 
                             System.out.print("ff[" + ind_aux + "]=" + String
                                     .format("%.3f", currentFF) + " ");
                         }
-                        System.out.println();
+                        System.out.println("");
                         System.out.print("\033[K\r[SmartAPSelection] ");
 
                         // Print the results with colours
@@ -841,7 +824,8 @@ import java.util.*;
                                 } else {
                                     System.out.print("[" + String
                                             .format("%.2f", th_avFF[ind_aux]
-                                                            / 1000.0) + "]");
+                                                            / 1000.0)
+                                                     + "]"); //
                                     ps.println(
                                             "\t\t[WorseAP] Throughput in agent "
                                             + agentsArray[ind_aux] + ": "
@@ -851,15 +835,16 @@ import java.util.*;
                             }
                         }
 
-                        for (Integer integer : th_list) {
+                        for (int ind_list = 0;
+                             ind_list < th_list.size(); ind_list++) {
 
-                            client_index = integer;
+                            client_index = th_list.get(ind_list);
 
                             // Order the handoff to the AP with the highest FF
                             if (!agentsArray[client_index]
                                     .equals(agentAddr)) { // Change to the best FF
 
-                                // If Rssi threshold is reached, check hystheresis
+                                //If Rssi threshold is reached, check hystheresis
                                 Double[] client_dBm = rssiData.get(eth);
                                 Double currentRssi = client_dBm[client_index];
                                 if (currentRssi
@@ -867,10 +852,11 @@ import java.util.*;
 
                                     Long handoffTime = handoffDate.get(eth);
 
-                                    // If Time hysteresis has expired, handoff
+                                    //If Time hysteresis has expired, handoff
                                     if ((handoffTime == null) || (
                                             (System.currentTimeMillis()
-                                             - handoffTime) / 1000
+                                             - handoffTime.longValue())
+                                            / 1000
                                             > SMARTAP_PARAMS.hysteresis_threshold)) {
 
                                         // make sure that you have received at least one packet
@@ -878,7 +864,8 @@ import java.util.*;
                                             handoffClientToAp(eth,
                                                               agentsArray[client_index]);
                                             handoffDate.put(eth,
-                                                            System.currentTimeMillis());
+                                                            Long.valueOf(
+                                                                    System.currentTimeMillis()));
                                             System.out.println(
                                                     "\033[0;1m - Handoff >--->--->---> "
                                                     + agentsArray[client_index]
@@ -888,8 +875,8 @@ import java.util.*;
                                                     + agentsArray[client_index]); // Log in file
                                             break;
                                         } else {
-                                            System.out
-                                                    .println(); // No packets received
+                                            System.out.println(
+                                                    ""); // No packets received
                                             ps.println(
                                                     "\t\t[No Action] No packets received"); // Log in file
                                             break;
@@ -902,14 +889,13 @@ import java.util.*;
                                         break;
                                     }
                                 } else {
-                                    // System.out.println(" - No Handoff: Rssi Threshold not reached");
+                                    //System.out.println(" - No Handoff: Rssi Threshold not reached");
                                     ps.println(
-                                            "\t\t[No Action] No Handoff: Rssi Threshold not reached, try next FF"); // Log
-                                    // in
-                                    // file
+                                            "\t\t[No Action] No Handoff: Rssi Threshold not reached, try next FF"); // Log in file
+                                    continue;
                                 }
                             } else {
-                                System.out.println(); // Best AP already
+                                System.out.println(""); // Best AP already
                                 ps.println(
                                         "\t\t[No Action] There is no better FF"); // Log in file
                                 break;
@@ -925,7 +911,7 @@ import java.util.*;
                 if ((SMARTAP_PARAMS.mode.equals("BALANCER"))
                     || (SMARTAP_PARAMS.mode.equals("JAIN-BALANCER"))) {
 
-                    Map<MACAddress, InetAddress> assignedClients; // Array with the balancer decision MAC of the STA - IP of the AP
+                    Map<MACAddress, InetAddress> assignedClients = new HashMap<MACAddress, InetAddress>(); // Array with the balancer decission MAC of the STA - IP of the AP
 
                     System.out.println(
                             "\033[K\r[SmartAPSelection] ====================");
@@ -948,7 +934,7 @@ import java.util.*;
                                                                   agentsArray,
                                                                   clients,
                                                                   SMARTAP_PARAMS.signal_threshold); // Very simple balancer algorithm
-                        System.out.println();
+                        System.out.println("");
                     }
 
                     // for each STA for which a handoff has been ordered
@@ -986,13 +972,15 @@ import java.util.*;
                             }
 
                         } else {
+
                             System.out.print("No Handoff " + clientHandoff
                                     .getIpAddress()
                                              + ": Hysteresis time not expired");
                             ps.println(
                                     "\t\t[No Action] No Handoff: Hysteresis time not expired"); // Log in file
+
                         }
-                        System.out.println();
+                        System.out.println("");
                     }
                 }
 
@@ -1006,7 +994,7 @@ import java.util.*;
                     System.out.print("\033[K\r[SmartAPSelection] ");
                     printAgentsLoad(agentsArray,
                                     vipAPAddr); // Print load and VIP agent
-                    System.out.println();
+                    System.out.println("");
                     for (OdinClient oc : clients) { // All clients
                         MACAddress eth = oc.getMacAddress(); // client MAC
                         InetAddress clientAddr = oc
@@ -1015,12 +1003,12 @@ import java.util.*;
                         if (flowsReceived.containsKey(clientAddr)) {
                             DetectedFlow cntx = flowsReceived
                                     .get(clientAddr);
-                        /*System.out.print("\033[K\r\t[Flow]     -> Source IP: " + cntx.IPSrcAddress + "\n");
-                        System.out.print("\033[K\r\t[Flow]     -> Destination IP: " + cntx.IPDstAddress + "\n");
-                        System.out.print("\033[K\r\t[Flow]     -> Protocol IP: " + cntx.protocol + "\n");
-                        System.out.print("\033[K\r\t[Flow]     -> Source Port: " + cntx.SrcPort + "\n");
-                        System.out.print("\033[K\r\t[Flow]     -> Destination Port: " + cntx.DstPort + "\n");
-                        System.out.print("\033[K\r\t[Flow] from agent: " + cntx.odinAgentAddr + " at " + cntx.timeStamp + "\n");*/
+                            /*System.out.print("\033[K\r\t[Flow]     -> Source IP: " + cntx.IPSrcAddress + "\n");
+                            System.out.print("\033[K\r\t[Flow]     -> Destination IP: " + cntx.IPDstAddress + "\n");
+                            System.out.print("\033[K\r\t[Flow]     -> Protocol IP: " + cntx.protocol + "\n");
+                            System.out.print("\033[K\r\t[Flow]     -> Source Port: " + cntx.SrcPort + "\n");
+                            System.out.print("\033[K\r\t[Flow]     -> Destination Port: " + cntx.DstPort + "\n");
+                            System.out.print("\033[K\r\t[Flow] from agent: " + cntx.odinAgentAddr + " at " + cntx.timeStamp + "\n");*/
 
                             if ((System.currentTimeMillis() - cntx.timeStamp)
                                 > 30000) { // Clean flow after 30 sec
@@ -1030,8 +1018,7 @@ import java.util.*;
                                                + clientAddr
                                                + " - Handoff\n");
                                 handoffClientToAp(eth,
-                                                  cntx.lastAgentAddr); // send the STA back to the AP where it was before the
-                                // handoff to the VIP AP
+                                                  cntx.lastAgentAddr);  // send the STA back to the AP where it was before the handoff to the VIP AP
                             } else {
                                 InetAddress agentAddr = oc.getLvap()
                                                           .getAgent()
@@ -1063,13 +1050,12 @@ import java.util.*;
                                                      + " already in VIP AP\n");
                                 }
                             }
-                        } /*else {
-                        System.out.print("\033[K\r\t[Flow] No flow for client "+clientAddr+"\n");
-                    }*/
+                        }/*else{
+                            System.out.print("\033[K\r\t[Flow] No flow for client "+clientAddr+"\n");
+                        }*/
                     }
 
-                    // A new STA may have associated to the VIP AP. Remove it from there. This can be
-                    // improved. FIXME
+                    // A new STA may have associated to the VIP AP. Remove it from there. This can be improved. FIXME
                     for (OdinClient oc : getClientsFromAgent(
                             vipAPAddr)) { // In case STA is associated before the app starts
                         MACAddress eth = oc.getMacAddress(); // client MAC
@@ -1081,7 +1067,6 @@ import java.util.*;
                         }
                     }
                 }
-
                 ps.flush();
                 System.out.println(
                         "\033[K\r[SmartAPSelection] Assignation done in: "
@@ -1097,7 +1082,9 @@ import java.util.*;
                  * * * * * * * * * * * * * * * * * * * * */
                 if (checkpoint()) {
                     softReset(rssiData, handoffDate, ffData);
-                    ps.println("Soft Resetting...");
+                    TEE("Soft Resetting...", ps);
+                    System.out
+                            .print("\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[K\r\n\033[0;0H"); // Clear lines above and return to console 0,0
                     continue;
                 }
 
@@ -1122,12 +1109,11 @@ import java.util.*;
     }
 
     private Double getRssiFromRxStats(MACAddress clientMAC,
-                                      String arr) { // Process the string with all the data, it saves 2 ms if done inside the app vs.
-        // in agent
+                                      String arr) { // Process the string with all the data, it saves 2 ms if done inside the app vs. in agent
 
-        for (String elem : arr.split("\n")) { // Split string in STAs
+        for (String elem : arr.split("\n")) {//Split string in STAs
 
-            String[] row = elem.split(" "); // Split string in MAC and rssi
+            String row[] = elem.split(" ");//Split string in MAC and rssi
 
             if (row.length != 2) { // If there is more than 2 items, next one
                 continue;
@@ -1136,16 +1122,15 @@ import java.util.*;
             MACAddress eth = MACAddress.valueOf(row[0].toLowerCase());
 
             if (clientMAC
-                    .equals(eth)) { // If it belongs to the client, return rssi
+                    .equals(eth)) {//If it belongs to the client, return rssi
 
                 Double rssi = Double.parseDouble(row[1]);
 
-                if (rssi != null) {
+                if (rssi != null)
                     return rssi;
-                }
             }
         }
-        return -99.9; // Not heard by the AP, return -99.9
+        return -99.9;//Not heard by the AP, return -99.9
     }
 
     private double calculateT2(int numberOfStas, double tValue) {
@@ -1161,6 +1146,7 @@ import java.util.*;
                                                                + 1));
 
             result = tValue + tCont;
+
         }
         return result;
     }
@@ -1261,7 +1247,7 @@ import java.util.*;
         int max_index = 0;
         int[] numStasPerAgent = new int[agentsArray.length];
         boolean orderHandoff = false;
-        Map<MACAddress, InetAddress> arrayHandoff = new HashMap<>();
+        Map<MACAddress, InetAddress> arrayHandoff = new HashMap<MACAddress, InetAddress>();
 
         HashSet<OdinClient> clients_Balancer;
 
@@ -1270,10 +1256,9 @@ import java.util.*;
         int numberOfAgentsAvailable = 0;
         int num_clients = clients.size();
 
-        for (InetAddress agentAddrBalancer : agentsArray) { // Create array with number of STAs for each AP, find the one with lower
-            // number
+        for (InetAddress agentAddrBalancer : agentsArray) { // Create array with number of STAs for each AP, find the one with lower number
 
-            clients_Balancer = new HashSet<>(
+            clients_Balancer = new HashSet<OdinClient>(
                     getClientsFromAgent(agentAddrBalancer));
 
             int numberOfStas = clients_Balancer.size();
@@ -1283,7 +1268,7 @@ import java.util.*;
             numStasPerAgent[ind_aux] = numberOfStas;
 
             for (MACAddress eth : rssiData
-                    .keySet()) { // If there is not a STA with enough RSSI, not handoff
+                    .keySet()) { // If there is not a STA with enougth RSSI, not handoff
                 Double[] client_dBm = rssiData.get(eth);
                 if (client_dBm[ind_aux] > SMARTAP_PARAMS.signal_threshold) {
                     stasToMove = true;
@@ -1298,16 +1283,15 @@ import java.util.*;
                 maxStas = numberOfStas;
                 max_index = ind_aux;
             }
-            if (stasToMove) {
+            if (stasToMove)
                 numberOfAgentsAvailable++;
-            }
             ind_aux++;
         }
         ind_aux = 0;
         float mean = (float) num_clients / numberOfAgentsAvailable;
         int meanStas = Math.round(mean);
 
-        for (InetAddress ignored : agentsArray) { // Print APs and number of STAs associated at it
+        for (InetAddress agentAddrBalancer : agentsArray) { // Print APs and number of STAs associated at it
 
             if ((ind_aux == agent_index) && (numStasPerAgent[ind_aux]
                                              < meanStas) && (maxStas
@@ -1323,18 +1307,16 @@ import java.util.*;
         }
         OdinClient clientHandoff = null;
         if (orderHandoff) {
-            clients_Balancer = new HashSet<>(
+            clients_Balancer = new HashSet<OdinClient>(
                     getClientsFromAgent(agentsArray[max_index]));
             double maxRssi = -99.9;
             for (OdinClient oc : clients_Balancer) {
-                Double[] client_dBm;
+                Double[] client_dBm = new Double[num_agents];
                 MACAddress eth = oc.getMacAddress();
                 InetAddress clientAddr = oc.getIpAddress();
                 if (clientAddr
-                        .equals(nullAddr)) // If client not assigned, next one
-                {
+                        .equals(nullAddr))// If client not assigned, next one
                     continue;
-                }
                 client_dBm = rssiData.get(eth);
                 if (client_dBm != null) {
                     if ((client_dBm[agent_index] >= maxRssi) && (
@@ -1356,18 +1338,21 @@ import java.util.*;
 
     /**
      * This method shows and stores detected flows
+     *
+     * @param oefd
+     * @param cntx
      */
     private void handler(OdinEventFlowDetection oefd,
                          FlowDetectionCallbackContext cntx) {
 
         InetAddress IPSrcAddress = null;
         InetAddress IPDstAddress = null;
-        // InetAddress odinAgentAddr = null;
+        //InetAddress odinAgentAddr = null;
 
         try {
             IPSrcAddress = InetAddress.getByName(cntx.IPSrcAddress);
             IPDstAddress = InetAddress.getByName(cntx.IPDstAddress);
-            // odinAgentAddr = InetAddress.getByName(cntx.odinAgentAddr);
+            //odinAgentAddr = InetAddress.getByName(cntx.odinAgentAddr);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -1385,7 +1370,6 @@ import java.util.*;
     }
 
     public class DetectedFlow {
-
         public InetAddress IPSrcAddress;
         public InetAddress IPDstAddress;
         public int protocol;
@@ -1483,7 +1467,7 @@ import java.util.*;
 
             ind_aux++;
         }
-        System.out.println();
+        System.out.println("");
 
         for (OdinClient oc : clients) { // For each STA
 
@@ -1498,10 +1482,8 @@ import java.util.*;
             Double[] fairnessIndex = new Double[num_agents];
 
             if (clientAddr
-                    .equals(nullAddr)) // If client not assigned, next one
-            {
+                    .equals(nullAddr))// If client not assigned, next one
                 continue;
-            }
 
             client_dBm = rssiData.get(eth);
 
@@ -1518,6 +1500,7 @@ import java.util.*;
                         for (int stas : numStasPerAgent) {
 
                             sum = sum + Math.pow(stas, 2);
+
                         }
 
                         fairnessIndex[agentIndex.get(agentAddrBalancer)] =
@@ -1538,10 +1521,12 @@ import java.util.*;
                             }
 
                             ind_aux++;
+
                         }
 
                         fairnessIndex[agentIndex.get(agentAddrBalancer)] =
                                 num_clients / (num_agents * sum);
+
                     }
                     if ((fairnessIndex[agentIndex.get(agentAddrBalancer)]
                          > maxFI) && (

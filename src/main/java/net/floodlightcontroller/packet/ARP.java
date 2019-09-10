@@ -1,19 +1,16 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.packet;
 
@@ -146,9 +143,10 @@ public class ARP extends BasePacket {
         this.senderProtocolAddress = senderProtocolAddress;
         return this;
     }
-    
+
     public ARP setSenderProtocolAddress(int address) {
-        this.senderProtocolAddress = ByteBuffer.allocate(4).putInt(address).array();
+        this.senderProtocolAddress = ByteBuffer.allocate(4).putInt(address)
+                                               .array();
         return this;
     }
 
@@ -177,9 +175,10 @@ public class ARP extends BasePacket {
     /**
      * @return True if gratuitous ARP (SPA = TPA), false otherwise
      */
-    public boolean isGratuitous() {        
-        assert(senderProtocolAddress.length == targetProtocolAddress.length);
-        
+    public boolean isGratuitous() {
+        assert (senderProtocolAddress.length
+                == targetProtocolAddress.length);
+
         int indx = 0;
         while (indx < senderProtocolAddress.length) {
             if (senderProtocolAddress[indx] != targetProtocolAddress[indx]) {
@@ -187,10 +186,10 @@ public class ARP extends BasePacket {
             }
             indx++;
         }
-        
+
         return true;
     }
-    
+
     /**
      * @param targetProtocolAddress the targetProtocolAddress to set
      */
@@ -198,16 +197,17 @@ public class ARP extends BasePacket {
         this.targetProtocolAddress = targetProtocolAddress;
         return this;
     }
-    
+
     public ARP setTargetProtocolAddress(int address) {
-        this.targetProtocolAddress = ByteBuffer.allocate(4).putInt(address).array();
+        this.targetProtocolAddress = ByteBuffer.allocate(4).putInt(address)
+                                               .array();
         return this;
     }
 
-    @Override
-    public byte[] serialize() {
-        int length = 8 + (2 * (0xff & this.hardwareAddressLength))
-                + (2 * (0xff & this.protocolAddressLength));
+    @Override public byte[] serialize() {
+        int length =
+                8 + (2 * (0xff & this.hardwareAddressLength)) + (2 * (0xff
+                                                                      & this.protocolAddressLength));
         byte[] data = new byte[length];
         ByteBuffer bb = ByteBuffer.wrap(data);
         bb.putShort(this.hardwareType);
@@ -215,10 +215,14 @@ public class ARP extends BasePacket {
         bb.put(this.hardwareAddressLength);
         bb.put(this.protocolAddressLength);
         bb.putShort(this.opCode);
-        bb.put(this.senderHardwareAddress, 0, 0xff & this.hardwareAddressLength);
-        bb.put(this.senderProtocolAddress, 0, 0xff & this.protocolAddressLength);
-        bb.put(this.targetHardwareAddress, 0, 0xff & this.hardwareAddressLength);
-        bb.put(this.targetProtocolAddress, 0, 0xff & this.protocolAddressLength);
+        bb.put(this.senderHardwareAddress, 0,
+               0xff & this.hardwareAddressLength);
+        bb.put(this.senderProtocolAddress, 0,
+               0xff & this.protocolAddressLength);
+        bb.put(this.targetHardwareAddress, 0,
+               0xff & this.hardwareAddressLength);
+        bb.put(this.targetProtocolAddress, 0,
+               0xff & this.protocolAddressLength);
         return data;
     }
 
@@ -230,22 +234,29 @@ public class ARP extends BasePacket {
         this.hardwareAddressLength = bb.get();
         this.protocolAddressLength = bb.get();
         this.opCode = bb.getShort();
-        this.senderHardwareAddress = new byte[0xff & this.hardwareAddressLength];
-        bb.get(this.senderHardwareAddress, 0, this.senderHardwareAddress.length);
-        this.senderProtocolAddress = new byte[0xff & this.protocolAddressLength];
-        bb.get(this.senderProtocolAddress, 0, this.senderProtocolAddress.length);
-        this.targetHardwareAddress = new byte[0xff & this.hardwareAddressLength];
-        bb.get(this.targetHardwareAddress, 0, this.targetHardwareAddress.length);
-        this.targetProtocolAddress = new byte[0xff & this.protocolAddressLength];
-        bb.get(this.targetProtocolAddress, 0, this.targetProtocolAddress.length);
+        this.senderHardwareAddress = new byte[0xff
+                                              & this.hardwareAddressLength];
+        bb.get(this.senderHardwareAddress, 0,
+               this.senderHardwareAddress.length);
+        this.senderProtocolAddress = new byte[0xff
+                                              & this.protocolAddressLength];
+        bb.get(this.senderProtocolAddress, 0,
+               this.senderProtocolAddress.length);
+        this.targetHardwareAddress = new byte[0xff
+                                              & this.hardwareAddressLength];
+        bb.get(this.targetHardwareAddress, 0,
+               this.targetHardwareAddress.length);
+        this.targetProtocolAddress = new byte[0xff
+                                              & this.protocolAddressLength];
+        bb.get(this.targetProtocolAddress, 0,
+               this.targetProtocolAddress.length);
         return this;
     }
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 13121;
         int result = super.hashCode();
         result = prime * result + hardwareAddressLength;
@@ -263,8 +274,7 @@ public class ARP extends BasePacket {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (!super.equals(obj))
@@ -282,13 +292,17 @@ public class ARP extends BasePacket {
             return false;
         if (protocolType != other.protocolType)
             return false;
-        if (!Arrays.equals(senderHardwareAddress, other.senderHardwareAddress))
+        if (!Arrays
+                .equals(senderHardwareAddress, other.senderHardwareAddress))
             return false;
-        if (!Arrays.equals(senderProtocolAddress, other.senderProtocolAddress))
+        if (!Arrays
+                .equals(senderProtocolAddress, other.senderProtocolAddress))
             return false;
-        if (!Arrays.equals(targetHardwareAddress, other.targetHardwareAddress))
+        if (!Arrays
+                .equals(targetHardwareAddress, other.targetHardwareAddress))
             return false;
-        if (!Arrays.equals(targetProtocolAddress, other.targetProtocolAddress))
+        if (!Arrays
+                .equals(targetProtocolAddress, other.targetProtocolAddress))
             return false;
         return true;
     }
@@ -296,19 +310,18 @@ public class ARP extends BasePacket {
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "ARP [hardwareType=" + hardwareType + ", protocolType="
-                + protocolType + ", hardwareAddressLength="
-                + hardwareAddressLength + ", protocolAddressLength="
-                + protocolAddressLength + ", opCode=" + opCode
-                + ", senderHardwareAddress="
-                + Arrays.toString(senderHardwareAddress)
-                + ", senderProtocolAddress="
-                + Arrays.toString(senderProtocolAddress)
-                + ", targetHardwareAddress="
-                + Arrays.toString(targetHardwareAddress)
-                + ", targetProtocolAddress="
-                + Arrays.toString(targetProtocolAddress) + "]";
+               + protocolType + ", hardwareAddressLength="
+               + hardwareAddressLength + ", protocolAddressLength="
+               + protocolAddressLength + ", opCode=" + opCode
+               + ", senderHardwareAddress=" + Arrays
+                       .toString(senderHardwareAddress)
+               + ", senderProtocolAddress=" + Arrays
+                       .toString(senderProtocolAddress)
+               + ", targetHardwareAddress=" + Arrays
+                       .toString(targetHardwareAddress)
+               + ", targetProtocolAddress=" + Arrays
+                       .toString(targetProtocolAddress) + "]";
     }
 }

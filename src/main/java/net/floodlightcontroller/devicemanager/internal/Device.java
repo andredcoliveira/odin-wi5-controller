@@ -1,47 +1,38 @@
 /**
- *    Copyright 2011,2012 Big Switch Networks, Inc.
- *    Originally created by David Erickson, Stanford University
- *
- *    Licensed under the Apache License, Version 2.0 (the "License"); you may
- *    not use this file except in compliance with the License. You may obtain
- *    a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- *    License for the specific language governing permissions and limitations
- *    under the License.
+ * Copyright 2011,2012 Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  **/
 
 package net.floodlightcontroller.devicemanager.internal;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.TreeSet;
-
+import net.floodlightcontroller.devicemanager.IDevice;
+import net.floodlightcontroller.devicemanager.IDeviceService.DeviceField;
+import net.floodlightcontroller.devicemanager.IEntityClass;
+import net.floodlightcontroller.devicemanager.SwitchPort;
+import net.floodlightcontroller.devicemanager.web.DeviceSerializer;
+import net.floodlightcontroller.topology.ITopologyService;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.openflow.util.HexString;
 
-import net.floodlightcontroller.devicemanager.IDeviceService.DeviceField;
-import net.floodlightcontroller.devicemanager.web.DeviceSerializer;
-import net.floodlightcontroller.devicemanager.IDevice;
-import net.floodlightcontroller.devicemanager.IEntityClass;
-import net.floodlightcontroller.devicemanager.SwitchPort;
-import static net.floodlightcontroller.devicemanager.SwitchPort.ErrorStatus.*;
-import net.floodlightcontroller.topology.ITopologyService;
+import java.util.*;
+
+import static net.floodlightcontroller.devicemanager.SwitchPort.ErrorStatus.DUPLICATE_DEVICE;
 
 /**
  * Concrete implementation of {@link IDevice}
  * @author readams
  */
-@JsonSerialize(using=DeviceSerializer.class)
-public class Device implements IDevice {
+@JsonSerialize(using = DeviceSerializer.class) public class Device
+        implements IDevice {
     protected Long deviceKey;
     protected DeviceManagerImpl deviceManager;
 
@@ -61,17 +52,15 @@ public class Device implements IDevice {
      * @param entity the initial entity for the device
      * @param entityClasses the entity classes associated with the entity
      */
-    public Device(DeviceManagerImpl deviceManager,
-                  Long deviceKey,
-                  Entity entity,
-                  Collection<IEntityClass> entityClasses) {
+    public Device(DeviceManagerImpl deviceManager, Long deviceKey,
+                  Entity entity, Collection<IEntityClass> entityClasses) {
         this.deviceManager = deviceManager;
         this.deviceKey = deviceKey;
-        this.entities = new Entity[] {entity};
-        this.macAddressString =
-                HexString.toHexString(entity.getMacAddress(), 6);
-        this.entityClasses =
-                entityClasses.toArray(new IEntityClass[entityClasses.size()]);
+        this.entities = new Entity[] { entity };
+        this.macAddressString = HexString
+                .toHexString(entity.getMacAddress(), 6);
+        this.entityClasses = entityClasses
+                .toArray(new IEntityClass[entityClasses.size()]);
         Arrays.sort(this.entities);
     }
 
@@ -82,15 +71,14 @@ public class Device implements IDevice {
      * @param entities the initial entities for the device
      * @param entityClasses the entity classes associated with the entity
      */
-    public Device(DeviceManagerImpl deviceManager,
-                  Long deviceKey,
+    public Device(DeviceManagerImpl deviceManager, Long deviceKey,
                   Collection<Entity> entities,
                   IEntityClass[] entityClasses) {
         this.deviceManager = deviceManager;
         this.deviceKey = deviceKey;
         this.entities = entities.toArray(new Entity[entities.size()]);
-        this.macAddressString =
-                HexString.toHexString(this.entities[0].getMacAddress(), 6);
+        this.macAddressString = HexString
+                .toHexString(this.entities[0].getMacAddress(), 6);
         this.entityClasses = entityClasses;
         Arrays.sort(this.entities);
     }
@@ -102,8 +90,7 @@ public class Device implements IDevice {
      * @param newEntity the entity to add
      * @param entityClasses the entity classes associated with the entities
      */
-    public Device(Device device,
-                  Entity newEntity,
+    public Device(Device device, Entity newEntity,
                   Collection<IEntityClass> entityClasses) {
         this.deviceManager = device.deviceManager;
         this.deviceKey = device.deviceKey;
@@ -112,14 +99,13 @@ public class Device implements IDevice {
         this.entities[this.entities.length - 1] = newEntity;
         Arrays.sort(this.entities);
 
-        this.macAddressString =
-                HexString.toHexString(this.entities[0].getMacAddress(), 6);
+        this.macAddressString = HexString
+                .toHexString(this.entities[0].getMacAddress(), 6);
 
-        if (entityClasses != null &&
-                entityClasses.size() > device.entityClasses.length) {
+        if (entityClasses != null
+            && entityClasses.size() > device.entityClasses.length) {
             IEntityClass[] classes = new IEntityClass[entityClasses.size()];
-            this.entityClasses =
-                    entityClasses.toArray(classes);
+            this.entityClasses = entityClasses.toArray(classes);
         } else {
             // same actual array, not a copy
             this.entityClasses = device.entityClasses;
@@ -130,52 +116,48 @@ public class Device implements IDevice {
     // IDevice
     // *******
 
-    @Override
-    public Long getDeviceKey() {
+    @Override public Long getDeviceKey() {
         return deviceKey;
     }
 
-    @Override
-    public long getMACAddress() {
+    @Override public long getMACAddress() {
         // we assume only one MAC per device for now.
         return entities[0].getMacAddress();
     }
 
-    @Override
-    public String getMACAddressString() {
+    @Override public String getMACAddressString() {
         return macAddressString;
     }
 
-    @Override
-    public Short[] getVlanId() {
+    @Override public Short[] getVlanId() {
         if (entities.length == 1) {
             if (entities[0].getVlan() != null) {
-                return new Short[]{ entities[0].getVlan() };
+                return new Short[] { entities[0].getVlan() };
             } else {
-                return new Short[] { Short.valueOf((short)-1) };
+                return new Short[] { Short.valueOf((short) -1) };
             }
         }
 
         TreeSet<Short> vals = new TreeSet<Short>();
         for (Entity e : entities) {
             if (e.getVlan() == null)
-                vals.add((short)-1);
+                vals.add((short) -1);
             else
                 vals.add(e.getVlan());
         }
         return vals.toArray(new Short[vals.size()]);
     }
 
-    static final EnumSet<DeviceField> ipv4Fields = EnumSet.of(DeviceField.IPV4);
+    static final EnumSet<DeviceField> ipv4Fields = EnumSet
+            .of(DeviceField.IPV4);
 
-    @Override
-    public Integer[] getIPv4Addresses() {
+    @Override public Integer[] getIPv4Addresses() {
         // XXX - TODO we can cache this result.  Let's find out if this
         // is really a performance bottleneck first though.
 
         if (entities.length == 1) {
             if (entities[0].getIpv4Address() != null) {
-                return new Integer[]{ entities[0].getIpv4Address() };
+                return new Integer[] { entities[0].getIpv4Address() };
             } else {
                 return new Integer[0];
             }
@@ -183,22 +165,24 @@ public class Device implements IDevice {
 
         TreeSet<Integer> vals = new TreeSet<Integer>();
         for (Entity e : entities) {
-            if (e.getIpv4Address() == null) continue;
+            if (e.getIpv4Address() == null)
+                continue;
 
             // We have an IP address only if among the devices within the class
             // we have the most recent entity with that IP.
             boolean validIP = true;
             for (IEntityClass clazz : entityClasses) {
-                Iterator<Device> devices =
-                        deviceManager.queryClassByEntity(clazz, ipv4Fields, e);
+                Iterator<Device> devices = deviceManager
+                        .queryClassByEntity(clazz, ipv4Fields, e);
                 while (devices.hasNext()) {
                     Device d = devices.next();
                     for (Entity se : d.entities) {
-                        if (se.ipv4Address != null &&
-                                se.ipv4Address.equals(e.ipv4Address) &&
-                                se.lastSeenTimestamp != null &&
-                                0 < se.lastSeenTimestamp.
-                                compareTo(e.lastSeenTimestamp)) {
+                        if (se.ipv4Address != null && se.ipv4Address
+                                .equals(e.ipv4Address)
+                            && se.lastSeenTimestamp != null
+                            && 0 < se.lastSeenTimestamp.
+                                                               compareTo(
+                                                                       e.lastSeenTimestamp)) {
                             validIP = false;
                             break;
                         }
@@ -217,21 +201,19 @@ public class Device implements IDevice {
         return vals.toArray(new Integer[vals.size()]);
     }
 
-    @Override
-    public SwitchPort[] getAttachmentPoints() {
+    @Override public SwitchPort[] getAttachmentPoints() {
         return getAttachmentPoints(false);
     }
 
-    @Override
-    public SwitchPort[] getAttachmentPoints(boolean includeError) {
+    @Override public SwitchPort[] getAttachmentPoints(boolean includeError) {
         // XXX - TODO we can cache this result.  Let's find out if this
         // is really a performance bottleneck first though.
 
         if (entities.length == 1) {
             Long dpid = entities[0].getSwitchDPID();
             Integer port = entities[0].getSwitchPort();
-            if (dpid != null && port != null &&
-                    deviceManager.isValidAttachmentPoint(dpid, port)) {
+            if (dpid != null && port != null && deviceManager
+                    .isValidAttachmentPoint(dpid, port)) {
                 SwitchPort sp = new SwitchPort(dpid, port);
                 return new SwitchPort[] { sp };
             } else {
@@ -240,7 +222,8 @@ public class Device implements IDevice {
         }
 
         // Find the most recent attachment point for each cluster
-        Entity[] clentities = Arrays.<Entity>copyOf(entities, entities.length);
+        Entity[] clentities = Arrays.<Entity>copyOf(entities,
+                                                    entities.length);
         Arrays.sort(clentities, deviceManager.apComparator);
         ArrayList<SwitchPort> blocked = null;
         ArrayList<SwitchPort> clusterBlocked = null;
@@ -258,17 +241,18 @@ public class Device implements IDevice {
             Entity cur = clentities[i];
             Long dpid = cur.getSwitchDPID();
             Integer port = cur.getSwitchPort();
-            if (dpid == null || port == null ||
-                    !deviceManager.isValidAttachmentPoint(dpid, port) ||
-                    (prev != null &&
-                    topology.isConsistent(prev.getSwitchDPID().longValue(),
-                                          prev.getSwitchPort().shortValue(),
-                                          dpid.longValue(),
-                                          port.shortValue()))
-                    )
+            if (dpid == null || port == null || !deviceManager
+                    .isValidAttachmentPoint(dpid, port) || (prev != null
+                                                            && topology
+                                                                    .isConsistent(
+                                                                            prev.getSwitchDPID()
+                                                                                .longValue(),
+                                                                            prev.getSwitchPort()
+                                                                                .shortValue(),
+                                                                            dpid.longValue(),
+                                                                            port.shortValue())))
                 continue;
-            long curCluster =
-                    topology.getL2DomainId(cur.switchDPID);
+            long curCluster = topology.getL2DomainId(cur.switchDPID);
             if (prevCluster != curCluster) {
                 prev = null;
                 latestLastSeen = 0;
@@ -279,22 +263,23 @@ public class Device implements IDevice {
                 }
             }
 
-            if (prev != null &&
-                    !(dpid.equals(prev.getSwitchDPID()) &&
-                            port.equals(prev.getSwitchPort())) &&
-                            !topology.isInSameBroadcastDomain(dpid.longValue(),
-                                                              port.shortValue(),
-                                                              prev.getSwitchDPID().longValue(),
-                                                              prev.getSwitchPort().shortValue()) &&
-                                                              !topology.isConsistent(prev.getSwitchDPID().longValue(),
-                                                                                     prev.getSwitchPort().shortValue(),
-                                                                                     dpid.longValue(), port.shortValue())) {
-                long curActive =
-                        deviceManager.apComparator.
-                        getEffTS(cur, cur.getActiveSince());
-                if (latestLastSeen > 0 &&
-                        curActive > 0 &&
-                        0 < Long.valueOf(latestLastSeen).compareTo(curActive)) {
+            if (prev != null && !(dpid.equals(prev.getSwitchDPID()) && port
+                    .equals(prev.getSwitchPort())) && !topology
+                    .isInSameBroadcastDomain(dpid.longValue(),
+                                             port.shortValue(),
+                                             prev.getSwitchDPID()
+                                                 .longValue(),
+                                             prev.getSwitchPort()
+                                                 .shortValue()) && !topology
+                    .isConsistent(prev.getSwitchDPID().longValue(),
+                                  prev.getSwitchPort().shortValue(),
+                                  dpid.longValue(), port.shortValue())) {
+                long curActive = deviceManager.apComparator.
+                                                                   getEffTS(
+                                                                           cur,
+                                                                           cur.getActiveSince());
+                if (latestLastSeen > 0 && curActive > 0 && 0 < Long
+                        .valueOf(latestLastSeen).compareTo(curActive)) {
                     // If the previous and current are both active at the same
                     // time (i.e. the last seen timestamp of previous is
                     // greater than active timestamp of current item, we want
@@ -309,17 +294,16 @@ public class Device implements IDevice {
                     if (includeError) {
                         boolean alreadyBlocked = false;
                         for (SwitchPort bl : clusterBlocked) {
-                            if (dpid.equals(bl.getSwitchDPID()) &&
-                                    port.equals(bl.getPort())) {
+                            if (dpid.equals(bl.getSwitchDPID()) && port
+                                    .equals(bl.getPort())) {
                                 alreadyBlocked = true;
                                 break;
                             }
                         }
                         if (!alreadyBlocked) {
-                            SwitchPort blap =
-                                    new SwitchPort(block.getSwitchDPID(),
-                                                   block.getSwitchPort(),
-                                                   DUPLICATE_DEVICE);
+                            SwitchPort blap = new SwitchPort(
+                                    block.getSwitchDPID(),
+                                    block.getSwitchPort(), DUPLICATE_DEVICE);
                             clusterBlocked.add(blap);
                         }
                     }
@@ -334,10 +318,10 @@ public class Device implements IDevice {
             prev = clentities[clEntIndex] = cur;
             prevCluster = curCluster;
 
-            long prevLastSeen =
-                    deviceManager.apComparator.
-                    getEffTS(prev,
-                             prev.getLastSeenTimestamp());
+            long prevLastSeen = deviceManager.apComparator.
+                                                                  getEffTS(
+                                                                          prev,
+                                                                          prev.getLastSeenTimestamp());
             if (latestLastSeen < prevLastSeen)
                 latestLastSeen = prevLastSeen;
         }
@@ -346,11 +330,11 @@ public class Device implements IDevice {
             return new SwitchPort[0];
         }
 
-        ArrayList<SwitchPort> vals = new ArrayList<SwitchPort>(clEntIndex + 1);
+        ArrayList<SwitchPort> vals = new ArrayList<SwitchPort>(
+                clEntIndex + 1);
         for (int i = 0; i <= clEntIndex; i++) {
             Entity e = clentities[i];
-            if (e.getSwitchDPID() != null &&
-                    e.getSwitchPort() != null) {
+            if (e.getSwitchDPID() != null && e.getSwitchPort() != null) {
                 SwitchPort sp = new SwitchPort(e.getSwitchDPID(),
                                                e.getSwitchPort());
                 vals.add(sp);
@@ -364,12 +348,11 @@ public class Device implements IDevice {
         return vals.toArray(new SwitchPort[vals.size()]);
     }
 
-    @Override
-    public Date getLastSeen() {
+    @Override public Date getLastSeen() {
         Date d = null;
         for (int i = 0; i < entities.length; i++) {
-            if (d == null ||
-                    entities[i].getLastSeenTimestamp().compareTo(d) > 0)
+            if (d == null
+                || entities[i].getLastSeenTimestamp().compareTo(d) > 0)
                 d = entities[i].getLastSeenTimestamp();
         }
         return d;
@@ -404,27 +387,29 @@ public class Device implements IDevice {
     // Object
     // ******
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + Arrays.hashCode(entities);
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null) return false;
-        if (getClass() != obj.getClass()) return false;
+    @Override public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
         Device other = (Device) obj;
-        if (!deviceKey.equals(other.deviceKey)) return false;
-        if (!Arrays.equals(entities, other.entities)) return false;
+        if (!deviceKey.equals(other.deviceKey))
+            return false;
+        if (!Arrays.equals(entities, other.entities))
+            return false;
         return true;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "Device [entities=" + Arrays.toString(entities) + "]";
     }
 }

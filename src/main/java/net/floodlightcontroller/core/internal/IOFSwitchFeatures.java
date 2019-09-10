@@ -1,9 +1,9 @@
 package net.floodlightcontroller.core.internal;
 
+import net.floodlightcontroller.core.IOFSwitch;
 import org.openflow.protocol.statistics.OFDescriptionStatistics;
 
-import net.floodlightcontroller.core.IOFSwitch;
-
 public interface IOFSwitchFeatures {
-    public void setFromDescription(IOFSwitch sw, OFDescriptionStatistics description);
+    public void setFromDescription(IOFSwitch sw,
+                                   OFDescriptionStatistics description);
 }

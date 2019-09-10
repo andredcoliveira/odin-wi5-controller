@@ -1,23 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol.statistics;
-
-import java.util.List;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -27,11 +22,14 @@ import org.openflow.protocol.factory.OFActionFactory;
 import org.openflow.protocol.factory.OFActionFactoryAware;
 import org.openflow.util.U16;
 
+import java.util.List;
+
 /**
  * Represents an ofp_flow_stats structure
  * @author David Erickson (daviderickson@cs.stanford.edu)
  */
-public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware {
+public class OFFlowStatisticsReply
+        implements OFStatistics, OFActionFactoryAware {
     public static int MINIMUM_LENGTH = 88;
 
     protected OFActionFactory actionFactory;
@@ -195,17 +193,14 @@ public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware
         this.length = length;
     }
 
-    @Override
-    @JsonIgnore
-    public int getLength() {
+    @Override @JsonIgnore public int getLength() {
         return U16.f(length);
     }
 
     /**
      * @param actionFactory the actionFactory to set
      */
-    @Override
-    public void setActionFactory(OFActionFactory actionFactory) {
+    @Override public void setActionFactory(OFActionFactory actionFactory) {
         this.actionFactory = actionFactory;
     }
 
@@ -223,8 +218,7 @@ public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware
         this.actions = actions;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         this.length = data.readShort();
         this.tableId = data.readByte();
         data.readByte(); // pad
@@ -243,12 +237,11 @@ public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware
         this.byteCount = data.readLong();
         if (this.actionFactory == null)
             throw new RuntimeException("OFActionFactory not set");
-        this.actions = this.actionFactory.parseActions(data, getLength() -
-                MINIMUM_LENGTH);
+        this.actions = this.actionFactory
+                .parseActions(data, getLength() - MINIMUM_LENGTH);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         data.writeShort(this.length);
         data.writeByte(this.tableId);
         data.writeByte((byte) 0);
@@ -259,7 +252,7 @@ public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware
         data.writeShort(this.idleTimeout);
         data.writeShort(this.hardTimeout);
         data.writeInt(0); // pad
-        data.writeShort((short)0); // pad
+        data.writeShort((short) 0); // pad
         data.writeLong(this.cookie);
         data.writeLong(this.packetCount);
         data.writeLong(this.byteCount);
@@ -270,8 +263,7 @@ public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware
         }
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 419;
         int result = 1;
         result = prime * result + (int) (byteCount ^ (byteCount >>> 32));
@@ -288,8 +280,7 @@ public class OFFlowStatisticsReply implements OFStatistics, OFActionFactoryAware
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

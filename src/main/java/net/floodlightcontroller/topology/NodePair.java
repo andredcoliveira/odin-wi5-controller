@@ -6,7 +6,7 @@ public class NodePair {
 
     public NodePair(long a, long b) {
         if (a < b) {
-            min = a; 
+            min = a;
             max = b;
         } else {
             min = b;
@@ -26,8 +26,7 @@ public class NodePair {
         return "[" + new Long(min) + ", " + new Long(max) + "]";
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + (int) (max ^ (max >>> 32));
@@ -35,8 +34,7 @@ public class NodePair {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)

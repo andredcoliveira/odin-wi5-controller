@@ -1,22 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol.statistics;
-
 
 import org.jboss.netty.buffer.ChannelBuffer;
 
@@ -31,31 +27,27 @@ public class OFVendorStatistics implements OFStatistics {
     // non-message fields
     protected int length = 0;
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         this.vendor = data.readInt();
         if (body == null)
             body = new byte[length - 4];
         data.readBytes(body);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         data.writeInt(this.vendor);
         if (body != null)
             data.writeBytes(body);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 457;
         int result = 1;
         result = prime * result + vendor;
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -72,8 +64,7 @@ public class OFVendorStatistics implements OFStatistics {
         return true;
     }
 
-    @Override
-    public int getLength() {
+    @Override public int getLength() {
         return length;
     }
 

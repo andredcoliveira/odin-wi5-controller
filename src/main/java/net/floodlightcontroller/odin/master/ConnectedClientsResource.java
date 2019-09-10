@@ -1,11 +1,11 @@
 package net.floodlightcontroller.odin.master;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import net.floodlightcontroller.util.MACAddress;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ConnectedClientsResource extends ServerResource {
 

@@ -1,17 +1,15 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc.*    Originally created by David Erickson, Stanford University
-**    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.*    Originally created by David Erickson, Stanford University
+ * *    Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.linkdiscovery;
 
@@ -19,9 +17,10 @@ import org.openflow.protocol.OFPhysicalPort.OFPortState;
 
 public class LinkInfo {
     public enum PortBroadcastState {
-        PBS_BLOCK,
-        PBS_FORWARD,
-    };
+        PBS_BLOCK, PBS_FORWARD,
+    }
+
+    ;
 
     /**
      * The term unicastValidTime may be slightly misleading here.
@@ -46,10 +45,8 @@ public class LinkInfo {
     protected Integer srcPortState;
     protected Integer dstPortState;
 
-    public LinkInfo(Long unicastValidTime,
-                    Long broadcastValidTime,
-                    Integer srcPortState,
-                    Integer dstPortState) {
+    public LinkInfo(Long unicastValidTime, Long broadcastValidTime,
+                    Integer srcPortState, Integer dstPortState) {
         this.unicastValidTime = unicastValidTime;
         this.multicastValidTime = broadcastValidTime;
         this.srcPortState = srcPortState;
@@ -57,8 +54,10 @@ public class LinkInfo {
     }
 
     public boolean linkStpBlocked() {
-        return ((srcPortState & OFPortState.OFPPS_STP_MASK.getValue()) == OFPortState.OFPPS_STP_BLOCK.getValue()) ||
-            ((dstPortState & OFPortState.OFPPS_STP_MASK.getValue()) == OFPortState.OFPPS_STP_BLOCK.getValue());
+        return ((srcPortState & OFPortState.OFPPS_STP_MASK.getValue())
+                == OFPortState.OFPPS_STP_BLOCK.getValue()) || (
+                       (dstPortState & OFPortState.OFPPS_STP_MASK.getValue())
+                       == OFPortState.OFPPS_STP_BLOCK.getValue());
     }
 
     public Long getUnicastValidTime() {
@@ -92,11 +91,12 @@ public class LinkInfo {
     public void setDstPortState(int dstPortState) {
         this.dstPortState = dstPortState;
     }
-    
-    public static ILinkDiscovery.LinkType getLinkType(LinkTuple lt, LinkInfo info) {
+
+    public static ILinkDiscovery.LinkType getLinkType(LinkTuple lt,
+                                                      LinkInfo info) {
         if (info.getUnicastValidTime() != null) {
             return ILinkDiscovery.LinkType.DIRECT_LINK;
-        } else if (info.getMulticastValidTime()  != null) {
+        } else if (info.getMulticastValidTime() != null) {
             return ILinkDiscovery.LinkType.MULTIHOP_LINK;
         }
         return ILinkDiscovery.LinkType.INVALID_LINK;
@@ -105,22 +105,28 @@ public class LinkInfo {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 5557;
         int result = 1;
-        result = prime * result + ((unicastValidTime == null) ? 0 : unicastValidTime.hashCode());
-        result = prime * result + ((multicastValidTime == null) ? 0 : multicastValidTime.hashCode());
-        result = prime * result + ((srcPortState == null) ? 0 : unicastValidTime.hashCode());
-        result = prime * result + ((dstPortState == null) ? 0 : dstPortState.hashCode());
+        result = prime * result + ((unicastValidTime == null) ?
+                                   0 :
+                                   unicastValidTime.hashCode());
+        result = prime * result + ((multicastValidTime == null) ?
+                                   0 :
+                                   multicastValidTime.hashCode());
+        result = prime * result + ((srcPortState == null) ?
+                                   0 :
+                                   unicastValidTime.hashCode());
+        result = prime * result + ((dstPortState == null) ?
+                                   0 :
+                                   dstPortState.hashCode());
         return result;
     }
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -159,12 +165,16 @@ public class LinkInfo {
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
-    @Override
-    public String toString() {
-        return "LinkInfo [unicastValidTime=" + ((unicastValidTime == null) ? "null" : unicastValidTime)
-                + ", multicastValidTime=" + ((multicastValidTime == null) ? "null" : multicastValidTime)
-                + ", srcPortState=" + ((srcPortState == null) ? "null" : srcPortState)
-                + ", dstPortState=" + ((dstPortState == null) ? "null" : srcPortState)
-                + "]";
+    @Override public String toString() {
+        return "LinkInfo [unicastValidTime=" + ((unicastValidTime == null) ?
+                                                "null" :
+                                                unicastValidTime)
+               + ", multicastValidTime=" + ((multicastValidTime == null) ?
+                                            "null" :
+                                            multicastValidTime)
+               + ", srcPortState=" + ((srcPortState == null) ?
+                                      "null" :
+                                      srcPortState) + ", dstPortState="
+               + ((dstPortState == null) ? "null" : srcPortState) + "]";
     }
 }

@@ -1,35 +1,30 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.linkdiscovery;
-
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.web.serializers.LinkTupleSerializer;
 import net.floodlightcontroller.linkdiscovery.ILinkDiscovery.LinkType;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 /**
  *
  *
  * @author David Erickson (daviderickson@cs.stanford.edu)
  */
-@JsonSerialize(using=LinkTupleSerializer.class)
-public class LinkTuple {
+@JsonSerialize(using = LinkTupleSerializer.class) public class LinkTuple {
     protected SwitchPortTuple src;
     protected SwitchPortTuple dst;
     protected LinkType type = null;
@@ -43,7 +38,8 @@ public class LinkTuple {
         this.dst = dst;
     }
 
-    public LinkTuple(IOFSwitch src, Short srcPort, IOFSwitch dst, Short dstPort) {
+    public LinkTuple(IOFSwitch src, Short srcPort, IOFSwitch dst,
+                     Short dstPort) {
         this.src = new SwitchPortTuple(src, srcPort);
         this.dst = new SwitchPortTuple(dst, dstPort);
     }
@@ -55,10 +51,11 @@ public class LinkTuple {
      * @param dstId
      * @param dstPort
      */
-    public LinkTuple(IOFSwitch src, Integer srcPort, IOFSwitch dst, Integer dstPort) {
+    public LinkTuple(IOFSwitch src, Integer srcPort, IOFSwitch dst,
+                     Integer dstPort) {
         this(src, srcPort.shortValue(), dst, dstPort.shortValue());
     }
-    
+
     /**
      * Set the LinkType, not done by default used primarily for the REST API
      * @param t
@@ -106,8 +103,7 @@ public class LinkTuple {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 2221;
         int result = 1;
         result = prime * result + ((dst == null) ? 0 : dst.hashCode());
@@ -118,8 +114,7 @@ public class LinkTuple {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -143,8 +138,7 @@ public class LinkTuple {
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "LinkTuple [src=" + src + ",dst=" + dst + "]";
     }
 }

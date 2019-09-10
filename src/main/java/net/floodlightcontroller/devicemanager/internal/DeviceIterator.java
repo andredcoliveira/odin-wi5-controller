@@ -1,41 +1,38 @@
 /**
-*    Copyright 2012, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2012, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.devicemanager.internal;
-
-import java.util.Arrays;
-import java.util.Iterator;
 
 import net.floodlightcontroller.devicemanager.IEntityClass;
 import net.floodlightcontroller.devicemanager.SwitchPort;
 import net.floodlightcontroller.util.FilterIterator;
+
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * An iterator for handling device queries
  */
 public class DeviceIterator extends FilterIterator<Device> {
     private IEntityClass[] entityClasses;
-    
+
     private Long macAddress;
     private Short vlan;
-    private Integer ipv4Address; 
+    private Integer ipv4Address;
     private Long switchDPID;
     private Integer switchPort;
-    
+
     /**
      * Construct a new device iterator over the key fields
      * @param subIterator an iterator over the full data structure to scan
@@ -46,12 +43,9 @@ public class DeviceIterator extends FilterIterator<Device> {
      * @param switchDPID the switch DPID
      * @param switchPort the switch port
      */
-    public DeviceIterator(Iterator<Device> subIterator, 
-                          IEntityClass[] entityClasses,
-                          Long macAddress,
-                          Short vlan, 
-                          Integer ipv4Address, 
-                          Long switchDPID,
+    public DeviceIterator(Iterator<Device> subIterator,
+                          IEntityClass[] entityClasses, Long macAddress,
+                          Short vlan, Integer ipv4Address, Long switchDPID,
                           Integer switchPort) {
         super(subIterator);
         this.entityClasses = entityClasses;
@@ -63,12 +57,12 @@ public class DeviceIterator extends FilterIterator<Device> {
         this.switchPort = switchPort;
     }
 
-    @Override
-    protected boolean matches(Device value) {
+    @Override protected boolean matches(Device value) {
         boolean match;
         if (entityClasses != null) {
             IEntityClass[] classes = next.getEntityClasses();
-            if (classes == null) return false;
+            if (classes == null)
+                return false;
 
             match = false;
             for (IEntityClass clazz : classes) {
@@ -78,9 +72,11 @@ public class DeviceIterator extends FilterIterator<Device> {
                         break;
                     }
                 }
-                if (match == true) break;
+                if (match == true)
+                    break;
             }
-            if (!match) return false;                
+            if (!match)
+                return false;
         }
         if (macAddress != null) {
             if (macAddress.longValue() != next.getMACAddress())
@@ -88,18 +84,19 @@ public class DeviceIterator extends FilterIterator<Device> {
         }
         if (vlan != null) {
             Short[] vlans = next.getVlanId();
-            if (Arrays.binarySearch(vlans, vlan) < 0) 
+            if (Arrays.binarySearch(vlans, vlan) < 0)
                 return false;
         }
         if (ipv4Address != null) {
             Integer[] ipv4Addresses = next.getIPv4Addresses();
-            if (Arrays.binarySearch(ipv4Addresses, ipv4Address) < 0) 
+            if (Arrays.binarySearch(ipv4Addresses, ipv4Address) < 0)
                 return false;
         }
         if (switchDPID != null || switchPort != null) {
             SwitchPort[] sps = next.getAttachmentPoints();
-            if (sps == null) return false;
-            
+            if (sps == null)
+                return false;
+
             match = false;
             for (SwitchPort sp : sps) {
                 if (switchDPID != null) {
@@ -113,7 +110,8 @@ public class DeviceIterator extends FilterIterator<Device> {
                 match = true;
                 break;
             }
-            if (!match) return false;
+            if (!match)
+                return false;
         }
         return true;
     }

@@ -1,28 +1,25 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 
 /**
  *
  */
 package org.openflow.protocol.action;
 
-import java.lang.reflect.Constructor;
-
 import org.openflow.protocol.Instantiable;
+
+import java.lang.reflect.Constructor;
 
 /**
  * List of OpenFlow Action types and mappings to wire protocol value and
@@ -31,71 +28,86 @@ import org.openflow.protocol.Instantiable;
  * @author David Erickson (daviderickson@cs.stanford.edu)
  */
 public enum OFActionType {
-    OUTPUT              (0, OFActionOutput.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionOutput();
-                            }}),
-    SET_VLAN_ID        (1, OFActionVirtualLanIdentifier.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionVirtualLanIdentifier();
-                            }}),
-    SET_VLAN_PCP        (2, OFActionVirtualLanPriorityCodePoint.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionVirtualLanPriorityCodePoint();
-                            }}),
-    STRIP_VLAN          (3, OFActionStripVirtualLan.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionStripVirtualLan();
-                            }}),
-    SET_DL_SRC          (4, OFActionDataLayerSource.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionDataLayerSource();
-                            }}),
-    SET_DL_DST          (5, OFActionDataLayerDestination.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionDataLayerDestination();
-                            }}),
-    SET_NW_SRC          (6, OFActionNetworkLayerSource.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionNetworkLayerSource();
-                            }}),
-    SET_NW_DST          (7, OFActionNetworkLayerDestination.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionNetworkLayerDestination();
-                            }}),
-    SET_NW_TOS          (8, OFActionNetworkTypeOfService.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionNetworkTypeOfService();
-                            }}),
-    SET_TP_SRC          (9, OFActionTransportLayerSource.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionTransportLayerSource();
-                            }}),
-    SET_TP_DST          (10, OFActionTransportLayerDestination.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionTransportLayerDestination();
-                            }}),
-    OPAQUE_ENQUEUE      (11, OFActionEnqueue.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionEnqueue();
-                            }}),
-    VENDOR              (0xffff, OFActionVendor.class, new Instantiable<OFAction>() {
-                            @Override
-                            public OFAction instantiate() {
-                                return new OFActionVendor();
-                            }});
+    OUTPUT(0, OFActionOutput.class, new Instantiable<OFAction>() {
+        @Override public OFAction instantiate() {
+            return new OFActionOutput();
+        }
+    }), SET_VLAN_ID(1, OFActionVirtualLanIdentifier.class,
+                    new Instantiable<OFAction>() {
+                        @Override public OFAction instantiate() {
+                            return new OFActionVirtualLanIdentifier();
+                        }
+                    }), SET_VLAN_PCP(2,
+                                     OFActionVirtualLanPriorityCodePoint.class,
+                                     new Instantiable<OFAction>() {
+                                         @Override
+                                         public OFAction instantiate() {
+                                             return new OFActionVirtualLanPriorityCodePoint();
+                                         }
+                                     }), STRIP_VLAN(3,
+                                                    OFActionStripVirtualLan.class,
+                                                    new Instantiable<OFAction>() {
+                                                        @Override
+                                                        public OFAction instantiate() {
+                                                            return new OFActionStripVirtualLan();
+                                                        }
+                                                    }), SET_DL_SRC(4,
+                                                                   OFActionDataLayerSource.class,
+                                                                   new Instantiable<OFAction>() {
+                                                                       @Override
+                                                                       public OFAction instantiate() {
+                                                                           return new OFActionDataLayerSource();
+                                                                       }
+                                                                   }), SET_DL_DST(
+            5, OFActionDataLayerDestination.class,
+            new Instantiable<OFAction>() {
+                @Override public OFAction instantiate() {
+                    return new OFActionDataLayerDestination();
+                }
+            }), SET_NW_SRC(6, OFActionNetworkLayerSource.class,
+                           new Instantiable<OFAction>() {
+                               @Override public OFAction instantiate() {
+                                   return new OFActionNetworkLayerSource();
+                               }
+                           }), SET_NW_DST(7,
+                                          OFActionNetworkLayerDestination.class,
+                                          new Instantiable<OFAction>() {
+                                              @Override
+                                              public OFAction instantiate() {
+                                                  return new OFActionNetworkLayerDestination();
+                                              }
+                                          }), SET_NW_TOS(8,
+                                                         OFActionNetworkTypeOfService.class,
+                                                         new Instantiable<OFAction>() {
+                                                             @Override
+                                                             public OFAction instantiate() {
+                                                                 return new OFActionNetworkTypeOfService();
+                                                             }
+                                                         }), SET_TP_SRC(9,
+                                                                        OFActionTransportLayerSource.class,
+                                                                        new Instantiable<OFAction>() {
+                                                                            @Override
+                                                                            public OFAction instantiate() {
+                                                                                return new OFActionTransportLayerSource();
+                                                                            }
+                                                                        }), SET_TP_DST(
+            10, OFActionTransportLayerDestination.class,
+            new Instantiable<OFAction>() {
+                @Override public OFAction instantiate() {
+                    return new OFActionTransportLayerDestination();
+                }
+            }), OPAQUE_ENQUEUE(11, OFActionEnqueue.class,
+                               new Instantiable<OFAction>() {
+                                   @Override public OFAction instantiate() {
+                                       return new OFActionEnqueue();
+                                   }
+                               }), VENDOR(0xffff, OFActionVendor.class,
+                                          new Instantiable<OFAction>() {
+                                              @Override
+                                              public OFAction instantiate() {
+                                                  return new OFActionVendor();
+                                              }
+                                          });
 
     protected static OFActionType[] mapping;
 
@@ -113,12 +125,13 @@ public enum OFActionType {
      * @param clazz The Java class corresponding to this type of OpenFlow Action
      * @param instantiable the instantiable for the OFAction this type represents
      */
-    OFActionType(int type, Class<? extends OFAction> clazz, Instantiable<OFAction> instantiable) {
+    OFActionType(int type, Class<? extends OFAction> clazz,
+                 Instantiable<OFAction> instantiable) {
         this.type = (short) type;
         this.clazz = clazz;
         this.instantiable = instantiable;
         try {
-            this.constructor = clazz.getConstructor(new Class[]{});
+            this.constructor = clazz.getConstructor(new Class[] {});
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failure getting constructor for class: " + clazz, e);
@@ -151,7 +164,7 @@ public enum OFActionType {
 
     static public OFActionType valueOf(short i) {
         if (i < 0)
-            i = (short) (16+i);
+            i = (short) (16 + i);
         return OFActionType.mapping[i];
     }
 

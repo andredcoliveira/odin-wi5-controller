@@ -1,14 +1,5 @@
 package net.floodlightcontroller.counter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.openflow.protocol.OFMessage;
-
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -17,23 +8,27 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.counter.CounterStore.NetworkLayer;
 import net.floodlightcontroller.counter.CounterValue.CounterType;
 import net.floodlightcontroller.packet.Ethernet;
+import org.openflow.protocol.OFMessage;
+
+import java.util.*;
 
 /**
  * An ICounsterStoreService implementation that does nothing.
  * This is used mainly for performance testing or if you don't
  * want to use the counterstore.
- * @author alexreimers
  *
+ * @author alexreimers
  */
-public class NullCounterStore implements IFloodlightModule,
-        ICounterStoreService {
+public class NullCounterStore
+        implements IFloodlightModule, ICounterStoreService {
 
     private ICounter emptyCounter;
     private List<String> emptyList;
     private Map<String, ICounter> emptyMap;
-    
+
     @Override
-    public void updatePacketInCounters(IOFSwitch sw, OFMessage m, Ethernet eth) {
+    public void updatePacketInCounters(IOFSwitch sw, OFMessage m,
+                                       Ethernet eth) {
         // no-op
     }
 
@@ -43,62 +38,52 @@ public class NullCounterStore implements IFloodlightModule,
     }
 
     @Override
-    public List<String>
-            getAllCategories(String counterName, NetworkLayer layer) {
+    public List<String> getAllCategories(String counterName,
+                                         NetworkLayer layer) {
         return emptyList;
     }
 
-    @Override
-    public ICounter createCounter(String key, CounterType type) {
+    @Override public ICounter createCounter(String key, CounterType type) {
         return emptyCounter;
     }
 
-    @Override
-    public ICounter getCounter(String key) {
+    @Override public ICounter getCounter(String key) {
         return emptyCounter;
     }
 
-    @Override
-    public Map<String, ICounter> getAll() {
+    @Override public Map<String, ICounter> getAll() {
         return emptyMap;
     }
 
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleServices() {
-        Collection<Class<? extends IFloodlightService>> services =
-                new ArrayList<Class<? extends IFloodlightService>>(1);
+        Collection<Class<? extends IFloodlightService>> services = new ArrayList<Class<? extends IFloodlightService>>(
+                1);
         services.add(ICounterStoreService.class);
         return services;
     }
 
     @Override
-    public Map<Class<? extends IFloodlightService>, IFloodlightService>
-            getServiceImpls() {
-        Map<Class<? extends IFloodlightService>,
-            IFloodlightService> m = 
-                new HashMap<Class<? extends IFloodlightService>,
-                        IFloodlightService>();
+    public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
+        Map<Class<? extends IFloodlightService>, IFloodlightService> m = new HashMap<Class<? extends IFloodlightService>, IFloodlightService>();
         m.put(ICounterStoreService.class, this);
         return m;
     }
 
     @Override
-    public Collection<Class<? extends IFloodlightService>>
-            getModuleDependencies() {
+    public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
         // None, return null
         return null;
     }
 
-    @Override
-    public void init(FloodlightModuleContext context)
-                             throws FloodlightModuleException {
+    @Override public void init(FloodlightModuleContext context)
+            throws FloodlightModuleException {
         emptyCounter = new SimpleCounter(new Date(), CounterType.LONG);
         emptyList = new ArrayList<String>();
         emptyMap = new HashMap<String, ICounter>();
     }
 
-    @Override
-    public void startUp(FloodlightModuleContext context) {
+    @Override public void startUp(FloodlightModuleContext context) {
         // no-op
     }
 }

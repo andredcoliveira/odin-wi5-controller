@@ -1,14 +1,14 @@
 package net.floodlightcontroller.odin.master;
 
+import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.util.MACAddress;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.util.MACAddress;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 @JsonSerialize(using = OdinAgentSerializer.class)
 public interface IOdinAgent {

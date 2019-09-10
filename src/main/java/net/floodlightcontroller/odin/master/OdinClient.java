@@ -1,9 +1,9 @@
 package net.floodlightcontroller.odin.master;
 
-import java.net.InetAddress;
-
 import net.floodlightcontroller.util.MACAddress;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+
+import java.net.InetAddress;
 
 @JsonSerialize(using = OdinClientSerializer.class) public class OdinClient
         implements Comparable {

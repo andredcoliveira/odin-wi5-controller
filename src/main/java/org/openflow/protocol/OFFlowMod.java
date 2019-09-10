@@ -1,24 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
-import java.util.LinkedList;
-import java.util.List;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.protocol.action.OFAction;
@@ -26,24 +20,28 @@ import org.openflow.protocol.factory.OFActionFactory;
 import org.openflow.protocol.factory.OFActionFactoryAware;
 import org.openflow.util.U16;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Represents an ofp_flow_mod message
  * @author David Erickson (daviderickson@cs.stanford.edu)
  *
  */
-public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Cloneable {
+public class OFFlowMod extends OFMessage
+        implements OFActionFactoryAware, Cloneable {
     public static int MINIMUM_LENGTH = 72;
 
     public static final short OFPFC_ADD = 0;                /* New flow. */
     public static final short OFPFC_MODIFY = 1;             /* Modify all matching flows. */
     public static final short OFPFC_MODIFY_STRICT = 2;      /* Modify entry strictly matching wildcards */
-    public static final short OFPFC_DELETE=3;               /* Delete all matching flows. */
-    public static final short OFPFC_DELETE_STRICT =4;       /* Strictly match wildcards and priority. */
+    public static final short OFPFC_DELETE = 3;               /* Delete all matching flows. */
+    public static final short OFPFC_DELETE_STRICT = 4;       /* Strictly match wildcards and priority. */
 
     // Open Flow Flow Mod Flags. Use "or" operation to set multiple flags
     public static final short OFPFF_SEND_FLOW_REM = 0x1; // 1 << 0
     public static final short OFPFF_CHECK_OVERLAP = 0x2; // 1 << 1
-    public static final short OFPFF_EMERG         = 0x4; // 1 << 2
+    public static final short OFPFF_EMERG = 0x4; // 1 << 2
 
     protected OFActionFactory actionFactory;
     protected OFMatch match;
@@ -243,8 +241,7 @@ public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Clonea
         return this;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         super.readFrom(data);
         if (this.match == null)
             this.match = new OFMatch();
@@ -259,12 +256,11 @@ public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Clonea
         this.flags = data.readShort();
         if (this.actionFactory == null)
             throw new RuntimeException("OFActionFactory not set");
-        this.actions = this.actionFactory.parseActions(data, getLengthU() -
-                MINIMUM_LENGTH);
+        this.actions = this.actionFactory
+                .parseActions(data, getLengthU() - MINIMUM_LENGTH);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         super.writeTo(data);
         this.match.writeTo(data);
         data.writeLong(cookie);
@@ -282,16 +278,16 @@ public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Clonea
         }
     }
 
-    @Override
-    public void setActionFactory(OFActionFactory actionFactory) {
+    @Override public void setActionFactory(OFActionFactory actionFactory) {
         this.actionFactory = actionFactory;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 227;
         int result = super.hashCode();
-        result = prime * result + ((actions == null) ? 0 : actions.hashCode());
+        result = prime * result + ((actions == null) ?
+                                   0 :
+                                   actions.hashCode());
         result = prime * result + bufferId;
         result = prime * result + command;
         result = prime * result + (int) (cookie ^ (cookie >>> 32));
@@ -304,8 +300,7 @@ public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Clonea
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -360,13 +355,12 @@ public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Clonea
     /* (non-Javadoc)
      * @see java.lang.Object#clone()
      */
-    @Override
-    public OFFlowMod clone() throws CloneNotSupportedException {
+    @Override public OFFlowMod clone() throws CloneNotSupportedException {
         OFMatch neoMatch = match.clone();
-        OFFlowMod flowMod= (OFFlowMod) super.clone();
+        OFFlowMod flowMod = (OFFlowMod) super.clone();
         flowMod.setMatch(neoMatch);
         List<OFAction> neoActions = new LinkedList<OFAction>();
-        for(OFAction action: this.actions)
+        for (OFAction action : this.actions)
             neoActions.add((OFAction) action.clone());
         flowMod.setActions(neoActions);
         return flowMod;
@@ -375,14 +369,13 @@ public class OFFlowMod extends OFMessage implements OFActionFactoryAware, Clonea
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "OFFlowMod [actionFactory=" + actionFactory + ", actions="
-                + actions + ", bufferId=" + bufferId + ", command=" + command
-                + ", cookie=" + cookie + ", flags=" + flags + ", hardTimeout="
-                + hardTimeout + ", idleTimeout=" + idleTimeout + ", match="
-                + match + ", outPort=" + outPort + ", priority=" + priority
-                + ", length=" + length + ", type=" + type + ", version="
-                + version + ", xid=" + xid + "]";
+               + actions + ", bufferId=" + bufferId + ", command=" + command
+               + ", cookie=" + cookie + ", flags=" + flags + ", hardTimeout="
+               + hardTimeout + ", idleTimeout=" + idleTimeout + ", match="
+               + match + ", outPort=" + outPort + ", priority=" + priority
+               + ", length=" + length + ", type=" + type + ", version="
+               + version + ", xid=" + xid + "]";
     }
 }

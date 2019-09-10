@@ -1,15 +1,14 @@
 package net.floodlightcontroller.perfmon;
 
+import net.floodlightcontroller.core.IOFMessageListener;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.codehaus.jackson.map.annotate.JsonSerialize;
-
-import net.floodlightcontroller.core.IOFMessageListener;
-
-@JsonSerialize(using=CumulativeTimeBucketJSONSerializer.class)
+@JsonSerialize(using = CumulativeTimeBucketJSONSerializer.class)
 public class CumulativeTimeBucket {
     private long startTime_ns; // First pkt time-stamp in this bucket
     private Map<Integer, OneComponentTime> compStats;
@@ -28,7 +27,7 @@ public class CumulativeTimeBucket {
     public long getTotalPktCnt() {
         return totalPktCnt;
     }
-    
+
     public long getAverageProcTimeNs() {
         return avgTotalProcTimeNs;
     }
@@ -36,25 +35,26 @@ public class CumulativeTimeBucket {
     public long getMinTotalProcTimeNs() {
         return minTotalProcTimeNs;
     }
-    
+
     public long getMaxTotalProcTimeNs() {
         return maxTotalProcTimeNs;
     }
-    
+
     public long getTotalSigmaProcTimeNs() {
         return sigmaTotalProcTimeNs;
     }
-    
+
     public int getNumComps() {
         return compStats.values().size();
     }
-    
+
     public Collection<OneComponentTime> getModules() {
         return compStats.values();
     }
 
     public CumulativeTimeBucket(List<IOFMessageListener> listeners) {
-        compStats = new ConcurrentHashMap<Integer, OneComponentTime>(listeners.size());
+        compStats = new ConcurrentHashMap<Integer, OneComponentTime>(
+                listeners.size());
         for (IOFMessageListener l : listeners) {
             OneComponentTime oct = new OneComponentTime(l);
             compStats.put(oct.hashCode(), oct);
@@ -65,7 +65,7 @@ public class CumulativeTimeBucket {
     private void updateSquaredProcessingTime(long curTimeNs) {
         sumSquaredProcTimeNs2 += (Math.pow(curTimeNs, 2));
     }
-    
+
     /**
      * Resets all counters and counters for each component time
      */
@@ -82,7 +82,7 @@ public class CumulativeTimeBucket {
             oct.resetAllCounters();
         }
     }
-    
+
     private void computeSigma() {
         // Computes std. deviation from the sum of count numbers and from
         // the sum of the squares of count numbers
@@ -91,31 +91,31 @@ public class CumulativeTimeBucket {
         temp = (sumSquaredProcTimeNs2 - temp) / totalPktCnt;
         sigmaTotalProcTimeNs = (long) Math.sqrt(temp);
     }
-    
+
     public void computeAverages() {
         // Must be called last to, needs latest info
         computeSigma();
-        
+
         for (OneComponentTime oct : compStats.values()) {
             oct.computeSigma();
         }
     }
-    
+
     public void updatePerPacketCounters(long procTimeNs) {
         totalPktCnt++;
         totalProcTimeNs += procTimeNs;
         avgTotalProcTimeNs = totalProcTimeNs / totalPktCnt;
         updateSquaredProcessingTime(procTimeNs);
-        
+
         if (procTimeNs > maxTotalProcTimeNs) {
             maxTotalProcTimeNs = procTimeNs;
         }
-        
+
         if (procTimeNs < minTotalProcTimeNs) {
             minTotalProcTimeNs = procTimeNs;
         }
     }
-    
+
     public void updateOneComponent(IOFMessageListener l, long procTimeNs) {
         compStats.get(l.hashCode()).updatePerPacketCounters(procTimeNs);
     }

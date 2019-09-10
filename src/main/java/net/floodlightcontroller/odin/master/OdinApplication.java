@@ -540,17 +540,22 @@ public abstract class OdinApplication implements Runnable {
     protected boolean checkpoint() {
         boolean interrupted = false;
 
+        // TEE("Entered checkpoint", null);
+        // TEE("checkpoint - Lock: " + getLock().toString(), null);
         synchronized (getLock()) {
             while (!getState().equals(State.RUNNING)) {
                 if (halt()) {
+                    TEE("Halted", null);
                     getLock().notifyAll();
                 }
+                TEE("Waiting", null);
                 try {
                     getLock().wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 interrupted = true;
+                TEE("Woke up", null);
             }
 
             getLock().notifyAll();
@@ -607,7 +612,6 @@ public abstract class OdinApplication implements Runnable {
         System.out.println(message);
         if (ps != null) {
             ps.println(message);
-            System.out.println(message);
         }
     }
 }

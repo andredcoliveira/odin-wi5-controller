@@ -1,59 +1,32 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.core.internal;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.core.IOFMessageListener;
 import net.floodlightcontroller.core.IFloodlightProviderService.Role;
+import net.floodlightcontroller.core.IOFMessageListener;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.types.MacVlanPair;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
 import net.floodlightcontroller.util.TimedCache;
-
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.jboss.netty.channel.Channel;
-import org.openflow.protocol.OFFeaturesReply;
-import org.openflow.protocol.OFFlowMod;
-import org.openflow.protocol.OFMatch;
-import org.openflow.protocol.OFMessage;
-import org.openflow.protocol.OFPhysicalPort;
-import org.openflow.protocol.OFPort;
-import org.openflow.protocol.OFType;
-import org.openflow.protocol.OFVendor;
+import org.openflow.protocol.*;
 import org.openflow.protocol.OFPhysicalPort.OFPortConfig;
 import org.openflow.protocol.OFPhysicalPort.OFPortState;
-import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.statistics.OFDescriptionStatistics;
 import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.util.HexString;
@@ -64,6 +37,15 @@ import org.openflow.vendor.nicira.OFRoleVendorData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  *
  * @author David Erickson (daviderickson@cs.stanford.edu)
@@ -71,7 +53,8 @@ import org.slf4j.LoggerFactory;
 public class OFSwitchImpl implements IOFSwitch {
     // TODO: should we really do logging in the class or should we throw
     // exception that can then be handled by callers?
-    protected static Logger log = LoggerFactory.getLogger(OFSwitchImpl.class);
+    protected static Logger log = LoggerFactory
+            .getLogger(OFSwitchImpl.class);
 
     protected ConcurrentMap<Object, Object> attributes;
     protected IFloodlightProviderService floodlightProvider;
@@ -83,8 +66,8 @@ public class OFSwitchImpl implements IOFSwitch {
     protected AtomicInteger transactionIdSource;
     protected Map<Short, OFPhysicalPort> ports;
     protected Long switchClusterId;
-    protected Map<MacVlanPair,Short> macVlanToPortMap;
-    protected Map<Integer,OFStatisticsFuture> statsFutureMap;
+    protected Map<MacVlanPair, Short> macVlanToPortMap;
+    protected Map<Integer, OFStatisticsFuture> statsFutureMap;
     protected Map<Integer, IOFMessageListener> iofMsgListenersMap;
     protected boolean connected;
     protected Role role;
@@ -97,36 +80,36 @@ public class OFSwitchImpl implements IOFSwitch {
      * verify that the reply matches the expected reply. We require in order
      * delivery of replies. That's why we use a Queue. 
      * The RoleChanger uses a timeout to ensure we receive a timely reply.
-     * 
+     *
      * Need to synchronize on this instance if a request is sent, received, 
      * checked. 
      */
     protected LinkedList<PendingRoleRequestEntry> pendingRoleRequests;
-    
+
     public static IOFSwitchFeatures switchFeatures;
-    protected static final ThreadLocal<Map<OFSwitchImpl,List<OFMessage>>> local_msg_buffer =
-            new ThreadLocal<Map<OFSwitchImpl,List<OFMessage>>>() {
-            @Override
-            protected Map<OFSwitchImpl,List<OFMessage>> initialValue() {
-                return new HashMap<OFSwitchImpl,List<OFMessage>>();
-            }
+    protected static final ThreadLocal<Map<OFSwitchImpl, List<OFMessage>>> local_msg_buffer = new ThreadLocal<Map<OFSwitchImpl, List<OFMessage>>>() {
+        @Override
+        protected Map<OFSwitchImpl, List<OFMessage>> initialValue() {
+            return new HashMap<OFSwitchImpl, List<OFMessage>>();
+        }
     };
-    
+
     // for managing our map sizes
-    protected static final int MAX_MACS_PER_SWITCH  = 1000;
-    
+    protected static final int MAX_MACS_PER_SWITCH = 1000;
+
     protected static class PendingRoleRequestEntry {
         protected int xid;
         protected Role role;
         // cookie is used to identify the role "generation". roleChanger uses
         protected long cookie;
+
         public PendingRoleRequestEntry(int xid, Role role, long cookie) {
             this.xid = xid;
             this.role = role;
             this.cookie = cookie;
         }
     }
-    
+
     public OFSwitchImpl() {
         this.attributes = new ConcurrentHashMap<Object, Object>();
         this.connectedSince = new Date();
@@ -134,69 +117,65 @@ public class OFSwitchImpl implements IOFSwitch {
         this.ports = new ConcurrentHashMap<Short, OFPhysicalPort>();
         this.switchClusterId = null;
         this.connected = true;
-        this.statsFutureMap = new ConcurrentHashMap<Integer,OFStatisticsFuture>();
-        this.iofMsgListenersMap = new ConcurrentHashMap<Integer,IOFMessageListener>();
+        this.statsFutureMap = new ConcurrentHashMap<Integer, OFStatisticsFuture>();
+        this.iofMsgListenersMap = new ConcurrentHashMap<Integer, IOFMessageListener>();
         this.role = null;
-        this.timedCache = new TimedCache<Long>(100, 5*1000 );  // 5 seconds interval
+        this.timedCache = new TimedCache<Long>(100, 5
+                                                    * 1000);  // 5 seconds interval
         this.listenerLock = new ReentrantReadWriteLock();
         this.portBroadcastCacheHitMap = new ConcurrentHashMap<Short, Long>();
         this.pendingRoleRequests = new LinkedList<OFSwitchImpl.PendingRoleRequestEntry>();
-        
+
         // Defaults properties for an ideal switch
         this.setAttribute(PROP_FASTWILDCARDS, (Integer) OFMatch.OFPFW_ALL);
         this.setAttribute(PROP_SUPPORTS_OFPP_FLOOD, new Boolean(true));
         this.setAttribute(PROP_SUPPORTS_OFPP_TABLE, new Boolean(true));
     }
-    
 
-    @Override
-    public Object getAttribute(String name) {
+    @Override public Object getAttribute(String name) {
         if (this.attributes.containsKey(name)) {
             return this.attributes.get(name);
         }
         return null;
     }
-    
-    @Override
-    public void setAttribute(String name, Object value) {
+
+    @Override public void setAttribute(String name, Object value) {
         this.attributes.put(name, value);
         return;
     }
 
-    @Override
-    public Object removeAttribute(String name) {
+    @Override public Object removeAttribute(String name) {
         return this.attributes.remove(name);
     }
-    
-    @Override
-    public boolean hasAttribute(String name) {
+
+    @Override public boolean hasAttribute(String name) {
         return this.attributes.containsKey(name);
     }
-        
-    @JsonIgnore
-    public Channel getChannel() {
+
+    @JsonIgnore public Channel getChannel() {
         return this.channel;
     }
 
     public void setChannel(Channel channel) {
         this.channel = channel;
     }
-    
+
     // TODO: document the difference between the different write functions
     public void write(OFMessage m, FloodlightContext bc) throws IOException {
-    	if (m instanceof OFFlowMod) {
-    	    byte[] bcast = new byte[] {-1, -1, -1, -1, -1, -1};
-    	    OFFlowMod fm = (OFFlowMod) m;
-    	    OFMatch match = fm.getMatch();
+        if (m instanceof OFFlowMod) {
+            byte[] bcast = new byte[] { -1, -1, -1, -1, -1, -1 };
+            OFFlowMod fm = (OFFlowMod) m;
+            OFMatch match = fm.getMatch();
             // Warn if programming a flow matching broadcast destination
-    	    if ((match.getWildcards() & OFMatch.OFPFW_DL_DST) == 0 &&
-    	            Arrays.equals(match.getDataLayerDestination(), bcast)) {
-    	    	log.warn("Programming flow with -1 destination addr");
-    	    	log.warn("swId {}, stack trace {}",
-                         stringId, new Exception().getStackTrace());
-    	    }
-    	}
-        Map<OFSwitchImpl,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
+            if ((match.getWildcards() & OFMatch.OFPFW_DL_DST) == 0 && Arrays
+                    .equals(match.getDataLayerDestination(), bcast)) {
+                log.warn("Programming flow with -1 destination addr");
+                log.warn("swId {}, stack trace {}", stringId,
+                         new Exception().getStackTrace());
+            }
+        }
+        Map<OFSwitchImpl, List<OFMessage>> msg_buffer_map = local_msg_buffer
+                .get();
         List<OFMessage> msg_buffer = msg_buffer_map.get(this);
         if (msg_buffer == null) {
             msg_buffer = new ArrayList<OFMessage>();
@@ -206,21 +185,25 @@ public class OFSwitchImpl implements IOFSwitch {
         this.floodlightProvider.handleOutgoingMessage(this, m, bc);
         msg_buffer.add(m);
 
-        if ((msg_buffer.size() >= Controller.BATCH_MAX_SIZE) ||
-            ((m.getType() != OFType.PACKET_OUT) && (m.getType() != OFType.FLOW_MOD))) {
+        if ((msg_buffer.size() >= Controller.BATCH_MAX_SIZE) || (
+                (m.getType() != OFType.PACKET_OUT) && (m.getType()
+                                                       != OFType.FLOW_MOD))) {
             this.write(msg_buffer);
             msg_buffer.clear();
         }
     }
 
-    public void write(List<OFMessage> msglist, FloodlightContext bc) throws IOException {
+    public void write(List<OFMessage> msglist, FloodlightContext bc)
+            throws IOException {
         for (OFMessage m : msglist) {
             if (role == Role.SLAVE) {
                 switch (m.getType()) {
                     case PACKET_OUT:
                     case FLOW_MOD:
                     case PORT_MOD:
-                        log.warn("Sending OF message that modifies switch state while in the slave role: {}", m.getType().name());
+                        log.warn(
+                                "Sending OF message that modifies switch state while in the slave role: {}",
+                                m.getType().name());
                         break;
                     default:
                         break;
@@ -236,7 +219,7 @@ public class OFSwitchImpl implements IOFSwitch {
     public void write(List<OFMessage> msglist) throws IOException {
         this.channel.write(msglist);
     }
-    
+
     public void disconnectOutputStream() {
         channel.close();
     }
@@ -244,16 +227,17 @@ public class OFSwitchImpl implements IOFSwitch {
     public OFFeaturesReply getFeaturesReply() {
         return this.featuresReply;
     }
-    
+
     public void setSwitchClusterId(Long id) {
         this.switchClusterId = id;
     }
-    
+
     public Long getSwitchClusterId() {
         return switchClusterId;
     }
 
-    public synchronized void setFeaturesReply(OFFeaturesReply featuresReply) {
+    public synchronized void setFeaturesReply(
+            OFFeaturesReply featuresReply) {
         this.featuresReply = featuresReply;
         for (OFPhysicalPort port : featuresReply.getPorts()) {
             ports.put(port.getPortNumber(), port);
@@ -279,7 +263,7 @@ public class OFSwitchImpl implements IOFSwitch {
     public synchronized void setPort(OFPhysicalPort port) {
         ports.put(port.getPortNumber(), port);
     }
-    
+
     public Map<Short, OFPhysicalPort> getPorts() {
         return ports;
     }
@@ -291,7 +275,7 @@ public class OFSwitchImpl implements IOFSwitch {
     public synchronized boolean portEnabled(short portNumber) {
         return portEnabled(ports.get(portNumber));
     }
-    
+
     public boolean portEnabled(OFPhysicalPort port) {
         if (port == null)
             return false;
@@ -304,45 +288,42 @@ public class OFSwitchImpl implements IOFSwitch {
         //    return false;
         return true;
     }
-    
-    @Override
-    public long getId() {
+
+    @Override public long getId() {
         if (this.featuresReply == null)
-            throw new RuntimeException("Features reply has not yet been set");
+            throw new RuntimeException(
+                    "Features reply has not yet been set");
         return this.featuresReply.getDatapathId();
     }
 
-    @Override
-    public String getStringId() {
+    @Override public String getStringId() {
         return stringId;
     }
 
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
-    @Override
-    public String toString() {
-        return "OFSwitchImpl [" + channel.getRemoteAddress() + " DPID[" + ((featuresReply != null) ? stringId : "?") + "]]";
+    @Override public String toString() {
+        return "OFSwitchImpl [" + channel.getRemoteAddress() + " DPID["
+               + ((featuresReply != null) ? stringId : "?") + "]]";
     }
 
-    @Override
-    public ConcurrentMap<Object, Object> getAttributes() {
+    @Override public ConcurrentMap<Object, Object> getAttributes() {
         return this.attributes;
     }
 
-    @Override
-    public Date getConnectedSince() {
+    @Override public Date getConnectedSince() {
         return connectedSince;
     }
 
-    @Override
-    public int getNextTransactionId() {
+    @Override public int getNextTransactionId() {
         return this.transactionIdSource.incrementAndGet();
     }
 
     @Override
     public void sendStatsQuery(OFStatisticsRequest request, int xid,
-                                IOFMessageListener caller) throws IOException {
+                               IOFMessageListener caller)
+            throws IOException {
         request.setXid(xid);
         this.iofMsgListenersMap.put(xid, caller);
         List<OFMessage> msglist = new ArrayList<OFMessage>(1);
@@ -352,9 +333,11 @@ public class OFSwitchImpl implements IOFSwitch {
     }
 
     @Override
-    public Future<List<OFStatistics>> getStatistics(OFStatisticsRequest request) throws IOException {
+    public Future<List<OFStatistics>> getStatistics(
+            OFStatisticsRequest request) throws IOException {
         request.setXid(getNextTransactionId());
-        OFStatisticsFuture future = new OFStatisticsFuture(threadPool, this, request.getXid());
+        OFStatisticsFuture future = new OFStatisticsFuture(threadPool, this,
+                                                           request.getXid());
         this.statsFutureMap.put(request.getXid(), future);
         List<OFMessage> msglist = new ArrayList<OFMessage>(1);
         msglist.add(request);
@@ -362,8 +345,7 @@ public class OFSwitchImpl implements IOFSwitch {
         return future;
     }
 
-    @Override
-    public void deliverStatisticsReply(OFMessage reply) {
+    @Override public void deliverStatisticsReply(OFMessage reply) {
         OFStatisticsFuture future = this.statsFutureMap.get(reply.getXid());
         if (future != null) {
             future.deliverFuture(this, reply);
@@ -372,21 +354,20 @@ public class OFSwitchImpl implements IOFSwitch {
             return;
         }
         /* Transaction id was not found in statsFutureMap.check the other map */
-        IOFMessageListener caller = this.iofMsgListenersMap.get(reply.getXid());
+        IOFMessageListener caller = this.iofMsgListenersMap
+                .get(reply.getXid());
         if (caller != null) {
             caller.receive(this, reply, null);
         }
     }
 
-    @Override
-    public void cancelStatisticsReply(int transactionId) {
-        if (null ==  this.statsFutureMap.remove(transactionId)) {
+    @Override public void cancelStatisticsReply(int transactionId) {
+        if (null == this.statsFutureMap.remove(transactionId)) {
             this.iofMsgListenersMap.remove(transactionId);
         }
     }
 
-    @Override
-    public void cancelAllStatisticsReplies() {
+    @Override public void cancelAllStatisticsReplies() {
         /* we don't need to be synchronized here. Even if another thread
          * modifies the map while we're cleaning up the future will eventuall
          * timeout */
@@ -396,39 +377,35 @@ public class OFSwitchImpl implements IOFSwitch {
         statsFutureMap.clear();
         iofMsgListenersMap.clear();
     }
- 
-    
+
     /**
      * @param floodlightProvider the floodlightProvider to set
      */
-    public void setFloodlightProvider(IFloodlightProviderService floodlightProvider) {
+    public void setFloodlightProvider(
+            IFloodlightProviderService floodlightProvider) {
         this.floodlightProvider = floodlightProvider;
     }
-    
+
     public void setThreadPoolService(IThreadPoolService tp) {
         this.threadPool = tp;
     }
 
-    @Override
-    public synchronized boolean isConnected() {
+    @Override public synchronized boolean isConnected() {
         return connected;
     }
 
-    @Override
-    public synchronized void setConnected(boolean connected) {
+    @Override public synchronized void setConnected(boolean connected) {
         this.connected = connected;
     }
-    
-    @Override
-    public Role getRole() {
+
+    @Override public Role getRole() {
         return role;
     }
-    
-    @Override
-    public boolean isActive() {
+
+    @Override public boolean isActive() {
         return (role != Role.SLAVE);
     }
-    
+
     @Override
     public void setSwitchProperties(OFDescriptionStatistics description) {
         if (switchFeatures != null) {
@@ -436,29 +413,29 @@ public class OFSwitchImpl implements IOFSwitch {
         }
     }
 
-    @Override
-    public void clearAllFlowMods() {
+    @Override public void clearAllFlowMods() {
         // Delete all pre-existing flows
         OFMatch match = new OFMatch().setWildcards(OFMatch.OFPFW_ALL);
         OFMessage fm = ((OFFlowMod) floodlightProvider.getOFMessageFactory()
-            .getMessage(OFType.FLOW_MOD))
-                .setMatch(match)
-            .setCommand(OFFlowMod.OFPFC_DELETE)
-            .setOutPort(OFPort.OFPP_NONE)
-            .setLength(U16.t(OFFlowMod.MINIMUM_LENGTH));
+                                                      .getMessage(
+                                                              OFType.FLOW_MOD))
+                .setMatch(match).setCommand(OFFlowMod.OFPFC_DELETE)
+                .setOutPort(OFPort.OFPP_NONE)
+                .setLength(U16.t(OFFlowMod.MINIMUM_LENGTH));
         try {
             List<OFMessage> msglist = new ArrayList<OFMessage>(1);
             msglist.add(fm);
             channel.write(msglist);
         } catch (Exception e) {
-            log.error("Failed to clear all flows on switch {} - {}", this, e);
+            log.error("Failed to clear all flows on switch {} - {}", this,
+                      e);
         }
     }
 
-    @Override
-    public boolean updateBroadcastCache(Long entry, Short port) {
+    @Override public boolean updateBroadcastCache(Long entry, Short port) {
         if (timedCache.update(entry)) {
-            Long count = portBroadcastCacheHitMap.putIfAbsent(port, new Long(1));
+            Long count = portBroadcastCacheHitMap
+                    .putIfAbsent(port, new Long(1));
             if (count != null) {
                 count++;
             }
@@ -468,14 +445,13 @@ public class OFSwitchImpl implements IOFSwitch {
         }
     }
 
-    @Override
-    public Map<Short, Long> getPortBroadcastHits() {
-    	return this.portBroadcastCacheHitMap;
+    @Override public Map<Short, Long> getPortBroadcastHits() {
+        return this.portBroadcastCacheHitMap;
     }
-    
 
     public void flush() {
-        Map<OFSwitchImpl,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
+        Map<OFSwitchImpl, List<OFMessage>> msg_buffer_map = local_msg_buffer
+                .get();
         List<OFMessage> msglist = msg_buffer_map.get(this);
         if ((msglist != null) && (msglist.size() > 0)) {
             try {
@@ -489,7 +465,8 @@ public class OFSwitchImpl implements IOFSwitch {
     }
 
     public static void flush_all() {
-        Map<OFSwitchImpl,List<OFMessage>> msg_buffer_map = local_msg_buffer.get();
+        Map<OFSwitchImpl, List<OFMessage>> msg_buffer_map = local_msg_buffer
+                .get();
         for (OFSwitchImpl sw : msg_buffer_map.keySet()) {
             sw.flush();
         }
@@ -499,10 +476,9 @@ public class OFSwitchImpl implements IOFSwitch {
      * Return a read lock that must be held while calling the listeners for
      * messages from the switch. Holding the read lock prevents the active
      * switch list from being modified out from under the listeners.
-     * @return 
+     * @return
      */
-    @JsonIgnore
-    public Lock getListenerReadLock() {
+    @JsonIgnore public Lock getListenerReadLock() {
         return listenerLock.readLock();
     }
 
@@ -513,16 +489,15 @@ public class OFSwitchImpl implements IOFSwitch {
      * message from the switch.
      * @return
      */
-    @JsonIgnore
-    public Lock getListenerWriteLock() {
+    @JsonIgnore public Lock getListenerWriteLock() {
         return listenerLock.writeLock();
     }
-    
+
     /**
      * Send NX role request message to the switch requesting the specified role.
-     * 
+     *
      * This method should ONLY be called by @see RoleChanger.submitRequest(). 
-     * 
+     *
      * After sending the request add it to the queue of pending request. We
      * use the queue to later verify that we indeed receive the correct reply.
      * @param sw switch to send the role request message to
@@ -533,7 +508,7 @@ public class OFSwitchImpl implements IOFSwitch {
      */
     protected int sendNxRoleRequest(Role role, long cookie)
             throws IOException {
-        synchronized(pendingRoleRequests) {
+        synchronized (pendingRoleRequests) {
             // Convert the role enum to the appropriate integer constant used
             // in the NX role request message
             int nxRole = 0;
@@ -553,72 +528,75 @@ public class OFSwitchImpl implements IOFSwitch {
                     // TODO: should throw an error
                     return 0;
             }
-            
+
             // Construct the role request message
-            OFVendor roleRequest = (OFVendor)floodlightProvider.
-                    getOFMessageFactory().getMessage(OFType.VENDOR);
+            OFVendor roleRequest = (OFVendor) floodlightProvider.
+                                                                        getOFMessageFactory()
+                                                                .getMessage(
+                                                                        OFType.VENDOR);
             int xid = this.getNextTransactionId();
             roleRequest.setXid(xid);
             roleRequest.setVendor(OFNiciraVendorData.NX_VENDOR_ID);
             OFRoleRequestVendorData roleRequestData = new OFRoleRequestVendorData();
             roleRequestData.setRole(nxRole);
             roleRequest.setVendorData(roleRequestData);
-            roleRequest.setLengthU(OFVendor.MINIMUM_LENGTH + 
-                                   roleRequestData.getLength());
-            
+            roleRequest.setLengthU(
+                    OFVendor.MINIMUM_LENGTH + roleRequestData.getLength());
+
             // Send it to the switch
             List<OFMessage> msglist = new ArrayList<OFMessage>(1);
             msglist.add(roleRequest);
             // FIXME: should this use this.write() in order for messages to
             // be processed by handleOutgoingMessage()
             this.channel.write(msglist);
-            
-            pendingRoleRequests.add(new PendingRoleRequestEntry(xid, role, cookie));
+
+            pendingRoleRequests
+                    .add(new PendingRoleRequestEntry(xid, role, cookie));
             return xid;
         }
     }
-    
-    /** 
+
+    /**
      * Deliver a RoleReply message to this switch. Checks if the reply 
      * message matches the expected reply (head of the pending request queue). 
      * We require in-order delivery of replies. If there's any deviation from
      * our expectations we disconnect the switch. 
-     * 
+     *
      * We must not check the received role against the controller's current
      * role because there's no synchronization but that's fine @see RoleChanger
-     * 
+     *
      * Will be called by the OFChannelHandler's receive loop
-     * 
+     *
      * @param xid Xid of the reply message
      * @param role The Role in the the reply message
      */
     protected void deliverRoleReply(int xid, Role role) {
-        synchronized(pendingRoleRequests) {
+        synchronized (pendingRoleRequests) {
             PendingRoleRequestEntry head = pendingRoleRequests.poll();
             if (head == null) {
                 // Maybe don't disconnect if the role reply we received is 
                 // for the same role we are already in. 
-                log.error("Switch {}: received unexpected role reply for Role {}" + 
-                          " Disconnecting switch", this, role );
+                log.error(
+                        "Switch {}: received unexpected role reply for Role {}"
+                        + " Disconnecting switch", this, role);
                 this.channel.close();
-            }
-            else if (head.xid != xid) {
+            } else if (head.xid != xid) {
                 // check xid before role!!
-                log.error("Switch {}: expected role reply with " +
-                       "Xid {}, got {}. Disconnecting switch",
-                       new Object[] { this, head.xid, xid } );
+                log.error("Switch {}: expected role reply with "
+                          + "Xid {}, got {}. Disconnecting switch",
+                          new Object[] { this, head.xid, xid });
                 this.channel.close();
-            }
-            else if (head.role != role) {
-                log.error("Switch {}: expected role reply with " +
-                       "Role {}, got {}. Disconnecting switch",
-                       new Object[] { this, head.role, role } );
+            } else if (head.role != role) {
+                log.error("Switch {}: expected role reply with "
+                          + "Role {}, got {}. Disconnecting switch",
+                          new Object[] { this, head.role, role });
                 this.channel.close();
-            }
-            else {
-                log.debug("Received role reply message from {}, setting role to {}",
-                          this, role);
-                if (this.role == null && getAttribute(SWITCH_SUPPORTS_NX_ROLE) == null) {
+            } else {
+                log.debug(
+                        "Received role reply message from {}, setting role to {}",
+                        this, role);
+                if (this.role == null
+                    && getAttribute(SWITCH_SUPPORTS_NX_ROLE) == null) {
                     // The first role reply we received. Set the attribute
                     // that the switch supports roles
                     setAttribute(SWITCH_SUPPORTS_NX_ROLE, true);
@@ -627,23 +605,23 @@ public class OFSwitchImpl implements IOFSwitch {
             }
         }
     }
-    
-    /** 
+
+    /**
      * Checks whether the given xid matches the xid of the first pending
      * role request. 
      * @param xid
-     * @return 
+     * @return
      */
-    protected boolean checkFirstPendingRoleRequestXid (int xid) {
-        synchronized(pendingRoleRequests) {
+    protected boolean checkFirstPendingRoleRequestXid(int xid) {
+        synchronized (pendingRoleRequests) {
             PendingRoleRequestEntry head = pendingRoleRequests.peek();
             if (head == null)
                 return false;
-            else 
+            else
                 return head.xid == xid;
         }
     }
-    
+
     /**
      * Checks whether the given request cookie matches the cookie of the first 
      * pending request
@@ -651,15 +629,15 @@ public class OFSwitchImpl implements IOFSwitch {
      * @return
      */
     protected boolean checkFirstPendingRoleRequestCookie(long cookie) {
-        synchronized(pendingRoleRequests) {
+        synchronized (pendingRoleRequests) {
             PendingRoleRequestEntry head = pendingRoleRequests.peek();
             if (head == null)
                 return false;
-            else 
+            else
                 return head.cookie == cookie;
         }
     }
-    
+
     /**
      * Called if we receive a vendor error message indicating that roles
      * are not supported by the switch. If the xid matches the first pending
@@ -668,13 +646,12 @@ public class OFSwitchImpl implements IOFSwitch {
      * @param xid
      */
     protected void deliverRoleRequestNotSupported(int xid) {
-        synchronized(pendingRoleRequests) {
+        synchronized (pendingRoleRequests) {
             PendingRoleRequestEntry head = pendingRoleRequests.poll();
             this.role = null;
-            if (head!=null && head.xid == xid) {
+            if (head != null && head.xid == xid) {
                 setAttribute(SWITCH_SUPPORTS_NX_ROLE, false);
-            }
-            else {
+            } else {
                 this.channel.close();
             }
         }

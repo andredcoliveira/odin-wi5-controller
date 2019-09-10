@@ -11,30 +11,32 @@ import net.floodlightcontroller.flowcache.IFlowCacheService.FCQueryEvType;
 public interface IFlowReconcileService extends IFloodlightService {
     /**
      * Add a flow reconcile listener
+     *
      * @param listener The module that can reconcile flows
      */
     public void addFlowReconcileListener(IFlowReconcileListener listener);
 
     /**
      * Remove a flow reconcile listener
+     *
      * @param listener The module that no longer reconcile flows
      */
     public void removeFlowReconcileListener(IFlowReconcileListener listener);
-    
+
     /**
      * Remove all flow reconcile listeners
      */
     public void clearFlowReconcileListeners();
-    
+
     /**
-     * Reconcile flow. Returns false if no modified flow-mod need to be 
-     * programmed if cluster ID is providced then pnly flows in the given 
+     * Reconcile flow. Returns false if no modified flow-mod need to be
+     * programmed if cluster ID is providced then pnly flows in the given
      * cluster are reprogrammed
      *
      * @param ofmRcIn the ofm rc in
      */
     public void reconcileFlow(OFMatchReconcile ofmRcIn);
-    
+
     /**
      * Updates the flows to a device after the device moved to a new location
      * <p>
@@ -42,12 +44,12 @@ public interface IFlowReconcileService extends IFloodlightService {
      * Reconciles each of these flows by potentially reprogramming them to its
      * new attachment point
      *
-     * @param device      device that has moved
-     * @param fcEvType    Event type that triggered the update
-     *
+     * @param device   device that has moved
+     * @param fcEvType Event type that triggered the update
      */
-    public void updateFlowForDestinationDevice(IDevice device, FCQueryEvType fcEvType);
-    
+    public void updateFlowForDestinationDevice(IDevice device,
+                                               FCQueryEvType fcEvType);
+
     /**
      * Updates the flows from a device
      * <p>
@@ -55,14 +57,15 @@ public interface IFlowReconcileService extends IFloodlightService {
      * Reconciles each of these flows by potentially reprogramming them to its
      * new attachment point
      *
-     * @param device      device where the flow originates
-     * @param fcEvType    Event type that triggered the update
-     *
+     * @param device   device where the flow originates
+     * @param fcEvType Event type that triggered the update
      */
-    public void updateFlowForSourceDevice(IDevice device, FCQueryEvType fcEvType);
+    public void updateFlowForSourceDevice(IDevice device,
+                                          FCQueryEvType fcEvType);
 
     /**
      * Generic flow query handler to insert FlowMods into the reconcile pipeline.
+     *
      * @param flowResp
      */
     public void flowQueryGenericHandler(FlowCacheQueryResp flowResp);

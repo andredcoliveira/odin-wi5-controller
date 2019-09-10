@@ -1,11 +1,11 @@
 package net.floodlightcontroller.odin.master;
 
-import java.io.IOException;
-
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.SerializerProvider;
+
+import java.io.IOException;
 
 public class OdinAgentSerializer extends JsonSerializer<IOdinAgent> {
 

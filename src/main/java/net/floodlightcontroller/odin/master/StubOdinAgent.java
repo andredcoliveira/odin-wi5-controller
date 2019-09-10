@@ -1,14 +1,14 @@
 package net.floodlightcontroller.odin.master;
 
+import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.util.MACAddress;
+
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.util.MACAddress;
 
 /**
  * Stub OdinAgent class to be used for testing. Wi5 NOTE: we introduce a new variable channel to map

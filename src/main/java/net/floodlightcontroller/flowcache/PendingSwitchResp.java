@@ -9,11 +9,10 @@ import net.floodlightcontroller.flowcache.IFlowCacheService.FCQueryEvType;
 public class PendingSwitchResp {
     protected FCQueryEvType evType;
 
-    public PendingSwitchResp(
-            FCQueryEvType evType) {
-        this.evType      = evType;
+    public PendingSwitchResp(FCQueryEvType evType) {
+        this.evType = evType;
     }
-    
+
     public FCQueryEvType getEvType() {
         return evType;
     }

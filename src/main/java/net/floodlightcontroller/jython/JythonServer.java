@@ -1,39 +1,39 @@
 package net.floodlightcontroller.jython;
 
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class starts a thread that runs a jython interpreter that
  * can be used for debug (or even development).
  *
  * @author mandeepdhami
- *
  */
 public class JythonServer extends Thread {
-    protected static Logger log = LoggerFactory.getLogger(JythonServer.class);
+    protected static Logger log = LoggerFactory
+            .getLogger(JythonServer.class);
 
-	int port;
-	Map<String, Object> locals;
-	
-	/**
-	 * @param port_ Port to use for jython server
-	 * @param locals_ Locals to add to the interpreters top level name space
-	 */
-	public JythonServer(int port_, Map<String, Object> locals_) {
-		this.port = port_ ;
-		this.locals = locals_;
-		if (this.locals == null) {
-			this.locals = new HashMap<String, Object>();
-		}
-		this.locals.put("log", JythonServer.log);
-		this.setName("debugserver");
-	}
+    int port;
+    Map<String, Object> locals;
+
+    /**
+     * @param port_   Port to use for jython server
+     * @param locals_ Locals to add to the interpreters top level name space
+     */
+    public JythonServer(int port_, Map<String, Object> locals_) {
+        this.port = port_;
+        this.locals = locals_;
+        if (this.locals == null) {
+            this.locals = new HashMap<String, Object>();
+        }
+        this.locals.put("log", JythonServer.log);
+        this.setName("debugserver");
+    }
 
     /**
      * The main thread for this class invoked by Thread.run()
@@ -46,7 +46,8 @@ public class JythonServer extends Thread {
             p.set(name, this.locals.get(name));
         }
 
-        URL jarUrl = JythonServer.class.getProtectionDomain().getCodeSource().getLocation();
+        URL jarUrl = JythonServer.class.getProtectionDomain().getCodeSource()
+                                       .getLocation();
         String jarPath = jarUrl.getPath();
         if (jarUrl.getProtocol().equals("file")) {
             // If URL is of type file, assume that we are in dev env and set path to python dir.

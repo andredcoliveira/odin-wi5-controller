@@ -1,24 +1,20 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.routing;
 
 import net.floodlightcontroller.core.web.serializers.DPIDSerializer;
-
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.openflow.util.HexString;
@@ -36,30 +32,25 @@ public class Link {
         this.dstPort = dstPort;
     }
 
-    
-    @JsonProperty("src-switch")
-    @JsonSerialize(using=DPIDSerializer.class)
+    @JsonProperty("src-switch") @JsonSerialize(using = DPIDSerializer.class)
     public long getSrc() {
         return src;
     }
 
-    @JsonProperty("src-port")
-    public short getSrcPort() {
+    @JsonProperty("src-port") public short getSrcPort() {
         return srcPort;
     }
 
-    @JsonProperty("dst-switch")
-    @JsonSerialize(using=DPIDSerializer.class)
+    @JsonProperty("dst-switch") @JsonSerialize(using = DPIDSerializer.class)
     public long getDst() {
         return dst;
     }
-    @JsonProperty("dst-port")
-    public short getDstPort() {
+
+    @JsonProperty("dst-port") public short getDstPort() {
         return dstPort;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + (int) (dst ^ (dst >>> 32));
@@ -69,8 +60,7 @@ public class Link {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -89,16 +79,10 @@ public class Link {
         return true;
     }
 
-
-    @Override
-    public String toString() {
-        return "Link [src=" + HexString.toHexString(this.src) 
-                + " outPort="
-                + srcPort
-                + ", dst=" + HexString.toHexString(this.dst)
-                + ", inPort="
-                + dstPort
-                + "]";
+    @Override public String toString() {
+        return "Link [src=" + HexString.toHexString(this.src) + " outPort="
+               + srcPort + ", dst=" + HexString.toHexString(this.dst)
+               + ", inPort=" + dstPort + "]";
     }
 }
 

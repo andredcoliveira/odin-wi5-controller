@@ -1,29 +1,20 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.core;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
 import net.floodlightcontroller.core.IFloodlightProviderService.Role;
-
 import org.jboss.netty.channel.Channel;
 import org.openflow.protocol.OFFeaturesReply;
 import org.openflow.protocol.OFMessage;
@@ -31,6 +22,12 @@ import org.openflow.protocol.OFPhysicalPort;
 import org.openflow.protocol.OFStatisticsRequest;
 import org.openflow.protocol.statistics.OFDescriptionStatistics;
 import org.openflow.protocol.statistics.OFStatistics;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  *
@@ -47,17 +44,17 @@ public interface IOFSwitch {
     public static final String PROP_REQUIRES_L3_MATCH = "requiresL3Match";
     public static final String PROP_SUPPORTS_OFPP_TABLE = "supportsOfppTable";
     public static final String PROP_SUPPORTS_OFPP_FLOOD = "supportsOfppFlood";
-    
+
     /**
      * Writes to the OFMessage to the output stream.
      * The message will be handed to the floodlightProvider for possible filtering
      * and processing by message listeners
-     * @param m   
-     * @param bc  
-     * @throws IOException  
+     * @param m
+     * @param bc
+     * @throws IOException
      */
-    public void write(OFMessage m, FloodlightContext bc) throws IOException; 
-    
+    public void write(OFMessage m, FloodlightContext bc) throws IOException;
+
     /**
      * Writes the list of messages to the output stream
      * The message will be handed to the floodlightProvider for possible filtering
@@ -66,10 +63,11 @@ public interface IOFSwitch {
      * @param bc
      * @throws IOException
      */
-    public void write(List<OFMessage> msglist, FloodlightContext bc) throws IOException;
-    
+    public void write(List<OFMessage> msglist, FloodlightContext bc)
+            throws IOException;
+
     /**
-     * 
+     *
      * @throws IOException
      */
     public void disconnectOutputStream();
@@ -94,12 +92,12 @@ public interface IOFSwitch {
      * @param featuresReply
      */
     public void setFeaturesReply(OFFeaturesReply featuresReply);
-    
+
     /**
      * Set the SwitchProperties based on it's description
      * @param description
      */
-    public void setSwitchProperties(OFDescriptionStatistics description);    
+    public void setSwitchProperties(OFDescriptionStatistics description);
 
     /**
      * Get list of all enabled ports. This will typically be different from
@@ -135,7 +133,7 @@ public interface IOFSwitch {
      * @param portNumber
      */
     public void deletePort(short portNumber);
-    
+
     /**
      * Get the portmap
      * @return
@@ -167,7 +165,7 @@ public interface IOFSwitch {
      * @return
      */
     public String getStringId();
-    
+
     /**
      * Retrieves attributes of this switch
      * @return
@@ -192,10 +190,10 @@ public interface IOFSwitch {
      *
      * @param request statistics request
      * @return Future object wrapping OFStatisticsReply
-     * @throws IOException 
+     * @throws IOException
      */
-    public Future<List<OFStatistics>> getStatistics(OFStatisticsRequest request)
-            throws IOException;
+    public Future<List<OFStatistics>> getStatistics(
+            OFStatisticsRequest request) throws IOException;
 
     /**
      * Check if the switch is still connected;
@@ -203,39 +201,39 @@ public interface IOFSwitch {
      * @return whether the switch is still disconnected
      */
     public boolean isConnected();
-    
+
     /**
      * Set whether the switch is connected
      * Only call while holding modifySwitchLock
      * @param connected whether the switch is connected
      */
     public void setConnected(boolean connected);
-    
+
     /**
      * Get the current role of the controller for the switch
      * @return the role of the controller
      */
     public Role getRole();
-    
+
     /**
      * Check if the controller is an active controller for the switch.
      * The controller is active if its role is MASTER or EQUAL.
      * @return whether the controller is active
      */
     public boolean isActive();
-    
+
     /**
      * Deliver the statistics future reply
      * @param reply the reply to deliver
      */
     public void deliverStatisticsReply(OFMessage reply);
-    
+
     /**
      * Cancel the statistics reply with the given transaction ID
      * @param transactionId the transaction ID
      */
     public void cancelStatisticsReply(int transactionId);
-    
+
     /**
      * Cancel all statistics replies
      */
@@ -281,7 +279,7 @@ public interface IOFSwitch {
      *         false if there is no cache hit.
      */
     public boolean updateBroadcastCache(Long entry, Short port);
-    
+
     /**
      * Get the portBroadcastCacheHits
      * @return
@@ -301,12 +299,12 @@ public interface IOFSwitch {
      * @throws IOException
      */
     public void sendStatsQuery(OFStatisticsRequest request, int xid,
-                            IOFMessageListener caller) throws IOException;
+                               IOFMessageListener caller) throws IOException;
 
     /**
      * Flush all flows queued for this switch in the current thread.
      * NOTE: The contract is limited to the current thread
      */
-     public void flush();
+    public void flush();
 
 }

@@ -1,19 +1,16 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.packet;
 
@@ -26,12 +23,11 @@ import java.nio.ByteBuffer;
  */
 public class BPDU extends BasePacket {
     public enum BPDUType {
-        CONFIG,
-        TOPOLOGY_CHANGE;
+        CONFIG, TOPOLOGY_CHANGE;
     }
-    
+
     private final long destMac = 0x0180c2000000L; // 01-80-c2-00-00-00
-    
+
     // TODO - check this for RSTP
     private LLC llcHeader;
     private short protocolId = 0;
@@ -46,17 +42,17 @@ public class BPDU extends BasePacket {
     private short maxAge; // 256ths of a second
     private short helloTime; // 256ths of a second
     private short forwardDelay; // 256ths of a second
-    
+
     public BPDU(BPDUType type) {
         rootBridgeId = new byte[8];
         senderBridgeId = new byte[8];
-        
+
         llcHeader = new LLC();
         llcHeader.setDsap((byte) 0x42);
         llcHeader.setSsap((byte) 0x42);
         llcHeader.setCtrl((byte) 0x03);
-        
-        switch(type) {
+
+        switch (type) {
             case CONFIG:
                 this.type = 0x0;
                 break;
@@ -68,19 +64,18 @@ public class BPDU extends BasePacket {
                 break;
         }
     }
-    
-    @Override
-    public byte[] serialize() {
+
+    @Override public byte[] serialize() {
         byte[] data;
         // TODO check these
-        if (type == 0x0) { 
+        if (type == 0x0) {
             // config
             data = new byte[38];
         } else {
             // topology change
             data = new byte[7]; // LLC + TC notification
         }
-        
+
         ByteBuffer bb = ByteBuffer.wrap(data);
         // Serialize the LLC header
         byte[] llc = llcHeader.serialize();
@@ -88,7 +83,7 @@ public class BPDU extends BasePacket {
         bb.putShort(protocolId);
         bb.put(version);
         bb.put(type);
-        
+
         if (type == 0x0) {
             bb.put(flags);
             bb.put(rootBridgeId, 0, rootBridgeId.length);
@@ -100,21 +95,21 @@ public class BPDU extends BasePacket {
             bb.putShort(helloTime);
             bb.putShort(forwardDelay);
         }
-        
+
         return data;
     }
 
     @Override
     public IPacket deserialize(byte[] data, int offset, int length) {
         ByteBuffer bb = ByteBuffer.wrap(data, offset, length);
-        
+
         // LLC header
         llcHeader.deserialize(data, offset, 3);
-        
+
         this.protocolId = bb.getShort();
         this.version = bb.get();
         this.type = bb.get();
-        
+
         // These fields only exist if it's a configuration BPDU
         if (this.type == 0x0) {
             this.flags = bb.get();
@@ -128,7 +123,7 @@ public class BPDU extends BasePacket {
             this.forwardDelay = bb.getShort();
         }
         // TODO should we set other fields to 0?
-        
+
         return this;
     }
 

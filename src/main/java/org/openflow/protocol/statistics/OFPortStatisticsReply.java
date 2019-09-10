@@ -1,22 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol.statistics;
-
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -222,14 +218,11 @@ public class OFPortStatisticsReply implements OFStatistics {
         this.collisions = collisions;
     }
 
-    @Override
-    @JsonIgnore
-    public int getLength() {
+    @Override @JsonIgnore public int getLength() {
         return 104;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         this.portNumber = data.readShort();
         data.readShort(); // pad
         data.readInt(); // pad
@@ -247,8 +240,7 @@ public class OFPortStatisticsReply implements OFStatistics {
         this.collisions = data.readLong();
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         data.writeShort(this.portNumber);
         data.writeShort((short) 0); // pad
         data.writeInt(0); // pad
@@ -266,38 +258,37 @@ public class OFPortStatisticsReply implements OFStatistics {
         data.writeLong(this.collisions);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 431;
         int result = 1;
         result = prime * result + (int) (collisions ^ (collisions >>> 32));
         result = prime * result + portNumber;
-        result = prime * result
-                + (int) (receivePackets ^ (receivePackets >>> 32));
-        result = prime * result + (int) (receiveBytes ^ (receiveBytes >>> 32));
-        result = prime * result
-                + (int) (receiveCRCErrors ^ (receiveCRCErrors >>> 32));
-        result = prime * result
-                + (int) (receiveDropped ^ (receiveDropped >>> 32));
-        result = prime * result
-                + (int) (receiveFrameErrors ^ (receiveFrameErrors >>> 32));
-        result = prime * result
-                + (int) (receiveOverrunErrors ^ (receiveOverrunErrors >>> 32));
-        result = prime * result
-                + (int) (receiveErrors ^ (receiveErrors >>> 32));
-        result = prime * result
-                + (int) (transmitBytes ^ (transmitBytes >>> 32));
-        result = prime * result
-                + (int) (transmitDropped ^ (transmitDropped >>> 32));
-        result = prime * result
-                + (int) (transmitErrors ^ (transmitErrors >>> 32));
-        result = prime * result
-                + (int) (transmitPackets ^ (transmitPackets >>> 32));
+        result = prime * result + (int) (receivePackets ^ (receivePackets
+                                                           >>> 32));
+        result = prime * result + (int) (receiveBytes ^ (receiveBytes
+                                                         >>> 32));
+        result = prime * result + (int) (receiveCRCErrors ^ (receiveCRCErrors
+                                                             >>> 32));
+        result = prime * result + (int) (receiveDropped ^ (receiveDropped
+                                                           >>> 32));
+        result = prime * result + (int) (receiveFrameErrors ^ (
+                receiveFrameErrors >>> 32));
+        result = prime * result + (int) (receiveOverrunErrors ^ (
+                receiveOverrunErrors >>> 32));
+        result = prime * result + (int) (receiveErrors ^ (receiveErrors
+                                                          >>> 32));
+        result = prime * result + (int) (transmitBytes ^ (transmitBytes
+                                                          >>> 32));
+        result = prime * result + (int) (transmitDropped ^ (transmitDropped
+                                                            >>> 32));
+        result = prime * result + (int) (transmitErrors ^ (transmitErrors
+                                                           >>> 32));
+        result = prime * result + (int) (transmitPackets ^ (transmitPackets
+                                                            >>> 32));
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

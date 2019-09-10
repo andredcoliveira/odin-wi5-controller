@@ -1,22 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol.action;
-
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.util.U16;
@@ -92,11 +88,10 @@ public class OFAction implements Cloneable {
      * @return "ofmsg=v=$version;t=$type:l=$len:xid=$xid"
      */
     public String toString() {
-        return "ofaction" +
-            ";t=" + this.getType() +
-            ";l=" + this.getLength();
+        return "ofaction" + ";t=" + this.getType() + ";l=" + this
+                .getLength();
     }
-    
+
     /**
      * Given the output from toString(), 
      * create a new OFAction
@@ -106,9 +101,9 @@ public class OFAction implements Cloneable {
     public static OFAction fromString(String val) {
         String tokens[] = val.split(";");
         if (!tokens[0].equals("ofaction"))
-            throw new IllegalArgumentException("expected 'ofaction' but got '" + 
-                    tokens[0] + "'");
-        String type_tokens[] = tokens[1].split("="); 
+            throw new IllegalArgumentException(
+                    "expected 'ofaction' but got '" + tokens[0] + "'");
+        String type_tokens[] = tokens[1].split("=");
         String len_tokens[] = tokens[2].split("=");
         OFAction action = new OFAction();
         action.setLength(Short.valueOf(len_tokens[1]));
@@ -128,8 +123,7 @@ public class OFAction implements Cloneable {
         // Note missing PAD, see MINIMUM_LENGTH comment for details
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 347;
         int result = 1;
         result = prime * result + length;
@@ -137,8 +131,7 @@ public class OFAction implements Cloneable {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -165,9 +158,8 @@ public class OFAction implements Cloneable {
     /* (non-Javadoc)
      * @see java.lang.Object#clone()
      */
-    @Override
-    public OFAction clone() throws CloneNotSupportedException {
+    @Override public OFAction clone() throws CloneNotSupportedException {
         return (OFAction) super.clone();
     }
-    
+
 }

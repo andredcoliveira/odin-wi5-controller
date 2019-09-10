@@ -1,21 +1,5 @@
 package net.floodlightcontroller.odin.master;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.util.MACAddress;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -27,6 +11,17 @@ import org.openflow.protocol.action.OFActionOutput;
 import org.openflow.util.U16;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * OdinAgent class. Wi5 NOTE: we introduce a new variable channel to map the physical Wi-Fi channel
@@ -551,7 +546,7 @@ import org.slf4j.LoggerFactory;
     }
 
     @Override public void setChannel(int channel) {
-        //Wi5- TODO: We should announce to the APs the change of the channel. This need futher discusssion
+        //Wi5- TODO: We should announce to the APs the change of the channel. This need further discussion
         if (channel != this.channel) {
             this.channel = channel;
         }

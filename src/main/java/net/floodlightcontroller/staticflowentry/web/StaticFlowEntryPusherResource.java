@@ -1,35 +1,30 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.staticflowentry.web;
 
-import java.io.IOException;
-import java.util.Map;
-
+import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
+import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
+import net.floodlightcontroller.storage.IStorageSourceService;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
-import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
-import net.floodlightcontroller.storage.IStorageSourceService;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Pushes a static flow entry to the storage source
@@ -37,8 +32,9 @@ import net.floodlightcontroller.storage.IStorageSourceService;
  *
  */
 public class StaticFlowEntryPusherResource extends ServerResource {
-    protected static Logger log = LoggerFactory.getLogger(StaticFlowEntryPusherResource.class);
-    
+    protected static Logger log = LoggerFactory
+            .getLogger(StaticFlowEntryPusherResource.class);
+
     /**
      * Checks to see if the user matches IP information without
      * checking for the correct ether-type (2048).
@@ -59,44 +55,46 @@ public class StaticFlowEntryPusherResource extends ServerResource {
                     type = Integer.parseInt(val);
                 } catch (NumberFormatException e) { /* fail silently */}
             }
-            if (type == 2048) matchEther = true;
+            if (type == 2048)
+                matchEther = true;
         }
-        
-        if ((rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_DST) || 
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_SRC) ||
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_PROTO) ||
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_TOS)) &&
-                (matchEther == false))
+
+        if ((rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_DST) || rows
+                .containsKey(StaticFlowEntryPusher.COLUMN_NW_SRC) || rows
+                     .containsKey(StaticFlowEntryPusher.COLUMN_NW_PROTO)
+             || rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_TOS)) && (
+                    matchEther == false))
             return false;
-        
+
         return true;
     }
-    
+
     /**
      * Takes a Static Flow Pusher string in JSON format and parses it into
      * our database schema then pushes it to the database.
      * @param fmJson The Static Flow Pusher entry in JSON format.
      * @return A string status message
      */
-    @Post
-    public String store(String fmJson) {
-        IStorageSourceService storageSource =
-                (IStorageSourceService)getContext().getAttributes().
-                    get(IStorageSourceService.class.getCanonicalName());
-        
+    @Post public String store(String fmJson) {
+        IStorageSourceService storageSource = (IStorageSourceService) getContext()
+                .getAttributes().
+                        get(IStorageSourceService.class.getCanonicalName());
+
         Map<String, Object> rowValues;
         try {
             rowValues = StaticFlowEntries.jsonToStorageEntry(fmJson);
             String status = null;
             if (!checkMatchIp(rowValues)) {
-                status = "Warning! Pushing a static flow entry that matches IP " +
-                        "fields without matching for IP payload (ether-type 2048) will cause " +
-                        "the switch to wildcard higher level fields.";
+                status =
+                        "Warning! Pushing a static flow entry that matches IP "
+                        + "fields without matching for IP payload (ether-type 2048) will cause "
+                        + "the switch to wildcard higher level fields.";
                 log.error(status);
             } else {
                 status = "Entry pushed";
             }
-            storageSource.insertRowAsync(StaticFlowEntryPusher.TABLE_NAME, rowValues);
+            storageSource.insertRowAsync(StaticFlowEntryPusher.TABLE_NAME,
+                                         rowValues);
             return ("{\"status\" : \"" + status + "\"}");
         } catch (IOException e) {
             log.error("Error parsing push flow mod request: " + fmJson, e);
@@ -104,12 +102,11 @@ public class StaticFlowEntryPusherResource extends ServerResource {
             return "{\"status\" : \"Error! Could not parse flod mod, see log for details.\"}";
         }
     }
-    
-    @Delete
-    public String del(String fmJson) {
-        IStorageSourceService storageSource =
-                (IStorageSourceService)getContext().getAttributes().
-                    get(IStorageSourceService.class.getCanonicalName());
+
+    @Delete public String del(String fmJson) {
+        IStorageSourceService storageSource = (IStorageSourceService) getContext()
+                .getAttributes().
+                        get(IStorageSourceService.class.getCanonicalName());
         String fmName = null;
         if (fmJson == null) {
             return "{\"status\" : \"Error! No data posted.\"}";
@@ -124,8 +121,9 @@ public class StaticFlowEntryPusherResource extends ServerResource {
             e.printStackTrace();
             return "{\"status\" : \"Error deleting entry, see log for details\"}";
         }
-        
-        storageSource.deleteRowAsync(StaticFlowEntryPusher.TABLE_NAME, fmName);
+
+        storageSource
+                .deleteRowAsync(StaticFlowEntryPusher.TABLE_NAME, fmName);
         return "{\"status\" : \"Entry " + fmName + " deleted\"}";
     }
 }

@@ -1,10 +1,10 @@
 package net.floodlightcontroller.odin.master;
 
+import net.floodlightcontroller.util.MACAddress;
+
 import java.net.InetAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import net.floodlightcontroller.util.MACAddress;
 
 class ClientManager {
 

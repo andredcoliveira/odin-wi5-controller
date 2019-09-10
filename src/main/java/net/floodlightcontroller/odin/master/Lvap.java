@@ -1,10 +1,10 @@
 package net.floodlightcontroller.odin.master;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.floodlightcontroller.util.MACAddress;
 import org.openflow.protocol.OFMessage;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents an LVAP that comprises a BSSID and a set of SSIDs on top of it.

@@ -17,8 +17,7 @@ public class OrderedNodePair {
         return dst;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 2417;
         int result = 1;
         result = prime * result + (int) (dst ^ (dst >>> 32));
@@ -26,8 +25,7 @@ public class OrderedNodePair {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
@@ -42,8 +40,7 @@ public class OrderedNodePair {
         return true;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "OrderedNodePair [src=" + src + ", dst=" + dst + "]";
     }
 }

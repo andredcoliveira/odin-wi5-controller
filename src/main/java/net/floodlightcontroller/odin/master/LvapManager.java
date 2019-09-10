@@ -1,15 +1,15 @@
 package net.floodlightcontroller.odin.master;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.openflow.protocol.OFFlowMod;
 import org.openflow.protocol.OFMatch;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.action.OFAction;
 import org.openflow.protocol.action.OFActionOutput;
 import org.openflow.util.U16;
+
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LvapManager {
 

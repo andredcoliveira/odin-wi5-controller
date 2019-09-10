@@ -2,7 +2,9 @@ package net.floodlightcontroller.linkdiscovery;
 
 public interface ILinkDiscovery {
 
-    public static enum UpdateOperation {ADD_OR_UPDATE, REMOVE, SWITCH_UPDATED};
+    public static enum UpdateOperation {ADD_OR_UPDATE, REMOVE, SWITCH_UPDATED}
+
+    ;
 
     public class LDUpdate {
         protected long src;
@@ -15,10 +17,10 @@ public interface ILinkDiscovery {
         protected LinkType type;
         protected UpdateOperation operation;
 
-        public LDUpdate(long src, short srcPort, int srcPortState,
-                      long dst, short dstPort, int dstPortState,
-                      ILinkDiscovery.LinkType type,
-                      UpdateOperation operation) {
+        public LDUpdate(long src, short srcPort, int srcPortState, long dst,
+                        short dstPort, int dstPortState,
+                        ILinkDiscovery.LinkType type,
+                        UpdateOperation operation) {
             this.src = src;
             this.srcPort = srcPort;
             this.srcPortState = srcPortState;
@@ -29,25 +31,26 @@ public interface ILinkDiscovery {
             this.operation = operation;
         }
 
-        public LDUpdate(LinkTuple lt, int srcPortState,
-                      int dstPortState, ILinkDiscovery.LinkType type, UpdateOperation operation) {
+        public LDUpdate(LinkTuple lt, int srcPortState, int dstPortState,
+                        ILinkDiscovery.LinkType type,
+                        UpdateOperation operation) {
             this(lt.getSrc().getSw().getId(), lt.getSrc().getPort(),
-                 srcPortState, lt.getDst().getSw().getId(), lt.getDst().getPort(),
-                 dstPortState, type, operation);
+                 srcPortState, lt.getDst().getSw().getId(),
+                 lt.getDst().getPort(), dstPortState, type, operation);
         }
 
         public LDUpdate(LDUpdate old) {
-        	this.src = old.src;
-        	this.srcPort = old.srcPort;
-        	this.srcPortState = old.srcPortState;
-        	this.dst = old.dst;
-        	this.dstPort = old.dstPort;
-        	this.dstPortState = old.dstPortState;
-        	this.srcType = old.srcType;
-        	this.type = old.type;
-        	this.operation = old.operation;
+            this.src = old.src;
+            this.srcPort = old.srcPort;
+            this.srcPortState = old.srcPortState;
+            this.dst = old.dst;
+            this.dstPort = old.dstPort;
+            this.dstPortState = old.dstPortState;
+            this.srcType = old.srcType;
+            this.type = old.type;
+            this.operation = old.operation;
         }
-        
+
         // For updtedSwitch(sw)
         public LDUpdate(long switchId, SwitchType stype) {
             this.operation = UpdateOperation.SWITCH_UPDATED;
@@ -94,22 +97,25 @@ public interface ILinkDiscovery {
         public void setOperation(UpdateOperation operation) {
             this.operation = operation;
         }
-        
-        @Override
-        public String toString() {
+
+        @Override public String toString() {
             return "LDUpdate [src=" + src + ", srcPort=" + srcPort
                    + ", srcPortState=" + srcPortState + ", dst=" + dst
-                   + ", dstPort=" + dstPort + ", dstPortState=" + dstPortState
-                   + ", srcType=" + srcType + ", type=" + type + ", operation="
-                   + operation + "]";
+                   + ", dstPort=" + dstPort + ", dstPortState="
+                   + dstPortState + ", srcType=" + srcType + ", type=" + type
+                   + ", operation=" + operation + "]";
         }
     }
 
     public enum SwitchType {
         BASIC_SWITCH, CORE_SWITCH
-    };
+    }
+
+    ;
 
     public enum LinkType {
         INVALID_LINK, DIRECT_LINK, MULTIHOP_LINK, TUNNEL
-    };
+    }
+
+    ;
 }

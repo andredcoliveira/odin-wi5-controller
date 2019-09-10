@@ -5,7 +5,7 @@ package org.openflow.protocol.factory;
  */
 public class MessageParseException extends Exception {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -75893812926304726L;
 

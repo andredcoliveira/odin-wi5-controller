@@ -1,22 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.util.U16;
@@ -29,9 +25,7 @@ public class OFPortStatus extends OFMessage {
     public static int MINIMUM_LENGTH = 64;
 
     public enum OFPortReason {
-        OFPPR_ADD,
-        OFPPR_DELETE,
-        OFPPR_MODIFY
+        OFPPR_ADD, OFPPR_DELETE, OFPPR_MODIFY
     }
 
     protected byte reason;
@@ -71,8 +65,7 @@ public class OFPortStatus extends OFMessage {
         this.length = U16.t(MINIMUM_LENGTH);
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         super.readFrom(data);
         this.reason = data.readByte();
         data.readerIndex(data.readerIndex() + 7); // skip 7 bytes of padding
@@ -81,8 +74,7 @@ public class OFPortStatus extends OFMessage {
         this.desc.readFrom(data);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         super.writeTo(data);
         data.writeByte(this.reason);
         for (int i = 0; i < 7; ++i)
@@ -90,8 +82,7 @@ public class OFPortStatus extends OFMessage {
         this.desc.writeTo(data);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 313;
         int result = super.hashCode();
         result = prime * result + ((desc == null) ? 0 : desc.hashCode());
@@ -99,8 +90,7 @@ public class OFPortStatus extends OFMessage {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

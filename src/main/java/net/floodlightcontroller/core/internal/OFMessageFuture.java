@@ -1,33 +1,25 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.core.internal;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
+import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.threadpool.IThreadPoolService;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFType;
 
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.threadpool.IThreadPoolService;
+import java.util.concurrent.*;
 
 /**
  * A Future object used to retrieve asynchronous OFMessage replies. Unregisters
@@ -50,14 +42,15 @@ public abstract class OFMessageFuture<V> implements Future<V> {
     protected static final long DEFAULT_TIMEOUT = 60;
     protected static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
-    public OFMessageFuture(IThreadPoolService tp,
-            IOFSwitch sw, OFType responseType, int transactionId) {
-        this(tp, sw, responseType, transactionId, 
-                 DEFAULT_TIMEOUT, DEFAULT_TIMEOUT_UNIT);
+    public OFMessageFuture(IThreadPoolService tp, IOFSwitch sw,
+                           OFType responseType, int transactionId) {
+        this(tp, sw, responseType, transactionId, DEFAULT_TIMEOUT,
+             DEFAULT_TIMEOUT_UNIT);
     }
 
-    public OFMessageFuture(IThreadPoolService tp,
-            IOFSwitch sw, OFType responseType, int transactionId, long timeout, TimeUnit unit) {
+    public OFMessageFuture(IThreadPoolService tp, IOFSwitch sw,
+                           OFType responseType, int transactionId,
+                           long timeout, TimeUnit unit) {
         this.threadPool = tp;
         this.canceled = false;
         this.latch = new CountDownLatch(1);
@@ -67,20 +60,19 @@ public abstract class OFMessageFuture<V> implements Future<V> {
 
         final OFMessageFuture<V> future = this;
         timeoutTimer = new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 if (timeoutTimer == this)
                     future.cancel(true);
             }
         };
-        threadPool.getScheduledExecutor().schedule(timeoutTimer, timeout, unit);
+        threadPool.getScheduledExecutor()
+                  .schedule(timeoutTimer, timeout, unit);
     }
 
     protected void unRegister() {
         this.timeoutTimer = null;
     }
 
-  
     public void deliverFuture(IOFSwitch sw, OFMessage msg) {
         if (transactionId == msg.getXid()) {
             handleReply(sw, msg);
@@ -113,8 +105,7 @@ public abstract class OFMessageFuture<V> implements Future<V> {
     /* (non-Javadoc)
      * @see java.util.concurrent.Future#cancel(boolean)
      */
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    @Override public boolean cancel(boolean mayInterruptIfRunning) {
         if (isDone()) {
             return false;
         } else {
@@ -128,24 +119,22 @@ public abstract class OFMessageFuture<V> implements Future<V> {
     /* (non-Javadoc)
      * @see java.util.concurrent.Future#isCancelled()
      */
-    @Override
-    public boolean isCancelled() {
+    @Override public boolean isCancelled() {
         return canceled;
     }
 
     /* (non-Javadoc)
      * @see java.util.concurrent.Future#isDone()
      */
-    @Override
-    public boolean isDone() {
+    @Override public boolean isDone() {
         return this.latch.getCount() == 0;
     }
 
     /* (non-Javadoc)
      * @see java.util.concurrent.Future#get()
      */
-    @Override
-    public V get() throws InterruptedException, ExecutionException {
+    @Override public V get()
+            throws InterruptedException, ExecutionException {
         this.latch.await();
         return result;
     }
@@ -153,9 +142,9 @@ public abstract class OFMessageFuture<V> implements Future<V> {
     /* (non-Javadoc)
      * @see java.util.concurrent.Future#get(long, java.util.concurrent.TimeUnit)
      */
-    @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException,
-            ExecutionException, TimeoutException {
+    @Override public V get(long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException,
+                   TimeoutException {
         this.latch.await(timeout, unit);
         return result;
     }

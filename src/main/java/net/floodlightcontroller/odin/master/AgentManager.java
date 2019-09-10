@@ -1,18 +1,14 @@
 package net.floodlightcontroller.odin.master;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 class AgentManager {
 
@@ -229,6 +225,7 @@ class AgentManager {
 
         @Override public void run() {
             //log.info("Executing failure check against: " + agent.getIpAddress());
+            // TODO: protect agents from timing out due to the FlyingNetworkManager
             if ((System.currentTimeMillis() - agent.getLastHeard())
                 >= agentTimeout) {
                 log.error(
@@ -240,7 +237,7 @@ class AgentManager {
                  */
 
                 // TODO: There should be a way to lock the master
-                // during such operations
+                //  during such operations
                 for (OdinClient oc : agent.getLvapsLocal()) {
                     clientManager.getClients().get(oc.getMacAddress())
                                  .getLvap().setAgent(null);

@@ -1,22 +1,19 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 
 /**
- * 
+ *
  */
 package net.floodlightcontroller.packet;
 
@@ -293,17 +290,22 @@ public class IPv4 extends BasePacket {
             optionsLength = this.options.length / 4;
         this.headerLength = (byte) (5 + optionsLength);
 
-        this.totalLength = (short) (this.headerLength * 4 + ((payloadData == null) ? 0
-                : payloadData.length));
+        this.totalLength = (short) (this.headerLength * 4 + ((payloadData
+                                                              == null) ?
+                                                             0 :
+                                                             payloadData.length));
 
         byte[] data = new byte[this.totalLength];
         ByteBuffer bb = ByteBuffer.wrap(data);
 
-        bb.put((byte) (((this.version & 0xf) << 4) | (this.headerLength & 0xf)));
+        bb.put((byte) (((this.version & 0xf) << 4) | (this.headerLength
+                                                      & 0xf)));
         bb.put(this.diffServ);
         bb.putShort(this.totalLength);
         bb.putShort(this.identification);
-        bb.putShort((short) (((this.flags & 0x7) << 13) | (this.fragmentOffset & 0x1fff)));
+        bb.putShort(
+                (short) (((this.flags & 0x7) << 13) | (this.fragmentOffset
+                                                       & 0x1fff)));
         bb.put(this.ttl);
         bb.put(this.protocol);
         bb.putShort(this.checksum);
@@ -321,8 +323,8 @@ public class IPv4 extends BasePacket {
             for (int i = 0; i < this.headerLength * 2; ++i) {
                 accumulation += 0xffff & bb.getShort();
             }
-            accumulation = ((accumulation >> 16) & 0xffff)
-                    + (accumulation & 0xffff);
+            accumulation = ((accumulation >> 16) & 0xffff) + (accumulation
+                                                              & 0xffff);
             this.checksum = (short) (~accumulation & 0xffff);
             bb.putShort(10, this.checksum);
         }
@@ -357,16 +359,19 @@ public class IPv4 extends BasePacket {
 
         IPacket payload;
         if (IPv4.protocolClassMap.containsKey(this.protocol)) {
-            Class<? extends IPacket> clazz = IPv4.protocolClassMap.get(this.protocol);
+            Class<? extends IPacket> clazz = IPv4.protocolClassMap
+                    .get(this.protocol);
             try {
                 payload = clazz.newInstance();
             } catch (Exception e) {
-                throw new RuntimeException("Error parsing payload for IPv4 packet", e);
+                throw new RuntimeException(
+                        "Error parsing payload for IPv4 packet", e);
             }
         } else {
             payload = new Data();
         }
-        this.payload = payload.deserialize(data, bb.position(), bb.limit()-bb.position());
+        this.payload = payload.deserialize(data, bb.position(),
+                                           bb.limit() - bb.position());
         this.payload.setParent(this);
 
         if (this.totalLength != length)
@@ -385,16 +390,16 @@ public class IPv4 extends BasePacket {
      */
     public static int toIPv4Address(String ipAddress) {
         if (ipAddress == null)
-            throw new IllegalArgumentException("Specified IPv4 address must" +
-                "contain 4 sets of numerical digits separated by periods");
+            throw new IllegalArgumentException("Specified IPv4 address must"
+                                               + "contain 4 sets of numerical digits separated by periods");
         String[] octets = ipAddress.split("\\.");
-        if (octets.length != 4) 
-            throw new IllegalArgumentException("Specified IPv4 address must" +
-                "contain 4 sets of numerical digits separated by periods");
+        if (octets.length != 4)
+            throw new IllegalArgumentException("Specified IPv4 address must"
+                                               + "contain 4 sets of numerical digits separated by periods");
 
         int result = 0;
         for (int i = 0; i < 4; ++i) {
-            result |= Integer.valueOf(octets[i]) << ((3-i)*8);
+            result |= Integer.valueOf(octets[i]) << ((3 - i) * 8);
         }
         return result;
     }
@@ -408,8 +413,8 @@ public class IPv4 extends BasePacket {
     public static int toIPv4Address(byte[] ipAddress) {
         int ip = 0;
         for (int i = 0; i < 4; i++) {
-          int t = (ipAddress[i] & 0xff) << ((3-i)*8);
-          ip |= t;
+            int t = (ipAddress[i] & 0xff) << ((3 - i) * 8);
+            ip |= t;
         }
         return ip;
     }
@@ -417,7 +422,7 @@ public class IPv4 extends BasePacket {
     /**
      * Accepts an IPv4 address and returns of string of the form xxx.xxx.xxx.xxx
      * ie 192.168.0.1
-     * 
+     *
      * @param ipAddress
      * @return
      */
@@ -425,7 +430,7 @@ public class IPv4 extends BasePacket {
         StringBuffer sb = new StringBuffer();
         int result = 0;
         for (int i = 0; i < 4; ++i) {
-            result = (ipAddress >> ((3-i)*8)) & 0xff;
+            result = (ipAddress >> ((3 - i) * 8)) & 0xff;
             sb.append(Integer.valueOf(result).toString());
             if (i != 3)
                 sb.append(".");
@@ -437,11 +442,12 @@ public class IPv4 extends BasePacket {
      * Accepts a collection of IPv4 addresses as integers and returns a single
      * String useful in toString method's containing collections of IP
      * addresses.
-     * 
+     *
      * @param ipAddresses collection
      * @return
      */
-    public static String fromIPv4AddressCollection(Collection<Integer> ipAddresses) {
+    public static String fromIPv4AddressCollection(
+            Collection<Integer> ipAddresses) {
         if (ipAddresses == null)
             return "null";
         StringBuffer sb = new StringBuffer();
@@ -450,7 +456,7 @@ public class IPv4 extends BasePacket {
             sb.append(fromIPv4Address(ip));
             sb.append(",");
         }
-        sb.replace(sb.length()-1, sb.length(), "]");
+        sb.replace(sb.length() - 1, sb.length(), "]");
         return sb.toString();
     }
 
@@ -462,9 +468,9 @@ public class IPv4 extends BasePacket {
      */
     public static byte[] toIPv4AddressBytes(String ipAddress) {
         String[] octets = ipAddress.split("\\.");
-        if (octets.length != 4) 
-            throw new IllegalArgumentException("Specified IPv4 address must" +
-                "contain 4 sets of numerical digits separated by periods");
+        if (octets.length != 4)
+            throw new IllegalArgumentException("Specified IPv4 address must"
+                                               + "contain 4 sets of numerical digits separated by periods");
 
         byte[] result = new byte[4];
         for (int i = 0; i < 4; ++i) {
@@ -476,8 +482,7 @@ public class IPv4 extends BasePacket {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 2521;
         int result = super.hashCode();
         result = prime * result + checksum;
@@ -499,8 +504,7 @@ public class IPv4 extends BasePacket {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (!super.equals(obj))

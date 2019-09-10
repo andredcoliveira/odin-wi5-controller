@@ -1,15 +1,15 @@
 package net.floodlightcontroller.odin.master;
 
-import java.net.InetAddress;
-import java.util.Map;
-import java.util.Set;
-
 import net.floodlightcontroller.odin.master.OdinApplication.State;
 import net.floodlightcontroller.odin.master.OdinMaster.ChannelAssignmentParams;
 import net.floodlightcontroller.odin.master.OdinMaster.MobilityParams;
 import net.floodlightcontroller.odin.master.OdinMaster.ScannParams;
 import net.floodlightcontroller.odin.master.OdinMaster.SmartApSelectionParams;
 import net.floodlightcontroller.util.MACAddress;
+
+import java.net.InetAddress;
+import java.util.Map;
+import java.util.Set;
 
 interface IOdinMasterToApplicationInterface {
 

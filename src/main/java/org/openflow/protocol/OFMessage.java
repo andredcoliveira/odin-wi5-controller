@@ -1,37 +1,33 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.packet.Ethernet;
-
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.util.HexString;
 import org.openflow.util.U16;
 import org.openflow.util.U32;
 import org.openflow.util.U8;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The base class for all OpenFlow protocol messages. This class contains the
@@ -48,17 +44,18 @@ public class OFMessage {
     protected OFType type;
     protected short length;
     protected int xid;
-    
+
     private ConcurrentHashMap<String, Object> storage;
-    
+
     public OFMessage() {
         storage = null;
         this.version = OFP_VERSION;
     }
-    
+
     protected synchronized ConcurrentHashMap<String, Object> getMessageStore() {
         if (storage == null) {
-            storage = new ConcurrentHashMap<String, Object>();;
+            storage = new ConcurrentHashMap<String, Object>();
+            ;
         }
         return storage;
     }
@@ -182,15 +179,12 @@ public class OFMessage {
      * @return "ofmsg=v=$version;t=$type:l=$len:xid=$xid"
      */
     public String toString() {
-        return "ofmsg" +
-            ":v=" + U8.f(this.getVersion()) +
-            ";t=" + this.getType() +
-            ";l=" + this.getLengthU() +
-            ";x=" + U32.f(this.getXid());
+        return "ofmsg" + ":v=" + U8.f(this.getVersion()) + ";t=" + this
+                .getType() + ";l=" + this.getLengthU() + ";x=" + U32
+                       .f(this.getXid());
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 97;
         int result = 1;
         result = prime * result + length;
@@ -200,8 +194,7 @@ public class OFMessage {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -230,11 +223,12 @@ public class OFMessage {
         }
         return true;
     }
-    
-    public static String getDataAsString(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+
+    public static String getDataAsString(IOFSwitch sw, OFMessage msg,
+                                         FloodlightContext cntx) {
 
         Ethernet eth;
-        StringBuffer sb =  new StringBuffer("");
+        StringBuffer sb = new StringBuffer("");
 
         DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss.SSS");
         Date date = new Date();
@@ -255,17 +249,18 @@ public class OFMessage {
                 sb.append("\nin_port: ");
                 sb.append(pktIn.getInPort());
                 sb.append("\ndata_length: ");
-                sb.append(pktIn.getTotalLength() - OFPacketIn.MINIMUM_LENGTH);
+                sb.append(
+                        pktIn.getTotalLength() - OFPacketIn.MINIMUM_LENGTH);
                 sb.append("\nbuffer: ");
                 sb.append(pktIn.getBufferId());
 
                 // If the conext is not set by floodlight, then ignore.
                 if (cntx != null) {
-                // packet type  icmp, arp, etc.
+                    // packet type  icmp, arp, etc.
                     eth = IFloodlightProviderService.bcStore.get(cntx,
-                            IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+                                                                 IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
                     if (eth != null)
-                           sb.append(eth.toString());
+                        sb.append(eth.toString());
                 }
                 break;
 
@@ -296,7 +291,7 @@ public class OFMessage {
                 // If the conext is not set by floodlight, then ignore.
                 if (cntx != null) {
                     eth = IFloodlightProviderService.bcStore.get(cntx,
-                        IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+                                                                 IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
                     if (eth != null)
                         sb.append(eth.toString());
                 }
@@ -328,7 +323,8 @@ public class OFMessage {
 
     }
 
-    public static byte[] getData(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+    public static byte[] getData(IOFSwitch sw, OFMessage msg,
+                                 FloodlightContext cntx) {
         return OFMessage.getDataAsString(sw, msg, cntx).getBytes();
     }
 }

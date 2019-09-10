@@ -1,19 +1,16 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.packet;
 
@@ -27,8 +24,8 @@ import java.util.Map;
  */
 public class UDP extends BasePacket {
     public static Map<Short, Class<? extends IPacket>> decodeMap;
-    public static short DHCP_SERVER_PORT = (short)67;
-    public static short DHCP_CLIENT_PORT = (short)68;
+    public static short DHCP_SERVER_PORT = (short) 67;
+    public static short DHCP_CLIENT_PORT = (short) 68;
 
     static {
         decodeMap = new HashMap<Short, Class<? extends IPacket>>();
@@ -37,7 +34,7 @@ public class UDP extends BasePacket {
          */
         UDP.decodeMap.put(DHCP_SERVER_PORT, DHCP.class);
         UDP.decodeMap.put(DHCP_CLIENT_PORT, DHCP.class);
-        
+
     }
 
     protected short sourcePort;
@@ -110,8 +107,9 @@ public class UDP extends BasePacket {
             payloadData = payload.serialize();
         }
 
-        this.length = (short) (8 + ((payloadData == null) ? 0
-                : payloadData.length));
+        this.length = (short) (8 + ((payloadData == null) ?
+                                    0 :
+                                    payloadData.length));
 
         byte[] data = new byte[this.length];
         ByteBuffer bb = ByteBuffer.wrap(data);
@@ -124,7 +122,7 @@ public class UDP extends BasePacket {
             bb.put(payloadData);
 
         if (this.parent != null && this.parent instanceof IPv4)
-            ((IPv4)this.parent).setProtocol(IPv4.PROTOCOL_UDP);
+            ((IPv4) this.parent).setProtocol(IPv4.PROTOCOL_UDP);
 
         // compute checksum if needed
         if (this.checksum == 0) {
@@ -134,10 +132,12 @@ public class UDP extends BasePacket {
             // compute pseudo header mac
             if (this.parent != null && this.parent instanceof IPv4) {
                 IPv4 ipv4 = (IPv4) this.parent;
-                accumulation += ((ipv4.getSourceAddress() >> 16) & 0xffff)
-                        + (ipv4.getSourceAddress() & 0xffff);
-                accumulation += ((ipv4.getDestinationAddress() >> 16) & 0xffff)
-                        + (ipv4.getDestinationAddress() & 0xffff);
+                accumulation +=
+                        ((ipv4.getSourceAddress() >> 16) & 0xffff) + (
+                                ipv4.getSourceAddress() & 0xffff);
+                accumulation +=
+                        ((ipv4.getDestinationAddress() >> 16) & 0xffff) + (
+                                ipv4.getDestinationAddress() & 0xffff);
                 accumulation += ipv4.getProtocol() & 0xff;
                 accumulation += this.length & 0xffff;
             }
@@ -150,8 +150,8 @@ public class UDP extends BasePacket {
                 accumulation += (bb.get() & 0xff) << 8;
             }
 
-            accumulation = ((accumulation >> 16) & 0xffff)
-                    + (accumulation & 0xffff);
+            accumulation = ((accumulation >> 16) & 0xffff) + (accumulation
+                                                              & 0xffff);
             this.checksum = (short) (~accumulation & 0xffff);
             bb.putShort(6, this.checksum);
         }
@@ -161,8 +161,7 @@ public class UDP extends BasePacket {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 5807;
         int result = super.hashCode();
         result = prime * result + checksum;
@@ -175,8 +174,7 @@ public class UDP extends BasePacket {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (!super.equals(obj))
@@ -205,20 +203,23 @@ public class UDP extends BasePacket {
 
         if (UDP.decodeMap.containsKey(this.destinationPort)) {
             try {
-                this.payload = UDP.decodeMap.get(this.destinationPort).getConstructor().newInstance();
+                this.payload = UDP.decodeMap.get(this.destinationPort)
+                                            .getConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("Failure instantiating class", e);
             }
         } else if (UDP.decodeMap.containsKey(this.sourcePort)) {
             try {
-                this.payload = UDP.decodeMap.get(this.sourcePort).getConstructor().newInstance();
+                this.payload = UDP.decodeMap.get(this.sourcePort)
+                                            .getConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("Failure instantiating class", e);
             }
         } else {
             this.payload = new Data();
         }
-        this.payload = payload.deserialize(data, bb.position(), bb.limit()-bb.position());
+        this.payload = payload.deserialize(data, bb.position(),
+                                           bb.limit() - bb.position());
         this.payload.setParent(this);
         return this;
     }

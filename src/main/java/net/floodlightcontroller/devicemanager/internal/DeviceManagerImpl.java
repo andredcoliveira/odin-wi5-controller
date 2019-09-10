@@ -1,83 +1,47 @@
 /**
- *    Copyright 2011,2012 Big Switch Networks, Inc.
- *    Originally created by David Erickson, Stanford University
- *
- *    Licensed under the Apache License, Version 2.0 (the "License"); you may
- *    not use this file except in compliance with the License. You may obtain
- *    a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- *    License for the specific language governing permissions and limitations
- *    under the License.
+ * Copyright 2011,2012 Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  **/
 
 package net.floodlightcontroller.devicemanager.internal;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import net.floodlightcontroller.core.FloodlightContext;
-import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.core.IHAListener;
-import net.floodlightcontroller.core.IInfoProvider;
-import net.floodlightcontroller.core.IOFMessageListener;
-import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.core.IFloodlightProviderService.Role;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.core.util.SingletonTask;
-import net.floodlightcontroller.devicemanager.IDevice;
-import net.floodlightcontroller.devicemanager.IDeviceService;
-import net.floodlightcontroller.devicemanager.IEntityClass;
-import net.floodlightcontroller.devicemanager.IEntityClassifier;
-import net.floodlightcontroller.devicemanager.IDeviceListener;
-import net.floodlightcontroller.devicemanager.SwitchPort;
+import net.floodlightcontroller.devicemanager.*;
 import net.floodlightcontroller.devicemanager.web.DeviceRoutable;
 import net.floodlightcontroller.flowcache.IFlowReconcileListener;
 import net.floodlightcontroller.flowcache.IFlowReconcileService;
 import net.floodlightcontroller.flowcache.OFMatchReconcile;
-import net.floodlightcontroller.packet.ARP;
-import net.floodlightcontroller.packet.DHCP;
-import net.floodlightcontroller.packet.Ethernet;
-import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.packet.UDP;
+import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.restserver.IRestApiService;
-import net.floodlightcontroller.storage.IStorageSourceService;
 import net.floodlightcontroller.storage.IStorageSourceListener;
+import net.floodlightcontroller.storage.IStorageSourceService;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
 import net.floodlightcontroller.topology.ITopologyService;
 import net.floodlightcontroller.util.MultiIterator;
-import static net.floodlightcontroller.devicemanager.internal.
-DeviceManagerImpl.DeviceUpdate.Change.*;
-
-import org.openflow.protocol.OFMatchWithSwDpid;
-import org.openflow.protocol.OFMessage;
-import org.openflow.protocol.OFPacketIn;
-import org.openflow.protocol.OFPhysicalPort;
-import org.openflow.protocol.OFType;
+import org.openflow.protocol.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static net.floodlightcontroller.devicemanager.internal.DeviceManagerImpl.DeviceUpdate.Change.*;
 
 /**
  * DeviceManager creates Devices based upon MAC addresses seen in the network.
@@ -85,12 +49,11 @@ import org.slf4j.LoggerFactory;
  * within the network.
  * @author readams
  */
-public class DeviceManagerImpl implements
-IDeviceService, IOFMessageListener,
-IStorageSourceListener, IFloodlightModule,
-IFlowReconcileListener, IInfoProvider, IHAListener {
-    protected static Logger logger =
-            LoggerFactory.getLogger(DeviceManagerImpl.class);
+public class DeviceManagerImpl implements IDeviceService, IOFMessageListener,
+        IStorageSourceListener, IFloodlightModule, IFlowReconcileListener,
+        IInfoProvider, IHAListener {
+    protected static Logger logger = LoggerFactory
+            .getLogger(DeviceManagerImpl.class);
 
     protected IFloodlightProviderService floodlightProvider;
     protected ITopologyService topology;
@@ -102,12 +65,12 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     /**
      * Time in milliseconds before entities will expire
      */
-    protected static final int ENTITY_TIMEOUT = 60*60*1000;
+    protected static final int ENTITY_TIMEOUT = 60 * 60 * 1000;
 
     /**
      * Time in seconds between cleaning up old entities/devices
      */
-    protected static final int ENTITY_CLEANUP_INTERVAL = 60*60;
+    protected static final int ENTITY_CLEANUP_INTERVAL = 60 * 60;
 
     /**
      * Attachment points on a broadcast domain will have lower priority
@@ -181,19 +144,17 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
          */
         public ClassState(IEntityClass clazz) {
             EnumSet<DeviceField> keyFields = clazz.getKeyFields();
-            EnumSet<DeviceField> primaryKeyFields =
-                    entityClassifier.getKeyFields();
-            boolean keyFieldsMatchPrimary =
-                    primaryKeyFields.equals(keyFields);
+            EnumSet<DeviceField> primaryKeyFields = entityClassifier
+                    .getKeyFields();
+            boolean keyFieldsMatchPrimary = primaryKeyFields
+                    .equals(keyFields);
 
             if (!keyFieldsMatchPrimary)
                 classIndex = new DeviceUniqueIndex(keyFields);
 
-            secondaryIndexMap =
-                    new HashMap<EnumSet<DeviceField>, DeviceIndex>();
+            secondaryIndexMap = new HashMap<EnumSet<DeviceField>, DeviceIndex>();
             for (EnumSet<DeviceField> fields : perClassIndices) {
-                secondaryIndexMap.put(fields,
-                                      new DeviceMultiIndex(fields));
+                secondaryIndexMap.put(fields, new DeviceMultiIndex(fields));
             }
         }
     }
@@ -239,9 +200,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      * Comparator for finding the correct attachment point to use based on
      * the set of entities
      */
-    protected class AttachmentPointComparator
-    implements Comparator<Entity> {
-
+    protected class AttachmentPointComparator implements Comparator<Entity> {
 
         public AttachmentPointComparator() {
             super();
@@ -253,15 +212,14 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             long et = ts.getTime();
             Long dpid = e.getSwitchDPID();
             Integer port = e.getSwitchPort();
-            if (dpid != null && port != null &&
-                    topology.isBroadcastDomainPort(dpid, port.shortValue())) {
+            if (dpid != null && port != null && topology
+                    .isBroadcastDomainPort(dpid, port.shortValue())) {
                 return et - NBD_TO_BD_TIMEDIFF_MS;
             }
             return et;
         }
 
-        @Override
-        public int compare(Entity e1, Entity e2) {
+        @Override public int compare(Entity e1, Entity e2) {
             int r = 0;
 
             Long swdpid1 = e1.getSwitchDPID();
@@ -271,13 +229,12 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             else if (swdpid2 == null)
                 r = 1;
             else {
-                Long d1ClusterId =
-                        topology.getL2DomainId(swdpid1);
-                Long d2ClusterId =
-                        topology.getL2DomainId(swdpid2);
+                Long d1ClusterId = topology.getL2DomainId(swdpid1);
+                Long d2ClusterId = topology.getL2DomainId(swdpid2);
                 r = d1ClusterId.compareTo(d2ClusterId);
             }
-            if (r != 0) return r;
+            if (r != 0)
+                return r;
 
             // the ordering of active times is a more
             // representative of the causal relationship
@@ -308,8 +265,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     // IDeviceManagerService
     // *********************
 
-    @Override
-    public IDevice getDevice(Long deviceKey) {
+    @Override public IDevice getDevice(Long deviceKey) {
         return deviceMap.get(deviceKey);
     }
 
@@ -321,9 +277,9 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             vlan = null;
         if (ipv4Address != null && ipv4Address == 0)
             ipv4Address = null;
-        return findDeviceByEntity(new Entity(macAddress, vlan,
-                                             ipv4Address, switchDPID,
-                                             switchPort, null));
+        return findDeviceByEntity(
+                new Entity(macAddress, vlan, ipv4Address, switchDPID,
+                           switchPort, null));
     }
 
     @Override
@@ -334,27 +290,21 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         if (ipv4Address != null && ipv4Address == 0)
             ipv4Address = null;
         return findDestByEntity(source,
-                                new Entity(macAddress,
-                                           vlan,
-                                           ipv4Address,
-                                           null,
-                                           null,
-                                           null));
+                                new Entity(macAddress, vlan, ipv4Address,
+                                           null, null, null));
     }
 
-    @Override
-    public Collection<? extends IDevice> getAllDevices() {
+    @Override public Collection<? extends IDevice> getAllDevices() {
         return Collections.unmodifiableCollection(deviceMap.values());
     }
 
     @Override
-    public void addIndex(boolean perClass,
-                         EnumSet<DeviceField> keyFields) {
+    public void addIndex(boolean perClass, EnumSet<DeviceField> keyFields) {
         if (perClass) {
             perClassIndices.add(keyFields);
         } else {
-            secondaryIndexMap.put(keyFields,
-                                  new DeviceMultiIndex(keyFields));
+            secondaryIndexMap
+                    .put(keyFields, new DeviceMultiIndex(keyFields));
         }
     }
 
@@ -366,9 +316,10 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                                                     Integer switchPort) {
         DeviceIndex index = null;
         if (secondaryIndexMap.size() > 0) {
-            EnumSet<DeviceField> keys =
-                    getEntityKeys(macAddress, vlan, ipv4Address,
-                                  switchDPID, switchPort);
+            EnumSet<DeviceField> keys = getEntityKeys(macAddress, vlan,
+                                                      ipv4Address,
+                                                      switchDPID,
+                                                      switchPort);
             index = secondaryIndexMap.get(keys);
         }
 
@@ -379,23 +330,16 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         } else {
             // index lookup
             Entity entity = new Entity((macAddress == null ? 0 : macAddress),
-                                       vlan,
-                                       ipv4Address,
-                                       switchDPID,
-                                       switchPort,
-                                       null);
-            deviceIterator =
-                    new DeviceIndexInterator(this, index.queryByEntity(entity));
+                                       vlan, ipv4Address, switchDPID,
+                                       switchPort, null);
+            deviceIterator = new DeviceIndexInterator(this,
+                                                      index.queryByEntity(
+                                                              entity));
         }
 
-        DeviceIterator di =
-                new DeviceIterator(deviceIterator,
-                                   null,
-                                   macAddress,
-                                   vlan,
-                                   ipv4Address,
-                                   switchDPID,
-                                   switchPort);
+        DeviceIterator di = new DeviceIterator(deviceIterator, null,
+                                               macAddress, vlan, ipv4Address,
+                                               switchDPID, switchPort);
         return di;
     }
 
@@ -407,16 +351,16 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                                                          Long switchDPID,
                                                          Integer switchPort) {
         IEntityClass[] entityClasses = reference.getEntityClasses();
-        ArrayList<Iterator<Device>> iterators =
-                new ArrayList<Iterator<Device>>();
+        ArrayList<Iterator<Device>> iterators = new ArrayList<Iterator<Device>>();
         for (IEntityClass clazz : entityClasses) {
             ClassState classState = getClassState(clazz);
 
             DeviceIndex index = null;
             if (classState.secondaryIndexMap.size() > 0) {
-                EnumSet<DeviceField> keys =
-                        getEntityKeys(macAddress, vlan, ipv4Address,
-                                      switchDPID, switchPort);
+                EnumSet<DeviceField> keys = getEntityKeys(macAddress, vlan,
+                                                          ipv4Address,
+                                                          switchDPID,
+                                                          switchPort);
                 index = classState.secondaryIndexMap.get(keys);
             }
 
@@ -426,22 +370,18 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                 if (index == null) {
                     // scan all devices
                     return new DeviceIterator(deviceMap.values().iterator(),
-                                              entityClasses,
-                                              macAddress, vlan, ipv4Address,
-                                              switchDPID, switchPort);
+                                              entityClasses, macAddress,
+                                              vlan, ipv4Address, switchDPID,
+                                              switchPort);
                 } else {
                     // scan the entire class
                     iter = new DeviceIndexInterator(this, index.getAll());
                 }
             } else {
                 // index lookup
-                Entity entity =
-                        new Entity((macAddress == null ? 0 : macAddress),
-                                   vlan,
-                                   ipv4Address,
-                                   switchDPID,
-                                   switchPort,
-                                   null);
+                Entity entity = new Entity(
+                        (macAddress == null ? 0 : macAddress), vlan,
+                        ipv4Address, switchDPID, switchPort, null);
                 iter = new DeviceIndexInterator(this,
                                                 index.queryByEntity(entity));
             }
@@ -451,13 +391,11 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         return new MultiIterator<Device>(iterators.iterator());
     }
 
-    @Override
-    public void addListener(IDeviceListener listener) {
+    @Override public void addListener(IDeviceListener listener) {
         deviceListeners.add(listener);
     }
 
-    @Override
-    public void setEntityClassifier(IEntityClassifier classifier) {
+    @Override public void setEntityClassifier(IEntityClassifier classifier) {
         entityClassifier = classifier;
     }
 
@@ -471,8 +409,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     // IInfoProvider
     // *************
 
-    @Override
-    public Map<String, Object> getInfo(String type) {
+    @Override public Map<String, Object> getInfo(String type) {
         if (!"summary".equals(type))
             return null;
 
@@ -485,15 +422,14 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     // IOFMessageListener
     // ******************
 
-    @Override
-    public String getName() {
+    @Override public String getName() {
         return "devicemanager";
     }
 
     @Override
     public boolean isCallbackOrderingPrereq(OFType type, String name) {
-        return ((type == OFType.PACKET_IN || type == OFType.FLOW_MOD)
-                && name.equals("topology"));
+        return ((type == OFType.PACKET_IN || type == OFType.FLOW_MOD) && name
+                .equals("topology"));
     }
 
     @Override
@@ -506,24 +442,23 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                            FloodlightContext cntx) {
         switch (msg.getType()) {
             case PACKET_IN:
-                return this.processPacketInMessage(sw,
-                                                   (OFPacketIn) msg, cntx);
+                return this
+                        .processPacketInMessage(sw, (OFPacketIn) msg, cntx);
         }
 
-        logger.error("received an unexpected message {} from switch {}",
-                     msg, sw);
+        logger.error("received an unexpected message {} from switch {}", msg,
+                     sw);
         return Command.CONTINUE;
     }
 
     // ***************
     // IFlowReconcileListener
     // ***************
-    @Override
-    public Command reconcileFlows(ArrayList<OFMatchReconcile> ofmRcList) {
+    @Override public Command reconcileFlows(
+            ArrayList<OFMatchReconcile> ofmRcList) {
         for (OFMatchReconcile ofm : ofmRcList) {
             // Extract source entity information
-            Entity srcEntity =
-                    getEntityFromFlowMod(ofm.ofmWithSwDpid, true);
+            Entity srcEntity = getEntityFromFlowMod(ofm.ofmWithSwDpid, true);
             if (srcEntity == null)
                 return Command.STOP;
 
@@ -537,11 +472,11 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
             // Find the device matching the destination from the entity
             // classes of the source.
-            Entity dstEntity = getEntityFromFlowMod(ofm.ofmWithSwDpid, false);
+            Entity dstEntity = getEntityFromFlowMod(ofm.ofmWithSwDpid,
+                                                    false);
             logger.debug("DeviceManager dstEntity {}", dstEntity);
             if (dstEntity != null) {
-                Device dstDevice =
-                        findDestByEntity(srcDevice, dstEntity);
+                Device dstDevice = findDestByEntity(srcDevice, dstEntity);
                 logger.debug("DeviceManager dstDevice {}", dstDevice);
                 if (dstDevice != null)
                     fcStore.put(ofm.cntx, CONTEXT_DST_DEVICE, dstDevice);
@@ -572,19 +507,14 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleServices() {
-        Collection<Class<? extends IFloodlightService>> l =
-                new ArrayList<Class<? extends IFloodlightService>>();
+        Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
         l.add(IDeviceService.class);
         return l;
     }
 
     @Override
-    public Map<Class<? extends IFloodlightService>, IFloodlightService>
-    getServiceImpls() {
-        Map<Class<? extends IFloodlightService>,
-        IFloodlightService> m =
-        new HashMap<Class<? extends IFloodlightService>,
-        IFloodlightService>();
+    public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
+        Map<Class<? extends IFloodlightService>, IFloodlightService> m = new HashMap<Class<? extends IFloodlightService>, IFloodlightService>();
         // We are the class that implements the service
         m.put(IDeviceService.class, this);
         return m;
@@ -592,8 +522,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
-        Collection<Class<? extends IFloodlightService>> l =
-                new ArrayList<Class<? extends IFloodlightService>>();
+        Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
         l.add(IFloodlightProviderService.class);
         l.add(IStorageSourceService.class);
         l.add(ITopologyService.class);
@@ -603,38 +532,34 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         return l;
     }
 
-    @Override
-    public void init(FloodlightModuleContext fmc) {
-        this.perClassIndices =
-                new HashSet<EnumSet<DeviceField>>();
+    @Override public void init(FloodlightModuleContext fmc) {
+        this.perClassIndices = new HashSet<EnumSet<DeviceField>>();
         addIndex(true, EnumSet.of(DeviceField.IPV4));
 
         this.deviceListeners = new HashSet<IDeviceListener>();
-        this.suppressAPs =
-                Collections.synchronizedSet(new HashSet<SwitchPort>());
+        this.suppressAPs = Collections
+                .synchronizedSet(new HashSet<SwitchPort>());
 
-        this.floodlightProvider =
-                fmc.getServiceImpl(IFloodlightProviderService.class);
-        this.storageSource =
-                fmc.getServiceImpl(IStorageSourceService.class);
-        this.topology =
-                fmc.getServiceImpl(ITopologyService.class);
+        this.floodlightProvider = fmc
+                .getServiceImpl(IFloodlightProviderService.class);
+        this.storageSource = fmc.getServiceImpl(IStorageSourceService.class);
+        this.topology = fmc.getServiceImpl(ITopologyService.class);
         this.restApi = fmc.getServiceImpl(IRestApiService.class);
         this.threadPool = fmc.getServiceImpl(IThreadPoolService.class);
-        this.flowReconcileMgr = fmc.getServiceImpl(IFlowReconcileService.class);
+        this.flowReconcileMgr = fmc
+                .getServiceImpl(IFlowReconcileService.class);
     }
 
-    @Override
-    public void startUp(FloodlightModuleContext fmc) {
+    @Override public void startUp(FloodlightModuleContext fmc) {
         if (entityClassifier == null)
             setEntityClassifier(new DefaultEntityClassifier());
 
-        primaryIndex = new DeviceUniqueIndex(entityClassifier.getKeyFields());
+        primaryIndex = new DeviceUniqueIndex(
+                entityClassifier.getKeyFields());
         secondaryIndexMap = new HashMap<EnumSet<DeviceField>, DeviceIndex>();
 
         deviceMap = new ConcurrentHashMap<Long, Device>();
-        classStateMap =
-                new ConcurrentHashMap<IEntityClass, ClassState>();
+        classStateMap = new ConcurrentHashMap<IEntityClass, ClassState>();
         apComparator = new AttachmentPointComparator();
 
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
@@ -642,8 +567,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         flowReconcileMgr.addFlowReconcileListener(this);
 
         Runnable ecr = new Runnable() {
-            @Override
-            public void run() {
+            @Override public void run() {
                 cleanupEntities();
                 entityCleanupTask.reschedule(ENTITY_CLEANUP_INTERVAL,
                                              TimeUnit.SECONDS);
@@ -651,8 +575,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         };
         ScheduledExecutorService ses = threadPool.getScheduledExecutor();
         entityCleanupTask = new SingletonTask(ses, ecr);
-        entityCleanupTask.reschedule(ENTITY_CLEANUP_INTERVAL,
-                                     TimeUnit.SECONDS);
+        entityCleanupTask
+                .reschedule(ENTITY_CLEANUP_INTERVAL, TimeUnit.SECONDS);
 
         if (restApi != null) {
             restApi.addRestletRoutable(new DeviceRoutable());
@@ -665,11 +589,11 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     // IHAListener
     // ***************
 
-    @Override
-    public void roleChanged(Role oldRole, Role newRole) {
-        switch(newRole) {
+    @Override public void roleChanged(Role oldRole, Role newRole) {
+        switch (newRole) {
             case SLAVE:
-                logger.debug("Resetting device state because of role change");
+                logger.debug(
+                        "Resetting device state because of role change");
                 startUp(null);
                 break;
         }
@@ -677,9 +601,9 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
     @Override
     public void controllerNodeIPsChanged(
-                                         Map<String, String> curControllerNodeIPs,
-                                         Map<String, String> addedControllerNodeIPs,
-                                         Map<String, String> removedControllerNodeIPs) {
+            Map<String, String> curControllerNodeIPs,
+            Map<String, String> addedControllerNodeIPs,
+            Map<String, String> removedControllerNodeIPs) {
         // no-op
     }
 
@@ -689,13 +613,13 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
     protected Command processPacketInMessage(IOFSwitch sw, OFPacketIn pi,
                                              FloodlightContext cntx) {
-        Ethernet eth =
-                IFloodlightProviderService.bcStore.
-                get(cntx,IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+        Ethernet eth = IFloodlightProviderService.bcStore.
+                                                                 get(cntx,
+                                                                     IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
 
         // Extract source entity information
-        Entity srcEntity =
-                getSourceEntityFromPacket(eth, sw.getId(), pi.getInPort());
+        Entity srcEntity = getSourceEntityFromPacket(eth, sw.getId(),
+                                                     pi.getInPort());
         if (srcEntity == null)
             return Command.STOP;
 
@@ -711,8 +635,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         // classes of the source.
         Entity dstEntity = getDestEntityFromPacket(eth);
         if (dstEntity != null) {
-            Device dstDevice =
-                    findDestByEntity(srcDevice, dstEntity);
+            Device dstDevice = findDestByEntity(srcDevice, dstEntity);
             if (dstDevice != null)
                 fcStore.put(cntx, CONTEXT_DST_DEVICE, dstDevice);
         }
@@ -730,16 +653,19 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     protected boolean isValidAttachmentPoint(long switchDPID,
                                              int switchPort) {
         IOFSwitch sw = floodlightProvider.getSwitches().get(switchDPID);
-        if (sw == null) return false;
-        OFPhysicalPort port = sw.getPort((short)switchPort);
-        if (port == null || !sw.portEnabled(port)) return false;
-        if (topology.isAttachmentPointPort(switchDPID, (short)switchPort) == false)
+        if (sw == null)
+            return false;
+        OFPhysicalPort port = sw.getPort((short) switchPort);
+        if (port == null || !sw.portEnabled(port))
+            return false;
+        if (topology.isAttachmentPointPort(switchDPID, (short) switchPort)
+            == false)
             return false;
 
         // Check whether the port is a physical port. We should not learn
         // attachment points on "special" ports.
-        if (((switchPort & 0xff00) == 0xff00) &&
-                (switchPort != (short)0xfffe))
+        if (((switchPort & 0xff00) == 0xff00) && (switchPort
+                                                  != (short) 0xfffe))
             return false;
 
         if (suppressAPs.contains(new SwitchPort(switchDPID, switchPort)))
@@ -751,16 +677,17 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     private int getSrcNwAddr(Ethernet eth, long dlAddr) {
         if (eth.getPayload() instanceof ARP) {
             ARP arp = (ARP) eth.getPayload();
-            if ((arp.getProtocolType() == ARP.PROTO_TYPE_IP) &&
-                    (Ethernet.toLong(arp.getSenderHardwareAddress()) == dlAddr)) {
+            if ((arp.getProtocolType() == ARP.PROTO_TYPE_IP) && (
+                    Ethernet.toLong(arp.getSenderHardwareAddress())
+                    == dlAddr)) {
                 return IPv4.toIPv4Address(arp.getSenderProtocolAddress());
             }
         } else if (eth.getPayload() instanceof IPv4) {
             IPv4 ipv4 = (IPv4) eth.getPayload();
             if (ipv4.getPayload() instanceof UDP) {
-                UDP udp = (UDP)ipv4.getPayload();
+                UDP udp = (UDP) ipv4.getPayload();
                 if (udp.getPayload() instanceof DHCP) {
-                    DHCP dhcp = (DHCP)udp.getPayload();
+                    DHCP dhcp = (DHCP) udp.getPayload();
                     if (dhcp.getOpCode() == DHCP.OPCODE_REPLY) {
                         return ipv4.getSourceAddress();
                     }
@@ -777,8 +704,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      * @param pi the original packetin
      * @return the entity from the packet
      */
-    private Entity getSourceEntityFromPacket(Ethernet eth,
-                                             long swdpid,
+    private Entity getSourceEntityFromPacket(Ethernet eth, long swdpid,
                                              int port) {
         byte[] dlAddrArr = eth.getSourceMACAddress();
         long dlAddr = Ethernet.toLong(dlAddrArr);
@@ -788,7 +714,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             return null;
 
         boolean learnap = true;
-        if (!isValidAttachmentPoint(swdpid, (short)port)) {
+        if (!isValidAttachmentPoint(swdpid, (short) port)) {
             // If this is an internal port or we otherwise don't want
             // to learn on these ports.  In the future, we should
             // handle this case by labeling flows with something that
@@ -800,11 +726,9 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
         short vlan = eth.getVlanID();
         int nwSrc = getSrcNwAddr(eth, dlAddr);
-        return new Entity(dlAddr,
-                          ((vlan >= 0) ? vlan : null),
+        return new Entity(dlAddr, ((vlan >= 0) ? vlan : null),
                           ((nwSrc != 0) ? nwSrc : null),
-                          (learnap ? swdpid : null),
-                          (learnap ? port : null),
+                          (learnap ? swdpid : null), (learnap ? port : null),
                           new Date());
     }
 
@@ -828,12 +752,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             nwDst = ipv4.getDestinationAddress();
         }
 
-        return new Entity(dlAddr,
-                          ((vlan >= 0) ? vlan : null),
-                          ((nwDst != 0) ? nwDst : null),
-                          null,
-                          null,
-                          null);
+        return new Entity(dlAddr, ((vlan >= 0) ? vlan : null),
+                          ((nwDst != 0) ? nwDst : null), null, null, null);
     }
 
     /**
@@ -841,7 +761,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      * @param ofmWithSwDpid
      * @return the entity from the packet
      */
-    private Entity getEntityFromFlowMod(OFMatchWithSwDpid ofmWithSwDpid, boolean isSource) {
+    private Entity getEntityFromFlowMod(OFMatchWithSwDpid ofmWithSwDpid,
+                                        boolean isSource) {
         byte[] dlAddrArr = ofmWithSwDpid.getOfMatch().getDataLayerSource();
         int nwSrc = ofmWithSwDpid.getOfMatch().getNetworkSource();
         if (!isSource) {
@@ -870,21 +791,21 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         }
 
         short vlan = ofmWithSwDpid.getOfMatch().getDataLayerVirtualLan();
-        return new Entity(dlAddr,
-                          ((vlan >= 0) ? vlan : null),
+        return new Entity(dlAddr, ((vlan >= 0) ? vlan : null),
                           ((nwSrc != 0) ? nwSrc : null),
                           (learnap ? swDpid : null),
-                          (learnap ? (int)inPort : null),
-                          new Date());
+                          (learnap ? (int) inPort : null), new Date());
     }
+
     /**
      * Look up a {@link Device} based on the provided {@link Entity}.
      * @param entity the entity to search for
      * @return The {@link Device} object if found
      */
     protected Device findDeviceByEntity(Entity entity) {
-        Long deviceKey =  primaryIndex.findByEntity(entity);
-        if (deviceKey == null) return null;
+        Long deviceKey = primaryIndex.findByEntity(entity);
+        if (deviceKey == null)
+            return null;
         return deviceMap.get(deviceKey);
     }
 
@@ -898,8 +819,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      * @param dstEntity the entity to look up
      * @return an {@link Device} or null if no device is found.
      */
-    protected Device findDestByEntity(IDevice source,
-                                      Entity dstEntity) {
+    protected Device findDestByEntity(IDevice source, Entity dstEntity) {
         Device dstDevice = findDeviceByEntity(dstEntity);
 
         //if (dstDevice == null) {
@@ -938,9 +858,9 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      * @param entity the entity to search for
      * @return The {@link Device} object if found
     private Device findDeviceInClassByEntity(IEntityClass clazz,
-                                               Entity entity) {
-        // XXX - TODO
-        throw new UnsupportedOperationException();
+    Entity entity) {
+    // XXX - TODO
+    throw new UnsupportedOperationException();
     }
      */
 
@@ -979,8 +899,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                     ClassState classState = getClassState(clazz);
 
                     if (classState.classIndex != null) {
-                        deviceKey =
-                                classState.classIndex.findByEntity(entity);
+                        deviceKey = classState.classIndex
+                                .findByEntity(entity);
                     }
                 }
             }
@@ -990,7 +910,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                 // device map, and use the referenced Device below.
                 device = deviceMap.get(deviceKey);
                 if (device == null)
-                    throw new IllegalStateException("Corrupted device index");
+                    throw new IllegalStateException(
+                            "Corrupted device index");
             } else {
                 // If the secondary index does not contain the entity,
                 // create a new Device object containing the entity, and
@@ -1014,9 +935,9 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                 updateSecondaryIndices(entity, classes, deviceKey);
 
                 // generate new device update
-                deviceUpdates =
-                        updateUpdates(deviceUpdates,
-                                      new DeviceUpdate(device, ADD, null));
+                deviceUpdates = updateUpdates(deviceUpdates,
+                                              new DeviceUpdate(device, ADD,
+                                                               null));
 
                 break;
             }
@@ -1025,23 +946,25 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             if ((entityindex = device.entityIndex(entity)) >= 0) {
                 // update timestamp on the found entity
                 Date lastSeen = entity.getLastSeenTimestamp();
-                if (lastSeen == null) lastSeen = new Date();
+                if (lastSeen == null)
+                    lastSeen = new Date();
                 device.entities[entityindex].setLastSeenTimestamp(lastSeen);
                 break;
             } else {
                 Device newDevice = allocateDevice(device, entity, classes);
 
                 // generate updates
-                EnumSet<DeviceField> changedFields =
-                        findChangedFields(device, entity);
+                EnumSet<DeviceField> changedFields = findChangedFields(
+                        device, entity);
                 if (changedFields.size() > 0)
-                    deviceUpdates =
-                    updateUpdates(deviceUpdates,
-                                  new DeviceUpdate(newDevice, CHANGE,
-                                                   changedFields));
+                    deviceUpdates = updateUpdates(deviceUpdates,
+                                                  new DeviceUpdate(newDevice,
+                                                                   CHANGE,
+                                                                   changedFields));
 
                 // update the device map with a replace call
-                boolean res = deviceMap.replace(deviceKey, device, newDevice);
+                boolean res = deviceMap
+                        .replace(deviceKey, device, newDevice);
                 // If replace returns false, restart the process from the
                 // beginning (this implies another thread concurrently
                 // modified this Device).
@@ -1054,8 +977,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                 if (!updateIndices(device, deviceKey)) {
                     continue;
                 }
-                updateSecondaryIndices(entity,
-                                       device.getEntityClasses(),
+                updateSecondaryIndices(entity, device.getEntityClasses(),
                                        deviceKey);
                 break;
             }
@@ -1074,36 +996,39 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
 
     protected EnumSet<DeviceField> findChangedFields(Device device,
                                                      Entity newEntity) {
-        EnumSet<DeviceField> changedFields =
-                EnumSet.of(DeviceField.IPV4,
-                           DeviceField.VLAN,
-                           DeviceField.SWITCH);
+        EnumSet<DeviceField> changedFields = EnumSet
+                .of(DeviceField.IPV4, DeviceField.VLAN, DeviceField.SWITCH);
 
         if (newEntity.getIpv4Address() == null)
             changedFields.remove(DeviceField.IPV4);
         if (newEntity.getVlan() == null)
             changedFields.remove(DeviceField.VLAN);
-        if (newEntity.getSwitchDPID() == null ||
-                newEntity.getSwitchPort() == null)
+        if (newEntity.getSwitchDPID() == null
+            || newEntity.getSwitchPort() == null)
             changedFields.remove(DeviceField.SWITCH);
 
-        if (changedFields.size() == 0) return changedFields;
+        if (changedFields.size() == 0)
+            return changedFields;
 
         for (Entity entity : device.getEntities()) {
-            if (newEntity.getIpv4Address() == null ||
-                    (entity.getIpv4Address() != null &&
-                    entity.getIpv4Address().equals(newEntity.getIpv4Address())))
+            if (newEntity.getIpv4Address() == null || (
+                    entity.getIpv4Address() != null && entity
+                            .getIpv4Address()
+                            .equals(newEntity.getIpv4Address())))
                 changedFields.remove(DeviceField.IPV4);
-            if (newEntity.getVlan() == null ||
-                    (entity.getVlan() != null &&
-                    entity.getVlan().equals(newEntity.getVlan())))
+            if (newEntity.getVlan() == null || (entity.getVlan() != null
+                                                && entity.getVlan()
+                                                         .equals(newEntity
+                                                                         .getVlan())))
                 changedFields.remove(DeviceField.VLAN);
-            if (newEntity.getSwitchDPID() == null ||
-                    newEntity.getSwitchPort() == null ||
-                    (entity.getSwitchDPID() != null &&
-                    entity.getSwitchPort() != null &&
-                    entity.getSwitchDPID().equals(newEntity.getSwitchDPID()) &&
-                    entity.getSwitchPort().equals(newEntity.getSwitchPort())))
+            if (newEntity.getSwitchDPID() == null
+                || newEntity.getSwitchPort() == null || (
+                        entity.getSwitchDPID() != null
+                        && entity.getSwitchPort() != null && entity
+                                .getSwitchDPID()
+                                .equals(newEntity.getSwitchDPID()) && entity
+                                .getSwitchPort()
+                                .equals(newEntity.getSwitchPort())))
                 changedFields.remove(DeviceField.SWITCH);
         }
 
@@ -1115,7 +1040,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      * @param updates the updates to process.
      */
     protected void processUpdates(Queue<DeviceUpdate> updates) {
-        if (updates == null) return;
+        if (updates == null)
+            return;
         DeviceUpdate update = null;
         while (null != (update = updates.poll())) {
             for (IDeviceListener listener : deviceListeners) {
@@ -1130,14 +1056,16 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                         for (DeviceField field : update.fieldsChanged) {
                             switch (field) {
                                 case IPV4:
-                                    listener.deviceIPV4AddrChanged(update.device);
+                                    listener.deviceIPV4AddrChanged(
+                                            update.device);
                                     break;
                                 case SWITCH:
                                 case PORT:
                                     listener.deviceMoved(update.device);
                                     break;
                                 case VLAN:
-                                    listener.deviceVlanChanged(update.device);
+                                    listener.deviceVlanChanged(
+                                            update.device);
                                     break;
                             }
                         }
@@ -1147,9 +1075,10 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         }
     }
 
-    private LinkedList<DeviceUpdate>
-    updateUpdates(LinkedList<DeviceUpdate> list, DeviceUpdate update) {
-        if (update == null) return list;
+    private LinkedList<DeviceUpdate> updateUpdates(
+            LinkedList<DeviceUpdate> list, DeviceUpdate update) {
+        if (update == null)
+            return list;
         if (list == null)
             list = new LinkedList<DeviceUpdate>();
         list.add(update);
@@ -1165,7 +1094,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
      */
     private ClassState getClassState(IEntityClass clazz) {
         ClassState classState = classStateMap.get(clazz);
-        if (classState != null) return classState;
+        if (classState != null)
+            return classState;
 
         classState = new ClassState(clazz);
         ClassState r = classStateMap.putIfAbsent(clazz, classState);
@@ -1191,8 +1121,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             ClassState classState = getClassState(clazz);
 
             if (classState.classIndex != null) {
-                if (!classState.classIndex.updateIndex(device,
-                                                       deviceKey))
+                if (!classState.classIndex.updateIndex(device, deviceKey))
                     return false;
             }
         }
@@ -1230,7 +1159,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
     private void updateSecondaryIndices(Entity entity,
                                         IEntityClass[] entityClasses,
                                         Long deviceKey) {
-        updateSecondaryIndices(entity, Arrays.asList(entityClasses), deviceKey);
+        updateSecondaryIndices(entity, Arrays.asList(entityClasses),
+                               deviceKey);
     }
 
     /**
@@ -1245,8 +1175,7 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         ArrayList<Entity> toKeep = new ArrayList<Entity>();
 
         Iterator<Device> diter = deviceMap.values().iterator();
-        LinkedList<DeviceUpdate> deviceUpdates =
-                new LinkedList<DeviceUpdate>();
+        LinkedList<DeviceUpdate> deviceUpdates = new LinkedList<DeviceUpdate>();
 
         while (diter.hasNext()) {
             Device d = diter.next();
@@ -1256,8 +1185,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                 toRemove.clear();
                 toKeep.clear();
                 for (Entity e : d.getEntities()) {
-                    if (e.getLastSeenTimestamp() != null &&
-                            0 > e.getLastSeenTimestamp().compareTo(cutoff)) {
+                    if (e.getLastSeenTimestamp() != null && 0 > e
+                            .getLastSeenTimestamp().compareTo(cutoff)) {
                         // individual entity needs to be removed
                         toRemove.add(e);
                     } else {
@@ -1269,7 +1198,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                 }
 
                 for (Entity e : toRemove) {
-                    removeEntity(e, d.getEntityClasses(), d.deviceKey, toKeep);
+                    removeEntity(e, d.getEntityClasses(), d.deviceKey,
+                                 toKeep);
                 }
 
                 if (toKeep.size() > 0) {
@@ -1277,17 +1207,17 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
                                                       toKeep,
                                                       d.entityClasses);
 
-                    EnumSet<DeviceField> changedFields =
-                            EnumSet.noneOf(DeviceField.class);
+                    EnumSet<DeviceField> changedFields = EnumSet
+                            .noneOf(DeviceField.class);
                     for (Entity e : toRemove) {
-                        changedFields.addAll(findChangedFields(newDevice, e));
+                        changedFields
+                                .addAll(findChangedFields(newDevice, e));
                     }
                     if (changedFields.size() > 0)
                         deviceUpdates.add(new DeviceUpdate(d, CHANGE,
                                                            changedFields));
 
-                    if (!deviceMap.replace(newDevice.getDeviceKey(),
-                                           d,
+                    if (!deviceMap.replace(newDevice.getDeviceKey(), d,
                                            newDevice)) {
                         // concurrent modification; try again
                         continue;
@@ -1304,10 +1234,8 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         }
     }
 
-    private void removeEntity(Entity removed,
-                              IEntityClass[] classes,
-                              Long deviceKey,
-                              Collection<Entity> others) {
+    private void removeEntity(Entity removed, IEntityClass[] classes,
+                              Long deviceKey, Collection<Entity> others) {
         for (DeviceIndex index : secondaryIndexMap.values()) {
             index.removeEntityIfNeeded(removed, deviceKey, others);
         }
@@ -1324,39 +1252,41 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
             ClassState classState = getClassState(clazz);
 
             if (classState.classIndex != null) {
-                classState.classIndex.removeEntityIfNeeded(removed,
-                                                           deviceKey,
-                                                           others);
+                classState.classIndex
+                        .removeEntityIfNeeded(removed, deviceKey, others);
             }
         }
     }
 
-    private EnumSet<DeviceField> getEntityKeys(Long macAddress,
-                                               Short vlan,
+    private EnumSet<DeviceField> getEntityKeys(Long macAddress, Short vlan,
                                                Integer ipv4Address,
                                                Long switchDPID,
                                                Integer switchPort) {
         EnumSet<DeviceField> keys = EnumSet.noneOf(DeviceField.class);
-        if (macAddress != null) keys.add(DeviceField.MAC);
-        if (vlan != null) keys.add(DeviceField.VLAN);
-        if (ipv4Address != null) keys.add(DeviceField.IPV4);
-        if (switchDPID != null) keys.add(DeviceField.SWITCH);
-        if (switchPort != null) keys.add(DeviceField.PORT);
+        if (macAddress != null)
+            keys.add(DeviceField.MAC);
+        if (vlan != null)
+            keys.add(DeviceField.VLAN);
+        if (ipv4Address != null)
+            keys.add(DeviceField.IPV4);
+        if (switchDPID != null)
+            keys.add(DeviceField.SWITCH);
+        if (switchPort != null)
+            keys.add(DeviceField.PORT);
         return keys;
     }
-
 
     protected Iterator<Device> queryClassByEntity(IEntityClass clazz,
                                                   EnumSet<DeviceField> keyFields,
                                                   Entity entity) {
         ClassState classState = getClassState(clazz);
         DeviceIndex index = classState.secondaryIndexMap.get(keyFields);
-        if (index == null) return Collections.<Device>emptySet().iterator();
+        if (index == null)
+            return Collections.<Device>emptySet().iterator();
         return new DeviceIndexInterator(this, index.queryByEntity(entity));
     }
 
-    protected Device allocateDevice(Long deviceKey,
-                                    Entity entity,
+    protected Device allocateDevice(Long deviceKey, Entity entity,
                                     Collection<IEntityClass> entityClasses) {
         return new Device(this, deviceKey, entity, entityClasses);
     }
@@ -1367,19 +1297,16 @@ IFlowReconcileListener, IInfoProvider, IHAListener {
         return new Device(this, deviceKey, entities, entityClasses);
     }
 
-    protected Device allocateDevice(Device device,
-                                    Entity entity,
+    protected Device allocateDevice(Device device, Entity entity,
                                     Collection<IEntityClass> entityClasses) {
         return new Device(device, entity, entityClasses);
     }
 
-    @Override
-    public void addSuppressAPs(long swId, short port) {
+    @Override public void addSuppressAPs(long swId, short port) {
         suppressAPs.add(new SwitchPort(swId, port));
     }
 
-    @Override
-    public void removeSuppressAPs(long swId, short port) {
+    @Override public void removeSuppressAPs(long swId, short port) {
         suppressAPs.remove(new SwitchPort(swId, port));
     }
 }

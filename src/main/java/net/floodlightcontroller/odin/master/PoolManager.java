@@ -1,16 +1,10 @@
 package net.floodlightcontroller.odin.master;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-
 import net.floodlightcontroller.util.MACAddress;
+
+import java.net.InetAddress;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class does all the book keeping for Odin's pool-based state. The master and other components
@@ -104,6 +98,8 @@ class PoolManager {
         if (poolToSsidListMap.get(GLOBAL_POOL).add(ssid)) {
             poolToSsidListMap.get(pool).add(ssid);
             numNetworks++;
+            System.out.println(
+                    "[DEBUG] PoolManager: " + poolToSsidListMap.toString());
             return true;
         }
 

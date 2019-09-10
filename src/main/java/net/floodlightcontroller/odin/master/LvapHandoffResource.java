@@ -1,15 +1,15 @@
 package net.floodlightcontroller.odin.master;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.HashMap;
-
 import net.floodlightcontroller.util.MACAddress;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.HashMap;
 
 public class LvapHandoffResource extends ServerResource {
 

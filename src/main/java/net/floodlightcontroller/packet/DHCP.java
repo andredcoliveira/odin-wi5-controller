@@ -1,19 +1,16 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2011, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.packet;
 
@@ -52,7 +49,7 @@ public class DHCP extends BasePacket {
      * ------------------------------------------
      * |            options (312)               |
      * ------------------------------------------
-     * 
+     *
      */
     // Header + magic without options
     public static int MIN_HEADER_LENGTH = 240;
@@ -60,30 +57,29 @@ public class DHCP extends BasePacket {
     public static byte OPCODE_REPLY = 0x2;
 
     public static byte HWTYPE_ETHERNET = 0x1;
-    
+
     public enum DHCPOptionCode {
-        OptionCode_SubnetMask           ((byte)1),
-        OptionCode_RequestedIP          ((byte)50),
-        OptionCode_LeaseTime            ((byte)51),
-        OptionCode_MessageType          ((byte)53),
-        OptionCode_DHCPServerIp         ((byte)54),
-        OptionCode_RequestedParameters  ((byte)55),
-        OptionCode_RenewalTime          ((byte)58),
-        OPtionCode_RebindingTime        ((byte)59),
-        OptionCode_ClientID             ((byte)61),
-        OptionCode_END                  ((byte)255);
-    
+        OptionCode_SubnetMask((byte) 1), OptionCode_RequestedIP(
+                (byte) 50), OptionCode_LeaseTime(
+                (byte) 51), OptionCode_MessageType(
+                (byte) 53), OptionCode_DHCPServerIp(
+                (byte) 54), OptionCode_RequestedParameters(
+                (byte) 55), OptionCode_RenewalTime(
+                (byte) 58), OPtionCode_RebindingTime(
+                (byte) 59), OptionCode_ClientID((byte) 61), OptionCode_END(
+                (byte) 255);
+
         protected byte value;
-        
+
         private DHCPOptionCode(byte value) {
             this.value = value;
         }
-        
+
         public byte getValue() {
             return value;
         }
     }
-    
+
     protected byte opCode;
     protected byte hardwareType;
     protected byte hardwareAddressLength;
@@ -279,7 +275,7 @@ public class DHCP extends BasePacket {
         this.clientHardwareAddress = clientHardwareAddress;
         return this;
     }
-    
+
     /**
      * Gets a specific DHCP option parameter
      * @param opetionCode The option code to get
@@ -322,7 +318,7 @@ public class DHCP extends BasePacket {
         }
         return null;
     }
-    
+
     /**
      * @return the serverName
      */
@@ -353,22 +349,21 @@ public class DHCP extends BasePacket {
         return this;
     }
 
-    @Override
-    public byte[] serialize() {
+    @Override public byte[] serialize() {
         // minimum size 240 including magic cookie, options generally padded to 300
         int optionsLength = 0;
         for (DHCPOption option : this.options) {
             if (option.getCode() == 0 || option.getCode() == 255) {
                 optionsLength += 1;
             } else {
-                optionsLength += 2 + (int)(0xff & option.getLength());
+                optionsLength += 2 + (int) (0xff & option.getLength());
             }
         }
         int optionsPadLength = 0;
         if (optionsLength < 60)
             optionsPadLength = 60 - optionsLength;
 
-        byte[] data = new byte[240+optionsLength+optionsPadLength];
+        byte[] data = new byte[240 + optionsLength + optionsPadLength];
         ByteBuffer bb = ByteBuffer.wrap(data);
         bb.put(this.opCode);
         bb.put(this.hardwareType);
@@ -383,7 +378,8 @@ public class DHCP extends BasePacket {
         bb.putInt(this.gatewayIPAddress);
         bb.put(this.clientHardwareAddress);
         if (this.clientHardwareAddress.length < 16) {
-            for (int i = 0; i < (16 - this.clientHardwareAddress.length); ++i) {
+            for (int i = 0;
+                 i < (16 - this.clientHardwareAddress.length); ++i) {
                 bb.put((byte) 0x0);
             }
         }
@@ -414,9 +410,10 @@ public class DHCP extends BasePacket {
         } else {
             byte[] bytes = null;
             try {
-                 bytes = string.getBytes("ascii");
+                bytes = string.getBytes("ascii");
             } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Failure encoding server name", e);
+                throw new RuntimeException("Failure encoding server name",
+                                           e);
             }
             int writeLength = bytes.length;
             if (writeLength > maxLength) {
@@ -435,7 +432,7 @@ public class DHCP extends BasePacket {
         if (bb.remaining() < MIN_HEADER_LENGTH) {
             return this;
         }
-        
+
         this.opCode = bb.get();
         this.hardwareType = bb.get();
         this.hardwareAddressLength = bb.get();
@@ -464,14 +461,16 @@ public class DHCP extends BasePacket {
         // read options
         while (bb.hasRemaining()) {
             DHCPOption option = new DHCPOption();
-            int code = 0xff & bb.get(); // convert signed byte to int in range [0,255]
+            int code = 0xff & bb
+                    .get(); // convert signed byte to int in range [0,255]
             option.setCode((byte) code);
             if (code == 0) {
                 // skip these
                 continue;
             } else if (code != 255) {
                 if (bb.hasRemaining()) {
-                    int l = 0xff & bb.get(); // convert signed byte to int in range [0,255]
+                    int l = 0xff & bb
+                            .get(); // convert signed byte to int in range [0,255]
                     option.setLength((byte) l);
                     if (bb.remaining() >= l) {
                         byte[] optionData = new byte[l];
@@ -480,13 +479,13 @@ public class DHCP extends BasePacket {
                     } else {
                         // Skip the invalid option and set the END option
                         code = 0xff;
-                        option.setCode((byte)code);
+                        option.setCode((byte) code);
                         option.setLength((byte) 0);
                     }
                 } else {
                     // Skip the invalid option and set the END option
                     code = 0xff;
-                    option.setCode((byte)code);
+                    option.setCode((byte) code);
                     option.setLength((byte) 0);
                 }
             }

@@ -1,24 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
-import java.util.Arrays;
-import java.util.List;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -27,9 +21,12 @@ import org.openflow.protocol.factory.OFMessageFactory;
 import org.openflow.protocol.factory.OFMessageFactoryAware;
 import org.openflow.util.U16;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Represents an ofp_error_msg
- * 
+ *
  * @author David Erickson (daviderickson@cs.stanford.edu)
  * @author Rob Sherwood (rob.sherwood@stanford.edu)
  */
@@ -43,18 +40,19 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
         // It uses the random value 0xb0c2 to avoid conflicts with other possible new
         // error types. Support for vendor-defined extended errors has been standardized
         // in the OF 1.2 spec, so this workaround is only needed for 1.0.
-        OFPET_HELLO_FAILED, OFPET_BAD_REQUEST, OFPET_BAD_ACTION, OFPET_FLOW_MOD_FAILED, OFPET_PORT_MOD_FAILED, OFPET_QUEUE_OP_FAILED, OFPET_VENDOR_ERROR((short)0xb0c2);
-        
+        OFPET_HELLO_FAILED, OFPET_BAD_REQUEST, OFPET_BAD_ACTION, OFPET_FLOW_MOD_FAILED, OFPET_PORT_MOD_FAILED, OFPET_QUEUE_OP_FAILED, OFPET_VENDOR_ERROR(
+                (short) 0xb0c2);
+
         protected short value;
-        
+
         private OFErrorType() {
             this.value = (short) this.ordinal();
         }
-        
+
         private OFErrorType(short value) {
             this.value = value;
         }
-        
+
         public short getValue() {
             return value;
         }
@@ -124,7 +122,7 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
     public boolean isVendorError() {
         return errorType == OFErrorType.OFPET_VENDOR_ERROR.getValue();
     }
-    
+
     /**
      * @return the errorCode
      */
@@ -167,19 +165,19 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
     public int getVendorErrorType() {
         return vendorErrorType;
     }
-    
+
     public void setVendorErrorType(int vendorErrorType) {
         this.vendorErrorType = vendorErrorType;
     }
-    
+
     public short getVendorErrorCode() {
         return vendorErrorCode;
     }
-    
+
     public void setVendorErrorCode(short vendorErrorCode) {
         this.vendorErrorCode = vendorErrorCode;
     }
-    
+
     public OFMessage getOffendingMsg() throws MessageParseException {
         // should only have one message embedded; if more than one, just
         // grab first
@@ -191,13 +189,13 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
 
         List<OFMessage> msglist = this.factory.parseMessage(errorMsg);
         if (msglist == null)
-                return null;
+            return null;
         return msglist.get(0);
     }
 
     /**
      * Write this offending message into the payload of the Error message
-     * 
+     *
      * @param offendingMsg
      */
 
@@ -217,8 +215,7 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
         return factory;
     }
 
-    @Override
-    public void setMessageFactory(OFMessageFactory factory) {
+    @Override public void setMessageFactory(OFMessageFactory factory) {
         this.factory = factory;
     }
 
@@ -252,8 +249,7 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
         this.errorIsAscii = errorIsAscii;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         super.readFrom(data);
         this.errorType = data.readShort();
         this.errorCode = data.readShort();
@@ -266,8 +262,7 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
         }
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         super.writeTo(data);
         data.writeShort(errorType);
         data.writeShort(errorCode);
@@ -277,11 +272,10 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
         result = prime * result + Arrays.hashCode(error);
@@ -293,11 +287,10 @@ public class OFError extends OFMessage implements OFMessageFactoryAware {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (!super.equals(obj))

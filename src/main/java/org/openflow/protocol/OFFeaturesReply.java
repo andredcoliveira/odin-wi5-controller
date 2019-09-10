@@ -1,38 +1,33 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
-import java.util.ArrayList;
-import java.util.List;
-
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.protocol.serializers.OFFeaturesReplyJSONSerializer;
 import org.openflow.util.U16;
 
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a features reply message
  * @author David Erickson (daviderickson@cs.stanford.edu)
  *
  */
-@JsonSerialize(using=OFFeaturesReplyJSONSerializer.class)
+@JsonSerialize(using = OFFeaturesReplyJSONSerializer.class)
 public class OFFeaturesReply extends OFMessage {
     public static int MINIMUM_LENGTH = 32;
 
@@ -40,14 +35,10 @@ public class OFFeaturesReply extends OFMessage {
      * Corresponds to bits on the capabilities field
      */
     public enum OFCapabilities {
-        OFPC_FLOW_STATS     (1 << 0),
-        OFPC_TABLE_STATS    (1 << 1),
-        OFPC_PORT_STATS     (1 << 2),
-        OFPC_STP            (1 << 3),
-        OFPC_RESERVED       (1 << 4),
-        OFPC_IP_REASM       (1 << 5),
-        OFPC_QUEUE_STATS    (1 << 6),
-        OFPC_ARP_MATCH_IP   (1 << 7);
+        OFPC_FLOW_STATS(1 << 0), OFPC_TABLE_STATS(1 << 1), OFPC_PORT_STATS(
+                1 << 2), OFPC_STP(1 << 3), OFPC_RESERVED(
+                1 << 4), OFPC_IP_REASM(1 << 5), OFPC_QUEUE_STATS(
+                1 << 6), OFPC_ARP_MATCH_IP(1 << 7);
 
         protected int value;
 
@@ -161,13 +152,12 @@ public class OFFeaturesReply extends OFMessage {
         if (ports == null) {
             this.setLengthU(MINIMUM_LENGTH);
         } else {
-            this.setLengthU(MINIMUM_LENGTH + ports.size()
-                    * OFPhysicalPort.MINIMUM_LENGTH);
+            this.setLengthU(MINIMUM_LENGTH
+                            + ports.size() * OFPhysicalPort.MINIMUM_LENGTH);
         }
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         super.readFrom(data);
         this.datapathId = data.readLong();
         this.buffers = data.readInt();
@@ -180,8 +170,8 @@ public class OFFeaturesReply extends OFMessage {
         } else {
             this.ports.clear();
         }
-        int portCount = (super.getLengthU() - 32)
-                / OFPhysicalPort.MINIMUM_LENGTH;
+        int portCount =
+                (super.getLengthU() - 32) / OFPhysicalPort.MINIMUM_LENGTH;
         OFPhysicalPort port;
         for (int i = 0; i < portCount; ++i) {
             port = new OFPhysicalPort();
@@ -190,8 +180,7 @@ public class OFFeaturesReply extends OFMessage {
         }
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         super.writeTo(data);
         data.writeLong(this.datapathId);
         data.writeInt(this.buffers);
@@ -206,8 +195,7 @@ public class OFFeaturesReply extends OFMessage {
             }
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 139;
         int result = super.hashCode();
         result = prime * result + actions;
@@ -219,8 +207,7 @@ public class OFFeaturesReply extends OFMessage {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

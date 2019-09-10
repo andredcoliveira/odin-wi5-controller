@@ -1,32 +1,6 @@
 package net.floodlightcontroller.odin.master;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import net.floodlightcontroller.core.FloodlightContext;
-import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.core.IOFMessageListener;
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.IOFSwitchListener;
+import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
@@ -42,6 +16,21 @@ import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * OdinMaster implementation. Exposes interfaces to OdinApplications, and keeps track of agents and
@@ -121,7 +110,6 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      * @param odinAgentAddr InetAddress of the agent
      */
     synchronized void receivePing(final InetAddress odinAgentAddr) {
-
         if (agentManager.receivePing(odinAgentAddr) && (!odinAgentAddr
                 .getHostAddress()
                 .equals(OdinMaster.detector_ip_address))) { // Detector does not need to be checked
@@ -1105,7 +1093,7 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      */
     @Override public int getTxPowerFromAgent(String pool,
                                              InetAddress agentAddr) {
-        // log.info("Getting TxPower OdinMaster");
+        log.info("Getting TxPower OdinMaster");
         return agentManager.getAgent(agentAddr).getTxPower();
     }
 
@@ -1376,6 +1364,8 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
                 }
 
                 for (int i = 1; i < fields.length; i++) {
+                    log.info("Adding network (" + fields[i] + ") to pool ("
+                             + poolName + ")");
                     poolManager.addNetworkForPool(poolName, fields[i]);
                 }
 

@@ -1,45 +1,49 @@
 package net.floodlightcontroller.counter;
 
-import java.util.List;
-import java.util.Map;
-
-import org.openflow.protocol.OFMessage;
-
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.counter.CounterStore.NetworkLayer;
 import net.floodlightcontroller.packet.Ethernet;
+import org.openflow.protocol.OFMessage;
+
+import java.util.List;
+import java.util.Map;
 
 public interface ICounterStoreService extends IFloodlightService {
 
-	public final static String CONTROLLER_NAME = "controller";
+    public final static String CONTROLLER_NAME = "controller";
     public final static String TitleDelimitor = "__";
 
-    /** Broadcast and multicast */
+    /**
+     * Broadcast and multicast
+     */
     public final static String BROADCAST = "broadcast";
     public final static String MULTICAST = "multicast";
     public final static String UNICAST = "unicast";
-    
-    /** L2 EtherType subCategories */
+
+    /**
+     * L2 EtherType subCategories
+     */
     public final static String L3ET_IPV4 = "L3_IPv4";
 
     /**
      * Update packetIn counters
-     * 
+     *
      * @param sw
      * @param m
      * @param eth
      */
-    public void updatePacketInCounters(IOFSwitch sw, OFMessage m, Ethernet eth);
-    
+    public void updatePacketInCounters(IOFSwitch sw, OFMessage m,
+                                       Ethernet eth);
+
     /**
      * This method can only be used to update packetOut and flowmod counters
-     * 
+     *
      * @param sw
      * @param ofMsg
      */
     public void updatePktOutFMCounterStore(IOFSwitch sw, OFMessage ofMsg);
-    
+
     /**
      * Retrieve a list of subCategories by counterName.
      * null if nothing.
@@ -48,9 +52,9 @@ public interface ICounterStoreService extends IFloodlightService {
                                          NetworkLayer layer);
 
     /**
-     * Create a new ICounter and set the title.  Note that the title must be 
+     * Create a new ICounter and set the title.  Note that the title must be
      * unique, otherwise this will throw an IllegalArgumentException.
-     * 
+     *
      * @param key
      * @param type
      * @return
@@ -64,7 +68,6 @@ public interface ICounterStoreService extends IFloodlightService {
 
     /**
      * Returns an immutable map of title:counter with all of the counters in the store.
-     * 
      * (Note - this method may be slow - primarily for debugging/UI)
      */
     public Map<String, ICounter> getAll();

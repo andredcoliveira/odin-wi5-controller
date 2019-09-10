@@ -1,23 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol;
-
-import java.util.List;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.protocol.factory.OFStatisticsFactory;
@@ -25,14 +20,15 @@ import org.openflow.protocol.factory.OFStatisticsFactoryAware;
 import org.openflow.protocol.statistics.OFStatistics;
 import org.openflow.protocol.statistics.OFStatisticsType;
 
+import java.util.List;
 
 /**
  * Base class for statistics requests/replies
  *
  * @author David Erickson (daviderickson@cs.stanford.edu) - Mar 27, 2010
  */
-public abstract class OFStatisticsMessageBase extends OFMessage implements
-        OFStatisticsFactoryAware {
+public abstract class OFStatisticsMessageBase extends OFMessage
+        implements OFStatisticsFactoryAware {
     public static int MINIMUM_LENGTH = 12;
 
     protected OFStatisticsFactory statisticsFactory;
@@ -87,20 +83,19 @@ public abstract class OFStatisticsMessageBase extends OFMessage implements
         this.statisticsFactory = statisticsFactory;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         super.readFrom(data);
-        this.statisticType = OFStatisticsType.valueOf(data.readShort(), this
-                .getType());
+        this.statisticType = OFStatisticsType
+                .valueOf(data.readShort(), this.getType());
         this.flags = data.readShort();
         if (this.statisticsFactory == null)
             throw new RuntimeException("OFStatisticsFactory not set");
-        this.statistics = statisticsFactory.parseStatistics(this.getType(),
-                this.statisticType, data, super.getLengthU() - MINIMUM_LENGTH);
+        this.statistics = statisticsFactory
+                .parseStatistics(this.getType(), this.statisticType, data,
+                                 super.getLengthU() - MINIMUM_LENGTH);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         super.writeTo(data);
         data.writeShort(this.statisticType.getTypeValue());
         data.writeShort(this.flags);
@@ -111,20 +106,20 @@ public abstract class OFStatisticsMessageBase extends OFMessage implements
         }
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 317;
         int result = super.hashCode();
         result = prime * result + flags;
-        result = prime * result
-                + ((statisticType == null) ? 0 : statisticType.hashCode());
-        result = prime * result
-                + ((statistics == null) ? 0 : statistics.hashCode());
+        result = prime * result + ((statisticType == null) ?
+                                   0 :
+                                   statisticType.hashCode());
+        result = prime * result + ((statistics == null) ?
+                                   0 :
+                                   statistics.hashCode());
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

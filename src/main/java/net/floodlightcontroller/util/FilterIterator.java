@@ -1,19 +1,16 @@
 /**
-*    Copyright 2012, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2012, Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.util;
 
@@ -44,15 +41,15 @@ public abstract class FilterIterator<T> implements Iterator<T> {
      * @return true if the value should be included
      */
     protected abstract boolean matches(T value);
-    
+
     // ***********
     // Iterator<T>
     // ***********
 
-    @Override
-    public boolean hasNext() {
-        if (next != null) return true;
-        
+    @Override public boolean hasNext() {
+        if (next != null)
+            return true;
+
         while (subIterator.hasNext()) {
             next = subIterator.next();
             if (matches(next))
@@ -62,8 +59,7 @@ public abstract class FilterIterator<T> implements Iterator<T> {
         return false;
     }
 
-    @Override
-    public T next() {
+    @Override public T next() {
         if (hasNext()) {
             T cur = next;
             next = null;
@@ -72,8 +68,7 @@ public abstract class FilterIterator<T> implements Iterator<T> {
         throw new NoSuchElementException();
     }
 
-    @Override
-    public void remove() {
+    @Override public void remove() {
         throw new UnsupportedOperationException();
     }
 

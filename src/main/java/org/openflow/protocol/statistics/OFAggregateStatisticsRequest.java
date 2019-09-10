@@ -1,22 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol.statistics;
-
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.protocol.OFMatch;
@@ -72,13 +68,11 @@ public class OFAggregateStatisticsRequest implements OFStatistics {
         this.outPort = outPort;
     }
 
-    @Override
-    public int getLength() {
+    @Override public int getLength() {
         return 44;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
+    @Override public void readFrom(ChannelBuffer data) {
         if (this.match == null)
             this.match = new OFMatch();
         this.match.readFrom(data);
@@ -87,16 +81,14 @@ public class OFAggregateStatisticsRequest implements OFStatistics {
         this.outPort = data.readShort();
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         this.match.writeTo(data);
         data.writeByte(this.tableId);
         data.writeByte((byte) 0);
         data.writeShort(this.outPort);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 401;
         int result = 1;
         result = prime * result + ((match == null) ? 0 : match.hashCode());
@@ -105,8 +97,7 @@ public class OFAggregateStatisticsRequest implements OFStatistics {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

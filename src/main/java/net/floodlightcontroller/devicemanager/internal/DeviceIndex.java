@@ -1,27 +1,24 @@
 /**
-*    Copyright 2012 Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright 2012 Big Switch Networks, Inc.
+ * Originally created by David Erickson, Stanford University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package net.floodlightcontroller.devicemanager.internal;
+
+import net.floodlightcontroller.devicemanager.IDeviceService.DeviceField;
 
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
-
-import net.floodlightcontroller.devicemanager.IDeviceService.DeviceField;
 
 /**
  * An index that maps key fields of an entity to device keys
@@ -48,7 +45,7 @@ public abstract class DeviceIndex {
      * @return an iterator over device keys
      */
     public abstract Iterator<Long> queryByEntity(Entity entity);
-    
+
     /**
      * Get all device keys in the index.  If certain devices exist
      * multiple times, then these devices may be returned multiple times
@@ -86,7 +83,7 @@ public abstract class DeviceIndex {
      * @param deviceKey the key to remove
      */
     public abstract void removeEntity(Entity entity, Long deviceKey);
-    
+
     /**
      * Remove the give device from the index only if this the collection
      * of others does not contain an entity that is identical on all the key
@@ -100,7 +97,8 @@ public abstract class DeviceIndex {
         IndexedEntity ie = new IndexedEntity(keyFields, entity);
         for (Entity o : others) {
             IndexedEntity oio = new IndexedEntity(keyFields, o);
-            if (oio.equals(ie)) return;
+            if (oio.equals(ie))
+                return;
         }
         removeEntity(entity, deviceKey);
     }

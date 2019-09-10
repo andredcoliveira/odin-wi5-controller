@@ -1,7 +1,7 @@
 # Pool-1
 NAME pool-1
-NODES 172.16.1.2 172.16.2.3
-NETWORKS odin-wifi
+NODES 172.16.0.1 172.16.0.2
+NETWORKS ow-wifi
 
 ####### Now applications and its parameters are defined ######
 
@@ -24,7 +24,7 @@ NETWORKS odin-wifi
 ####### ShowScannedStationsStatistics params - Optional filename to save statistics
 ####### INTERFERENCES TimeToStart(sec) ReportingPeriod(sec) ScanningInterval(sec) AddedTime(sec) Filename
 # APPLICATION net.floodlightcontroller.odin.applications.ShowScannedStationsStatistics
-# INTERFERENCES 30 30 5 1 ScannedStationsStatistics.txt
+# INTERFERENCES 30 20 5 1 ScannedStationsStatistics.txt
 
 ####### ShowMatrixOfDistancedBs params
 ####### MATRIX TimeToStart(sec) ReportingPeriod(sec) ScanningInterval(sec) AddedTime(sec) Channel
@@ -63,7 +63,7 @@ NETWORKS odin-wifi
 ####### SMARTAPSELECTION TimeToStart(sec) ScanningInterval(msec) AddedTime(msec) SignalThreshold(dBm) Hysteresis(sec) Alpha(0-1) Pause(sec) Mode TxpowerSTA(dBm) ThReqSTA(kbps) Filename
 ####### Mode = RSSI, FF, BALANCER, JAIN-BALANCER, DETECTOR; Choose between RSSI, FittingnessFactor algorithm, Balancer, Jain's Fairness index Balancer or Detector modes
 APPLICATION net.floodlightcontroller.odin.applications.SmartApSelection
-SMARTAPSELECTION 50 200 0 -56 4 0.8 0 JAIN-BALANCER 10 2000 SmartApSelectionLog.txt
+SMARTAPSELECTION 30 200 0 -56 4 0.8 0 JAIN-BALANCER 10 2000 SmartApSelectionLog.txt
 
 ####### Demo Statistics
 # APPLICATION net.floodlightcontroller.odin.applications.DemoStatistics

@@ -1,22 +1,18 @@
 /**
-*    Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
-*    University
-* 
-*    Licensed under the Apache License, Version 2.0 (the "License"); you may
-*    not use this file except in compliance with the License. You may obtain
-*    a copy of the License at
-*
-*         http://www.apache.org/licenses/LICENSE-2.0
-*
-*    Unless required by applicable law or agreed to in writing, software
-*    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-*    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-*    License for the specific language governing permissions and limitations
-*    under the License.
-**/
+ * Copyright (c) 2008 The Board of Trustees of The Leland Stanford Junior
+ * University
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ **/
 
 package org.openflow.protocol.statistics;
-
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.openflow.util.StringByteSerializer;
@@ -105,66 +101,58 @@ public class OFDescriptionStatistics implements OFStatistics {
         this.datapathDescription = datapathDescription;
     }
 
-    @Override
-    public int getLength() {
+    @Override public int getLength() {
         return 1056;
     }
 
-    @Override
-    public void readFrom(ChannelBuffer data) {
-        this.manufacturerDescription = StringByteSerializer.readFrom(data,
-                DESCRIPTION_STRING_LENGTH);
-        this.hardwareDescription = StringByteSerializer.readFrom(data,
-                DESCRIPTION_STRING_LENGTH);
-        this.softwareDescription = StringByteSerializer.readFrom(data,
-                DESCRIPTION_STRING_LENGTH);
-        this.serialNumber = StringByteSerializer.readFrom(data,
-                SERIAL_NUMBER_LENGTH);
-        this.datapathDescription = StringByteSerializer.readFrom(data,
-                DESCRIPTION_STRING_LENGTH);
+    @Override public void readFrom(ChannelBuffer data) {
+        this.manufacturerDescription = StringByteSerializer
+                .readFrom(data, DESCRIPTION_STRING_LENGTH);
+        this.hardwareDescription = StringByteSerializer
+                .readFrom(data, DESCRIPTION_STRING_LENGTH);
+        this.softwareDescription = StringByteSerializer
+                .readFrom(data, DESCRIPTION_STRING_LENGTH);
+        this.serialNumber = StringByteSerializer
+                .readFrom(data, SERIAL_NUMBER_LENGTH);
+        this.datapathDescription = StringByteSerializer
+                .readFrom(data, DESCRIPTION_STRING_LENGTH);
     }
 
-    @Override
-    public void writeTo(ChannelBuffer data) {
+    @Override public void writeTo(ChannelBuffer data) {
         StringByteSerializer.writeTo(data, DESCRIPTION_STRING_LENGTH,
-                this.manufacturerDescription);
+                                     this.manufacturerDescription);
         StringByteSerializer.writeTo(data, DESCRIPTION_STRING_LENGTH,
-                this.hardwareDescription);
+                                     this.hardwareDescription);
         StringByteSerializer.writeTo(data, DESCRIPTION_STRING_LENGTH,
-                this.softwareDescription);
-        StringByteSerializer.writeTo(data, SERIAL_NUMBER_LENGTH,
-                this.serialNumber);
+                                     this.softwareDescription);
+        StringByteSerializer
+                .writeTo(data, SERIAL_NUMBER_LENGTH, this.serialNumber);
         StringByteSerializer.writeTo(data, DESCRIPTION_STRING_LENGTH,
-                this.datapathDescription);
+                                     this.datapathDescription);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 409;
         int result = 1;
-        result = prime
-                * result
-                + ((datapathDescription == null) ? 0 : datapathDescription
-                        .hashCode());
-        result = prime
-                * result
-                + ((hardwareDescription == null) ? 0 : hardwareDescription
-                        .hashCode());
-        result = prime
-                * result
-                + ((manufacturerDescription == null) ? 0
-                        : manufacturerDescription.hashCode());
-        result = prime * result
-                + ((serialNumber == null) ? 0 : serialNumber.hashCode());
-        result = prime
-                * result
-                + ((softwareDescription == null) ? 0 : softwareDescription
-                        .hashCode());
+        result = prime * result + ((datapathDescription == null) ?
+                                   0 :
+                                   datapathDescription.hashCode());
+        result = prime * result + ((hardwareDescription == null) ?
+                                   0 :
+                                   hardwareDescription.hashCode());
+        result = prime * result + ((manufacturerDescription == null) ?
+                                   0 :
+                                   manufacturerDescription.hashCode());
+        result = prime * result + ((serialNumber == null) ?
+                                   0 :
+                                   serialNumber.hashCode());
+        result = prime * result + ((softwareDescription == null) ?
+                                   0 :
+                                   softwareDescription.hashCode());
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

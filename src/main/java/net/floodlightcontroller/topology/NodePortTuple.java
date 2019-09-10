@@ -2,7 +2,6 @@ package net.floodlightcontroller.topology;
 
 import net.floodlightcontroller.core.web.serializers.DPIDSerializer;
 import net.floodlightcontroller.linkdiscovery.SwitchPortTuple;
-
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.openflow.util.HexString;
@@ -11,6 +10,7 @@ import org.openflow.util.HexString;
  * A NodePortTuple is similar to a SwitchPortTuple
  * but it only stores IDs instead of references
  * to the actual objects.
+ *
  * @author srini
  */
 public class NodePortTuple {
@@ -19,6 +19,7 @@ public class NodePortTuple {
 
     /**
      * Creates a NodePortTuple
+     *
      * @param nodeId The DPID of the switch
      * @param portId The port of the switch
      */
@@ -26,10 +27,11 @@ public class NodePortTuple {
         this.nodeId = nodeId;
         this.portId = portId;
     }
-    
+
     /**
      * Creates a NodePortTuple from the same information
      * in a SwitchPortTuple
+     *
      * @param swt
      */
     public NodePortTuple(SwitchPortTuple swt) {
@@ -40,28 +42,29 @@ public class NodePortTuple {
         this.portId = swt.getPort();
     }
 
-    @JsonProperty("switch")
-    @JsonSerialize(using=DPIDSerializer.class)
+    @JsonProperty("switch") @JsonSerialize(using = DPIDSerializer.class)
     public long getNodeId() {
         return nodeId;
     }
+
     public void setNodeId(long nodeId) {
         this.nodeId = nodeId;
     }
-    @JsonProperty("port")
-    public short getPortId() {
+
+    @JsonProperty("port") public short getPortId() {
         return portId;
     }
+
     public void setPortId(short portId) {
         this.portId = portId;
     }
-    
+
     public String toString() {
-        return "[id=" + HexString.toHexString(nodeId) + ", port=" + new Short(portId) + "]";
+        return "[id=" + HexString.toHexString(nodeId) + ", port="
+               + new Short(portId) + "]";
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + (int) (nodeId ^ (nodeId >>> 32));
@@ -69,8 +72,7 @@ public class NodePortTuple {
         return result;
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
