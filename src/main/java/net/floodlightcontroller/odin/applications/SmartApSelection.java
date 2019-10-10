@@ -10,8 +10,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-@SuppressWarnings("Duplicates") public class SmartApSelection
-        extends OdinApplication {
+@SuppressWarnings("Duplicates")
+public class SmartApSelection extends OdinApplication {
 
     // IMPORTANT: this application only works if all the agents in the
     //poolfile are activated before the end of the INITIAL_INTERVAL.
@@ -151,6 +151,7 @@ import java.util.*;
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+
 
         int ind_aux = 0;
 
@@ -292,8 +293,11 @@ import java.util.*;
 
                 time = System.currentTimeMillis();
 
+//                System.out.println("\n\n\t[DEBUG] num_channels: " + num_channels + "\t\n\n\n");  // DEBUG
+
                 //For each channel used in our APs
                 for (int channel = 0; channel < num_channels; ++channel) {
+//                    System.out.println("\n\n\t[DEBUG] channels[channel]: " + channels[channel] + "\t\n\n\n");  // DEBUG
 
                     if (channels[channel] == 0)
                         continue;
@@ -313,8 +317,7 @@ import java.util.*;
 
                     // sleep during the scanning
                     try {
-                        Thread.sleep(SMARTAP_PARAMS.scanning_interval
-                                     + SMARTAP_PARAMS.added_time);
+                        Thread.sleep(SMARTAP_PARAMS.scanning_interval + SMARTAP_PARAMS.added_time);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -323,24 +326,22 @@ import java.util.*;
                     for (InetAddress agentAddr : agents) {
 
                         // Reception statistics
-                        if (scanningAgents.get(agentAddr)
-                            == 0) { // Busy agent
-                            System.out.println(
-                                    "\033[K\r[SmartAPSelection] Agent BUSY during scanning operation");
+                        if (scanningAgents.get(agentAddr) == 0) { // Busy agent
+                            System.out.println("\033[K\r[SmartAPSelection] Agent BUSY during scanning operation");
                             continue;
                         }
 
                         // Agent non busy, so we recover the information
-                        vals_rx[channel][agent] = getScannedStaRssiFromAgent(
-                                agentAddr);
+                        vals_rx[channel][agent] = getScannedStaRssiFromAgent(agentAddr);
+//                        System.out.println("\n\n[DEBUG] channel: " + channel + "\n\n");  // DEBUG
                         agent++;
                     }
-                    //Thread.sleep(200); // Give some time to the AP
+//                    Thread.sleep(200); // Give some time to the AP
                 }
 
-                System.out.println(
-                        "\033[K\r[SmartAPSelection] Scanning done in: " + (
-                                System.currentTimeMillis() - time) + " ms");
+//                System.out.println("\n\nvals_rx: " + Arrays.deepToString(vals_rx) + "\n\n");  // DEBUG
+
+                System.out.println("\033[K\r[SmartAPSelection] Scanning done in: " + (System.currentTimeMillis() - time) + " ms");
 
                 /* * * * * * * * * * * * * * * * * * * * *
                  *                                       *

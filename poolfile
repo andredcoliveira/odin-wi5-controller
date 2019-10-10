@@ -1,6 +1,6 @@
 # Pool-1
 NAME pool-1
-NODES 172.16.0.1 172.16.0.2
+NODES 172.16.0.1
 NETWORKS ow-wifi
 
 ####### Now applications and its parameters are defined ######
@@ -63,13 +63,13 @@ NETWORKS ow-wifi
 ####### SMARTAPSELECTION TimeToStart(sec) ScanningInterval(msec) AddedTime(msec) SignalThreshold(dBm) Hysteresis(sec) Alpha(0-1) Pause(sec) Mode TxpowerSTA(dBm) ThReqSTA(kbps) Filename
 ####### Mode = RSSI, FF, BALANCER, JAIN-BALANCER, DETECTOR; Choose between RSSI, FittingnessFactor algorithm, Balancer, Jain's Fairness index Balancer or Detector modes
 APPLICATION net.floodlightcontroller.odin.applications.SmartApSelection
-SMARTAPSELECTION 30 200 0 -56 4 0.8 0 JAIN-BALANCER 10 2000 SmartApSelectionLog.txt
+SMARTAPSELECTION 15 200 0 -56 4 0.8 0 JAIN-BALANCER 0 2000 SmartApSelectionLog.txt
 
 ####### Demo Statistics
 # APPLICATION net.floodlightcontroller.odin.applications.DemoStatistics
 
 ####### Flying Network Manager
-APPLICATION net.floodlightcontroller.odin.applications.FlyingNetworkManager
+# APPLICATION net.floodlightcontroller.odin.applications.FlyingNetworkManager
 
 ####### VIP AP IP Address
 # VIPAP 192.168.1.14

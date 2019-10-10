@@ -993,7 +993,6 @@ public class OdinMaster implements IFloodlightModule, IOFSwitchListener,
      */
     @Override public int getChannelFromAgent(String pool,
                                              InetAddress agentAddr) {
-        // log.info("Getting channel OdinMaster");
         return agentManager.getAgent(agentAddr).getChannel();
     }
 
